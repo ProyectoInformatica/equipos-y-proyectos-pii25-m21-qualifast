@@ -1,7 +1,17 @@
 [
     {
         "id": 1,
-        "nombre": "Juan Pérez",
+        "nombre": "Juan P\u00e9rez",
         "delito": "Robo"
+    },
+    {
+        "id": 2,
+        "nombre": "pedro sanchez",
+        "delito": "ME CAGO EN SU PUTA MADRE"
+    },
+    {
+        "id": 3,
+        "nombre": "sanchez pedro",
+        "delito": "Delito Pendiente"
     }
 ]
