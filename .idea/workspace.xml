@@ -4,7 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="646ec208-4847-4804-bd2a-de767974a4d8" name="Changes" comment="" />
+    <list default="true" id="646ec208-4847-4804-bd2a-de767974a4d8" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/vista/vista_dashboard_sensores.py" beforeDir="false" afterPath="$PROJECT_DIR$/vista/vista_dashboard_sensores.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -18,21 +21,21 @@
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
-  "lastFilter": {
-    "state": "OPEN",
-    "assignee": "Dakyen"
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;Dakyen&quot;
   }
-}]]></component>
+}</component>
   <component name="GithubPullRequestsUISettings"><![CDATA[{
   "selectedUrlAndAccountId": {
-    "url": "https://github.com/ProyectoInformatica/equipos-y-proyectos-pii25-m21-qualifast",
+    "url": "https://github.com/ProyectoInformatica/equipos-y-proyectos-pii25-m21-qualifast.git",
     "accountId": "9b66a030-f86a-45e3-a548-7f16f0cddf1d"
   }
 }]]></component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 7
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 7
+}</component>
   <component name="ProjectId" id="35nNpD2BoRdk61XNd1taJEmakbR" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -46,7 +49,7 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "git-widget-placeholder": "feature/ImplementarModeloDeSensores__Daniel",
+    "git-widget-placeholder": "feature__DiseñarDashboardPrincipal__Daniel",
     "junie.onboarding.icon.badge.shown": "true",
     "last_opened_file_path": "/Users/daniel/Documents/Uni/2 año/equipos-y-proyectos-pii25-m21-qualifast",
     "node.js.detected.package.eslint": "true",
@@ -104,6 +107,7 @@
       <option name="presentableId" value="Default" />
       <updated>1763742055658</updated>
       <workItem from="1763742056825" duration="5958000" />
+      <workItem from="1763854014693" duration="1399000" />
     </task>
     <servers />
   </component>
