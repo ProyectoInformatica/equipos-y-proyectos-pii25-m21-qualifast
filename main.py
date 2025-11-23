@@ -1,6 +1,6 @@
 import flet as ft
 import modelo.manejador_datos as modelo
-from vista import vista_login, vista_dashboard_sensores, vista_camaras  # <--- IMPORTAMOS LA NUEVA VISTA
+from vista import vista_login, vista_dashboard_sensores, vista_camaras, vista_gestion_presos
 
 
 # --- FUNCIONES DEL CONTROLADOR ---
@@ -29,7 +29,6 @@ def on_logout_click(e):
 
 def on_refrescar_click(e):
     """Refresca la página forzando la recarga de la ruta actual."""
-    print("Controlador: Refrescando página...")
     if hasattr(e, 'page') and e.page:
         route = e.page.route
         e.page.on_route_change(ft.RouteChangeEvent(route))
@@ -47,53 +46,107 @@ def on_control_actuador_click(e, actuador_id, nuevo_estado):
     on_refrescar_click(e)
 
 
-# --- CONTROLADORES DE NAVEGACIÓN NUEVOS ---
-
+# --- GESTIÓN DE CÁMARAS ---
 def on_ver_camaras_click(e):
-    """Navega a la ruta de cámaras."""
     e.page.go("/camaras")
 
+
 def on_volver_dashboard_click(e):
-    """Navega de vuelta al dashboard."""
     e.page.go("/dashboard")
 
 
-# --- CONTROLADORES DE PRESOS ---
+# --- GESTIÓN DE PRESOS (LÓGICA CORREGIDA) ---
 
-def on_crear_preso_click(e, campo_nombre):
+def guardar_nuevo_preso(e, datos, dialogo):
+    """
+    Callback llamado desde el diálogo de crear.
+    Recibe 'dialogo' para poder cerrarlo correctamente usando page.close(dialogo).
+    """
     page = e.page
-    nombre = campo_nombre.value
+    nombre = datos.get("nombre")
+    delito = datos.get("delito")
+    celda = datos.get("celda")
+
     if not nombre:
-        page.snack_bar = ft.SnackBar(ft.Text("El nombre es obligatorio.", color="white"), bgcolor=ft.Colors.RED_700)
+        page.snack_bar = ft.SnackBar(ft.Text("El nombre es obligatorio."), bgcolor=ft.Colors.RED_700)
         page.snack_bar.open = True
         page.update()
         return
 
-    if modelo.add_preso(nombre, "Delito Pendiente"):
-        campo_nombre.value = ""
+    # Llamar al modelo
+    if modelo.add_preso(nombre, delito, celda):
         page.snack_bar = ft.SnackBar(ft.Text(f"Preso {nombre} añadido."), bgcolor=ft.Colors.GREEN_700)
         page.snack_bar.open = True
-        on_refrescar_click(e)
+
+        # --- CORRECCIÓN DEL ERROR ---
+        page.close(dialogo)
+
+        on_refrescar_click(e)  # Refrescar lista
     else:
-        page.snack_bar = ft.SnackBar(ft.Text("Error al añadir preso."), bgcolor=ft.Colors.RED_700)
+        page.snack_bar = ft.SnackBar(ft.Text("Error al añadir."), bgcolor=ft.Colors.RED_700)
         page.snack_bar.open = True
         page.update()
+
+
+def guardar_edicion_preso(e, datos, dialogo):
+    """
+    Callback llamado desde el diálogo de editar.
+    """
+    page = e.page
+    id_preso = datos.get("id")
+    datos_nuevos = {
+        "nombre": datos.get("nombre"),
+        "delito": datos.get("delito"),
+        "celda": datos.get("celda")
+    }
+
+    if modelo.update_preso(id_preso, datos_nuevos):
+        page.snack_bar = ft.SnackBar(ft.Text("Datos actualizados."), bgcolor=ft.Colors.GREEN_700)
+        page.snack_bar.open = True
+
+        # --- CORRECCIÓN DEL ERROR ---
+        page.close(dialogo)
+
+        on_refrescar_click(e)
+    else:
+        page.snack_bar = ft.SnackBar(ft.Text("Error al actualizar."), bgcolor=ft.Colors.RED_700)
+        page.snack_bar.open = True
+        page.update()
+
+
+def on_abrir_crear_preso(e):
+    """Abre el diálogo para crear."""
+    # Pasamos el callback que maneja el guardado
+    dialogo = vista_gestion_presos.crear_dialogo_preso(
+        titulo="Nuevo Ingreso",
+        on_guardar=guardar_nuevo_preso
+    )
+    e.page.open(dialogo)
+
+
+def on_abrir_editar_preso(e, preso):
+    """Abre el diálogo para editar con datos cargados."""
+    dialogo = vista_gestion_presos.crear_dialogo_preso(
+        titulo="Editar Expediente",
+        on_guardar=guardar_edicion_preso,
+        preso_actual=preso
+    )
+    e.page.open(dialogo)
 
 
 def on_borrar_preso_click(e, id_preso):
-    """Función para borrar presos."""
     page = e.page
-    print(f"Controlador: Borrando preso {id_preso}")
-
     if modelo.delete_preso(id_preso):
-        page.snack_bar = ft.SnackBar(ft.Text(f"Preso {id_preso} eliminado."), bgcolor=ft.Colors.GREEN_700)
+        page.snack_bar = ft.SnackBar(ft.Text(f"Preso eliminado."), bgcolor=ft.Colors.GREEN_700)
         page.snack_bar.open = True
         on_refrescar_click(e)
     else:
-        page.snack_bar = ft.SnackBar(ft.Text("Error al eliminar preso."), bgcolor=ft.Colors.RED_700)
+        page.snack_bar = ft.SnackBar(ft.Text("Error al eliminar."), bgcolor=ft.Colors.RED_700)
         page.snack_bar.open = True
         page.update()
 
+
+# --- GESTIÓN DE USUARIOS ---
 
 def on_crear_usuario_click(e, campo_user, campo_pass, dd_rol):
     page = e.page
@@ -107,7 +160,7 @@ def on_crear_usuario_click(e, campo_user, campo_pass, dd_rol):
     if modelo.add_usuario(username, password, rol_nuevo):
         page.snack_bar = ft.SnackBar(ft.Text(f"Usuario {username} creado."), bgcolor=ft.Colors.GREEN_700)
     else:
-        page.snack_bar = ft.SnackBar(ft.Text("Error al crear usuario.", color="white"), bgcolor=ft.Colors.RED_700)
+        page.snack_bar = ft.SnackBar(ft.Text("Error al crear usuario."), bgcolor=ft.Colors.RED_700)
 
     page.snack_bar.open = True
     campo_user.value = ""
@@ -124,32 +177,23 @@ def main(page: ft.Page):
     page.theme_mode = ft.ThemeMode.DARK
 
     def route_change(route_event):
-        # Normalizar el evento de ruta
         route = route_event.route if isinstance(route_event, ft.RouteChangeEvent) else route_event
-
-        print(f"Navegando a: {route}")
         page.views.clear()
         rol = page.session.get("user_rol")
 
-        # PROTECCIÓN DE RUTAS: Redirección si no hay sesión
-        # Esto protege automáticamente /dashboard, /camaras, etc.
         if not rol and route != "/login":
             page.go("/login")
             return
-
-        # --- GESTIÓN DE VISTAS ---
 
         if route == "/login":
             page.views.append(vista_login.crear_vista_login(on_login_click))
 
         elif route == "/dashboard":
-            # 1. Obtener datos del MODELO
             datos_act = modelo.get_estado_actuadores()
             datos_presos = modelo.get_presos()
             datos_user = modelo.get_usuarios()
             datos_sens = modelo.get_log_sensores()
 
-            # 2. Crear la VISTA pasando datos y handlers
             page.views.append(
                 vista_dashboard_sensores.crear_dashboard_view(
                     page=page,
@@ -161,15 +205,15 @@ def main(page: ft.Page):
                     on_logout_click=on_logout_click,
                     on_refrescar_click=on_refrescar_click,
                     on_control_actuador_click=on_control_actuador_click,
-                    on_crear_preso_click=on_crear_preso_click,
                     on_crear_usuario_click=on_crear_usuario_click,
                     on_borrar_preso_click=on_borrar_preso_click,
-                    on_ver_camaras_click=on_ver_camaras_click # <--- Pasamos el nuevo handler
+                    on_ver_camaras_click=on_ver_camaras_click,
+                    on_abrir_crear_preso=on_abrir_crear_preso,
+                    on_abrir_editar_preso=on_abrir_editar_preso
                 )
             )
 
         elif route == "/camaras":
-            # Crear la vista de cámaras
             page.views.append(
                 vista_camaras.crear_vista_camaras(
                     on_refrescar_click=on_refrescar_click,

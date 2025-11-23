@@ -1,22 +1,9 @@
 [
     {
         "id": 1,
-        "nombre": "Roberto Casas",
-        "delito": "Robo con fuerza"
-    },
-    {
-        "id": 2,
-        "nombre": "Elena M.",
-        "delito": "Vandalismo y alteración del orden"
-    },
-    {
-        "id": 3,
-        "nombre": "Sánchez Pedro",
-        "delito": "Fraude fiscal"
-    },
-    {
-        "id": 4,
-        "nombre": "Marcos Alonso",
-        "delito": "Conducción temeraria"
+        "nombre": "S\u00e1nchez Pedro",
+        "delito": "Atraco",
+        "celda": "1",
+        "fecha_ingreso": "23/11/2025 18:36"
     }
 ]

@@ -14,20 +14,21 @@ def crear_dashboard_view(
         on_logout_click,
         on_refrescar_click,
         on_control_actuador_click,
-        on_crear_preso_click,
         on_crear_usuario_click,
         on_borrar_preso_click,
-        on_ver_camaras_click  # <--- NUEVO ARGUMENTO
+        on_ver_camaras_click,
+        # Nuevos argumentos para gestión avanzada de presos
+        on_abrir_crear_preso,
+        on_abrir_editar_preso
 ):
     """
     Crea la estructura principal del Dashboard.
     """
 
-    # --- TOPBAR (Barra Superior) ---
+    # --- TOPBAR ---
     title = ft.Text("Planta Comisaría", size=18, weight=ft.FontWeight.BOLD, color=COLORS['text'])
     legend = ft.Text("🟢 Puerta abierta 🔴 Puerta cerrada", size=10, color=COLORS['muted'])
 
-    # Botón para ir a cámaras (NUEVO)
     boton_camaras = ft.ElevatedButton(
         "Ver Cámaras",
         icon=ft.Icons.CAMERA_ALT,
@@ -48,7 +49,7 @@ def crear_dashboard_view(
     topbar = ft.Row([
         ft.Column([title, legend], spacing=2),
         ft.Container(expand=True),
-        boton_camaras,  # Añadido aquí
+        boton_camaras,
         ft.Container(width=10),
         user_label,
         logout_btn
@@ -70,17 +71,18 @@ def crear_dashboard_view(
     # --- BOTTOM ROW (Gestión) ---
     bottom_row = ft.Row(spacing=12, expand=False)
 
-    # 1. Tarjeta de Presos
+    # 1. Tarjeta de Presos (ACTUALIZADA)
     bottom_row.controls.append(
         vista.vista_gestion_presos.crear_vista_presos(
             lista_presos=datos_presos,
-            on_crear_preso_handler=on_crear_preso_click,
+            on_abrir_crear_handler=on_abrir_crear_preso,
+            on_abrir_editar_handler=on_abrir_editar_preso,
             on_refrescar_handler=on_refrescar_click,
             on_borrar_preso_handler=on_borrar_preso_click
         )
     )
 
-    # 2. Tarjeta de Usuarios (Solo visible para Comisario)
+    # 2. Tarjeta de Usuarios
     bottom_row.controls.append(
         vista.vista_gestion_usuarios.crear_vista_usuarios(
             rol_actual=rol_usuario,
@@ -89,14 +91,14 @@ def crear_dashboard_view(
         )
     )
 
-    # --- ENSAMBLAJE COLUMNA IZQUIERDA ---
+    # --- COLUMNA IZQUIERDA ---
     left_column = ft.Column(
         spacing=12,
         expand=True,
         controls=[topbar, map_card, bottom_row]
     )
 
-    # --- PANEL DERECHO (Log de Sensores) ---
+    # --- PANEL DERECHO (Log) ---
     right_content = ft.Column(spacing=12, expand=True)
 
     right_content.controls.append(
@@ -111,13 +113,8 @@ def crear_dashboard_view(
     )
 
     right_content.controls.append(ft.Divider(height=10, color=COLORS['muted']))
+    right_content.controls.append(ft.Text("Log de Sensores (Últimos registros)", size=10, color=COLORS['muted']))
 
-    # Título del Log
-    right_content.controls.append(
-        ft.Text("Log de Sensores (Últimos registros)", size=10, color=COLORS['muted'])
-    )
-
-    # Lista del log
     log_list = ft.ListView(expand=True, spacing=5, padding=5)
 
     if not datos_sensores:
@@ -125,10 +122,8 @@ def crear_dashboard_view(
     else:
         for log in reversed(datos_sensores[-15:]):
             icono = "📝"
-            # Mapeo simple de iconos según el sensor (asegurándose que existen en DEVICE_ICONS)
-            key_sensor = log['sensor'].lower().replace("-", "")  # ej: mq-2 -> mq2
+            key_sensor = log['sensor'].lower().replace("-", "")
             if log['sensor'] == 'DHT11': key_sensor = 'dht'
-
             icono = DEVICE_ICONS.get(key_sensor, "📝")
 
             log_item = ft.Container(
