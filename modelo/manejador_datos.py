@@ -1,5 +1,6 @@
 import json
 import os
+from datetime import datetime
 
 # --- Ubicaciones de los archivos JSON ---
 USUARIOS_FILE = 'modelo/usuarios.json'
@@ -79,26 +80,34 @@ def add_usuario(username, password_plana, rol):
     return True
 
 
-# --- LÓGICA DE PRESOS (NUEVO) ---
+# --- LÓGICA DE PRESOS ---
 def get_presos():
     """Devuelve la lista completa de presos."""
     return _leer_json(PRESOS_FILE)
 
 
-def add_preso(nombre, delito):
-    """Añade un nuevo preso generando ID automático."""
+def add_preso(nombre, delito, celda="Sin asignar"):
+    """
+    Añade un nuevo preso.
+    Si no se pasa celda, se pone por defecto.
+    """
     presos = _leer_json(PRESOS_FILE)
 
-    # Generación de ID robusta (max ID + 1)
+    # Generación de ID robusta
     if presos:
         nuevo_id = max(p["id"] for p in presos) + 1
     else:
         nuevo_id = 1
 
+    # Fecha actual formato: DD/MM/YYYY HH:MM
+    fecha_actual = datetime.now().strftime("%d/%m/%Y %H:%M")
+
     nuevo_preso = {
         "id": nuevo_id,
         "nombre": nombre,
-        "delito": delito
+        "delito": delito,
+        "celda": celda,
+        "fecha_ingreso": fecha_actual
     }
     presos.append(nuevo_preso)
     _escribir_json(PRESOS_FILE, presos)
@@ -124,7 +133,7 @@ def update_preso(id_preso, datos_nuevos):
 
     for preso in presos:
         if preso['id'] == id_preso:
-            preso.update(datos_nuevos)  # Actualiza campos (nombre, delito)
+            preso.update(datos_nuevos)  # Actualiza campos pasados en el dict
             encontrado = True
             break
 

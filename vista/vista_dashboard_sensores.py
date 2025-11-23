@@ -14,18 +14,30 @@ def crear_dashboard_view(
         on_logout_click,
         on_refrescar_click,
         on_control_actuador_click,
-        on_crear_preso_click,
         on_crear_usuario_click,
-        on_borrar_preso_click  # <--- 1. AÑADIMOS ESTE ARGUMENTO
+        on_borrar_preso_click,
+        on_ver_camaras_click,
+        on_abrir_crear_preso,
+        on_abrir_editar_preso
 ):
     """
-    Crea la estructura principal del Dashboard.
-    Organiza la pantalla en dos columnas: Izquierda (Mapa/Gestión) y Derecha (Sensores/Log).
+    Crea la estructura principal del Dashboard fusionado.
     """
 
-    # --- TOPBAR (Barra Superior) ---
+    # --- PERMISOS ---
+    puede_controlar = (rol_usuario != 'policia')
+
+    # --- TOPBAR ---
     title = ft.Text("Planta Comisaría", size=18, weight=ft.FontWeight.BOLD, color=COLORS['text'])
     legend = ft.Text("🟢 Puerta abierta 🔴 Puerta cerrada", size=10, color=COLORS['muted'])
+
+    boton_camaras = ft.ElevatedButton(
+        "Ver Cámaras",
+        icon=ft.Icons.CAMERA_ALT,
+        bgcolor=COLORS['glass'],
+        color=COLORS['text'],
+        on_click=on_ver_camaras_click
+    )
 
     user_label = ft.Container(
         content=ft.Text(f"Usuario: {rol_usuario.upper()}", size=10, weight=ft.FontWeight.BOLD, color=COLORS['text']),
@@ -37,12 +49,15 @@ def crear_dashboard_view(
                                    on_click=on_logout_click)
 
     topbar = ft.Row([
-        ft.Row([title, legend]),
+        ft.Column([title, legend], spacing=2),
         ft.Container(expand=True),
-        ft.Row([user_label, logout_btn])
-    ])
+        boton_camaras,
+        ft.Container(width=10),
+        user_label,
+        logout_btn
+    ], alignment=ft.MainAxisAlignment.CENTER, vertical_alignment=ft.CrossAxisAlignment.CENTER)
 
-    # --- MAPA (Placeholder) ---
+    # --- MAPA ---
     map_card = ft.Container(
         content=ft.Column([
             ft.Text("Mapa de la comisaría", color=COLORS['text'], size=16),
@@ -58,17 +73,18 @@ def crear_dashboard_view(
     # --- BOTTOM ROW (Gestión) ---
     bottom_row = ft.Row(spacing=12, expand=False)
 
-    # 1. Tarjeta de Presos
+    # 1. Tarjeta de Presos (TU VERSIÓN AVANZADA)
     bottom_row.controls.append(
         vista.vista_gestion_presos.crear_vista_presos(
             lista_presos=datos_presos,
-            on_crear_preso_handler=on_crear_preso_click,
+            on_abrir_crear_handler=on_abrir_crear_preso,
+            on_abrir_editar_handler=on_abrir_editar_preso,
             on_refrescar_handler=on_refrescar_click,
-            on_borrar_preso_handler=on_borrar_preso_click  # <--- 2. PASAMOS EL ARGUMENTO AQUÍ
+            on_borrar_preso_handler=on_borrar_preso_click
         )
     )
 
-    # 2. Tarjeta de Usuarios (Solo visible para Comisario)
+    # 2. Tarjeta de Usuarios
     bottom_row.controls.append(
         vista.vista_gestion_usuarios.crear_vista_usuarios(
             rol_actual=rol_usuario,
@@ -77,36 +93,61 @@ def crear_dashboard_view(
         )
     )
 
-    # --- ENSAMBLAJE COLUMNA IZQUIERDA ---
+    # --- COLUMNA IZQUIERDA ---
     left_column = ft.Column(
         spacing=12,
         expand=True,
         controls=[topbar, map_card, bottom_row]
     )
 
-    # --- PANEL DERECHO (Log de Sensores) ---
+    # --- PANEL DERECHO (Log y Controles) ---
     right_content = ft.Column(spacing=12, expand=True)
 
     right_content.controls.append(
         ft.Text("Panel de Control y Sensores", size=12, weight=ft.FontWeight.BOLD, color=COLORS['text'])
     )
 
-    # Placeholder para controles (Sprint 3)
-    right_content.controls.append(
-        ft.Container(
-            content=ft.Text("Controles (Sprint 3)", size=10, color=COLORS['muted'], italic=True),
-            padding=5, bgcolor=COLORS['glass'], border_radius=5
-        )
+    # -- CONTROLES DE ACTUADORES (Fusión: Recuperados del código base) --
+    led_estado = datos_actuadores.get("leds", {}).get("estado", "off")
+    fan_estado = datos_actuadores.get("fan", {}).get("estado", "off")
+
+    control_leds = ft.Container(
+        bgcolor=COLORS['glass'], padding=10, border_radius=5,
+        content=ft.Row([
+            ft.Text(f"{DEVICE_ICONS['leds']} Luces Generales", color=COLORS['text']),
+            ft.Container(expand=True),
+            ft.Switch(
+                value=(led_estado == "on"),
+                on_change=lambda e, est=led_estado: on_control_actuador_click(
+                    e, "leds", "off" if est == "on" else "on"
+                ),
+                disabled=(not puede_controlar)
+            )
+        ])
     )
+
+    control_fan = ft.Container(
+        bgcolor=COLORS['glass'], padding=10, border_radius=5,
+        content=ft.Row([
+            ft.Text(f"{DEVICE_ICONS['fan']} Ventilación", color=COLORS['text']),
+            ft.Container(expand=True),
+            ft.Switch(
+                value=(fan_estado == "on"),
+                on_change=lambda e, est=fan_estado: on_control_actuador_click(
+                    e, "fan", "off" if est == "on" else "on"
+                ),
+                disabled=(not puede_controlar)
+            )
+        ])
+    )
+
+    right_content.controls.append(control_leds)
+    right_content.controls.append(control_fan)
 
     right_content.controls.append(ft.Divider(height=10, color=COLORS['muted']))
+    right_content.controls.append(ft.Text("Log de Sensores (Últimos registros)", size=10, color=COLORS['muted']))
 
-    # Título del Log
-    right_content.controls.append(
-        ft.Text("Log de Sensores (Últimos registros)", size=10, color=COLORS['muted'])
-    )
-
-    # Lista del log
+    # -- LOG DE SENSORES --
     log_list = ft.ListView(expand=True, spacing=5, padding=5)
 
     if not datos_sensores:
@@ -114,14 +155,9 @@ def crear_dashboard_view(
     else:
         for log in reversed(datos_sensores[-15:]):
             icono = "📝"
-            if log['sensor'] == "DHT11":
-                icono = DEVICE_ICONS['dht']
-            elif log['sensor'] == "MQ-2":
-                icono = DEVICE_ICONS['mq2']
-            elif log['sensor'] == "MQ-135":
-                icono = DEVICE_ICONS['mq135']
-            elif log['sensor'] == "LDR":
-                icono = DEVICE_ICONS['ldr']
+            key_sensor = log['sensor'].lower().replace("-", "")
+            if log['sensor'] == 'DHT11': key_sensor = 'dht'
+            icono = DEVICE_ICONS.get(key_sensor, "📝")
 
             log_item = ft.Container(
                 content=ft.Row([

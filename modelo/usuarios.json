@@ -13,5 +13,10 @@
     "user": "policia",
     "password": "1234",
     "rol": "policia"
+  },
+  {
+    "user": "agente_ruiz",
+    "password": "1234",
+    "rol": "policia"
   }
 ]
