@@ -25,22 +25,6 @@ if not os.path.exists(SENSORES_FILE):
 
     # --- FUNCIONES AUXILIARES ---
 
-VIDEO_ORIGEN = 'assets/videoGato.mp4'
-
-CARPETA_DESTINO = 'capturas_simuladas' 
-
-
-if not os.path.exists(CARPETA_DESTINO):
-    os.makedirs(CARPETA_DESTINO)
-
-if not os.path.exists(SENSORES_FILE):
-    try:
-        with open(SENSORES_FILE, 'w') as f:
-            json.dump([], f)
-    except IOError:
-        pass 
-
-
 
 def _leer_json(archivo):
     try:

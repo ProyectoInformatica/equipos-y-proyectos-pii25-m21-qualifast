@@ -25,6 +25,7 @@ def on_logout_click(e):
     e.page.session.clear()
     e.page.go("/login")
 
+
 def on_refrescar_click(e):
     if hasattr(e, 'page') and e.page:
         ruta = e.page.route
@@ -84,13 +85,6 @@ def on_borrar_preso_click(e, id_preso):
 def on_crear_usuario_click(e, u, p, r):
     if modelo.add_usuario(u.value, p.value, r.value): on_refrescar_click(e)
 
-def on_ver_camara_click(e):
-    """
-    Se ejecuta al pulsar 'Cam'. Navega a la nueva página de video.
-    """
-    page = e.page
-    print("¡Click en cámara detectado! Navegando a /video")
-    page.go("/video")
 
 # --- ROUTER PRINCIPAL ---
 

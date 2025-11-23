@@ -6,6 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="f6f11da1-8d5f-4223-91f5-f1b21610e87e" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.git.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.git.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/equipos-y-proyectos-pii25-m21-qualifast.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/equipos-y-proyectos-pii25-m21-qualifast.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/modelo/actuadores_estado.json" beforeDir="false" afterPath="$PROJECT_DIR$/modelo/actuadores_estado.json" afterDir="false" />
@@ -59,7 +60,7 @@
     &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;feature/Controlador__de__Camara__Fernando&quot;,
     &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/Users/daniel/Documents/Uni/2 año/equipos-y-proyectos-pii25-m21-qualifast/capturas_simuladas&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/daniel/Downloads/QualifastBuildings&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
@@ -226,7 +227,9 @@
       <updated>1763857904773</updated>
       <workItem from="1763857906345" duration="675000" />
       <workItem from="1763863680085" duration="557000" />
-      <workItem from="1763935573323" duration="2087000" />
+      <workItem from="1763935573323" duration="2048000" />
+      <workItem from="1763937689010" duration="37000" />
+      <workItem from="1763938955701" duration="40000" />
     </task>
     <servers />
   </component>
@@ -234,7 +237,7 @@
     <option name="version" value="3" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/equipos_y_proyectos_pii25_m21_qualifast$main.coverage" NAME="main Coverage Results" MODIFIED="1763937595537" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/equipos_y_proyectos_pii25_m21_qualifast$main.coverage" NAME="main Coverage Results" MODIFIED="1763937708232" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/_git$main.coverage" NAME="main Coverage Results" MODIFIED="1763921759934" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>
