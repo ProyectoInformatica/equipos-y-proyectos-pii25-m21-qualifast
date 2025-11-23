@@ -1,68 +1,80 @@
 import flet as ft
+import os
+import glob
 from vista.temas import COLORS
 
 
-def crear_vista_camaras(on_refrescar_click, on_volver_dashboard):
+def crear_vista_camaras(on_refrescar_click, on_volver_dashboard, on_ver_video_click):
     """
-    Crea la vista de cámaras de seguridad.
-    Muestra una imagen simulada y controles básicos.
+    Muestra la última captura disponible en 'capturas_simuladas' y un botón para ver el video grabado.
     """
 
-    # --- APP BAR (Barra superior) ---
-    app_bar = ft.AppBar(
-        leading=ft.IconButton(
-            icon=ft.Icons.ARROW_BACK,
-            icon_color=COLORS['text'],
-            on_click=on_volver_dashboard,
-            tooltip="Volver al Dashboard"
-        ),
-        title=ft.Text("Cámara de Seguridad - Acceso Remoto", color=COLORS['text'], size=16),
-        bgcolor=COLORS['card'],
-        actions=[
-            ft.IconButton(
-                icon=ft.Icons.REFRESH,
-                icon_color=COLORS['accent'],
-                on_click=on_refrescar_click,
-                tooltip="Actualizar imagen"
-            ),
-            ft.Container(width=10)  # Espaciador
-        ]
-    )
+    # 1. Buscar la imagen más reciente
+    carpeta_capturas = "capturas_simuladas"
+    imagen_mostrada = None
+    texto_estado = "Esperando señal..."
 
-    # --- CONTENIDO PRINCIPAL ---
+    try:
+        lista_archivos = glob.glob(os.path.join(carpeta_capturas, "*.jpg"))
+        if lista_archivos:
+            archivo_mas_reciente = max(lista_archivos, key=os.path.getctime)
+            # Flet necesita rutas absolutas o relativas limpias
+            imagen_mostrada = archivo_mas_reciente
+            texto_estado = f"Señal en vivo: {os.path.basename(archivo_mas_reciente)}"
+    except Exception as e:
+        texto_estado = f"Error leyendo señal: {e}"
 
-    # Imagen de la cámara
-    camara_display = ft.Container(
+    # Contenedor de la imagen (Monitor)
+    monitor_screen = ft.Container(
         content=ft.Image(
-            src="camara_sim.jpg",  # Asegúrate de tener esta imagen en la raíz o assets
-            width=800,
-            height=500,
+            src=imagen_mostrada if imagen_mostrada else "https://via.placeholder.com/640x360?text=SIN+SEÑAL",
             fit=ft.ImageFit.CONTAIN,
-            border_radius=10,
+            gapless_playback=True,  # Ayuda a que no parpadee al refrescar
         ),
+        bgcolor="black",
+        border=ft.border.all(10, "#374151"),  # Marco del monitor
+        border_radius=10,
         alignment=ft.alignment.center,
         expand=True
     )
 
-    # Panel de estado (simulado)
-    status_panel = ft.Container(
-        content=ft.Row([
-            ft.Icon(ft.Icons.CIRCLE, color=COLORS['bad'], size=12),  # 'bad' es rojo en tus temas (REC)
-            ft.Text("GRABANDO EN VIVO", color=COLORS['bad'], weight=ft.FontWeight.BOLD),
-            ft.Container(width=20),
-            ft.Icon(ft.Icons.WIFI, color=COLORS['ok'], size=16),
-            ft.Text("Señal Estable", color=COLORS['muted'])
-        ], alignment=ft.MainAxisAlignment.CENTER),
-        padding=10
-    )
-
     return ft.View(
         "/camaras",
-        controls=[
-            app_bar,
-            status_panel,
-            camara_display
-        ],
         bgcolor=COLORS['bg'],
-        padding=0
+        controls=[
+            ft.AppBar(
+                title=ft.Text("Sala de Vigilancia - CCTV"),
+                bgcolor=COLORS['card'],
+                leading=ft.IconButton(ft.Icons.ARROW_BACK, on_click=on_volver_dashboard)
+            ),
+            ft.Container(
+                padding=20,
+                expand=True,
+                content=ft.Column([
+                    ft.Row([
+                        ft.Icon(ft.Icons.CIRCLE, color="red", size=15),
+                        ft.Text("REC", color="red", weight="bold"),
+                        ft.Container(width=20),
+                        ft.Text(texto_estado, color=COLORS['text'])
+                    ]),
+
+                    monitor_screen,
+
+                    ft.Row([
+                        ft.ElevatedButton(
+                            "Actualizar Fotograma",
+                            icon=ft.Icons.REFRESH,
+                            on_click=on_refrescar_click
+                        ),
+                        ft.ElevatedButton(
+                            "Ver Grabación (Video)",
+                            icon=ft.Icons.PLAY_CIRCLE_FILLED,
+                            bgcolor=COLORS['accent'],
+                            color=COLORS['bg'],
+                            on_click=on_ver_video_click  # Navega a /video
+                        ),
+                    ], alignment=ft.MainAxisAlignment.CENTER, spacing=20)
+                ])
+            )
+        ]
     )
