@@ -55,13 +55,10 @@ def on_volver_dashboard_click(e):
     e.page.go("/dashboard")
 
 
-# --- GESTIÓN DE PRESOS (LÓGICA CORREGIDA) ---
+# --- GESTIÓN DE PRESOS (FUSIÓN: Lógica avanzada) ---
 
 def guardar_nuevo_preso(e, datos, dialogo):
-    """
-    Callback llamado desde el diálogo de crear.
-    Recibe 'dialogo' para poder cerrarlo correctamente usando page.close(dialogo).
-    """
+    """Guarda un nuevo preso desde el diálogo."""
     page = e.page
     nombre = datos.get("nombre")
     delito = datos.get("delito")
@@ -73,15 +70,14 @@ def guardar_nuevo_preso(e, datos, dialogo):
         page.update()
         return
 
-    # Llamar al modelo
     if modelo.add_preso(nombre, delito, celda):
         page.snack_bar = ft.SnackBar(ft.Text(f"Preso {nombre} añadido."), bgcolor=ft.Colors.GREEN_700)
         page.snack_bar.open = True
 
-        # --- CORRECCIÓN DEL ERROR ---
+        # CORRECCIÓN: Cierre correcto del diálogo
         page.close(dialogo)
 
-        on_refrescar_click(e)  # Refrescar lista
+        on_refrescar_click(e)
     else:
         page.snack_bar = ft.SnackBar(ft.Text("Error al añadir."), bgcolor=ft.Colors.RED_700)
         page.snack_bar.open = True
@@ -89,9 +85,7 @@ def guardar_nuevo_preso(e, datos, dialogo):
 
 
 def guardar_edicion_preso(e, datos, dialogo):
-    """
-    Callback llamado desde el diálogo de editar.
-    """
+    """Guarda la edición de un preso."""
     page = e.page
     id_preso = datos.get("id")
     datos_nuevos = {
@@ -104,7 +98,7 @@ def guardar_edicion_preso(e, datos, dialogo):
         page.snack_bar = ft.SnackBar(ft.Text("Datos actualizados."), bgcolor=ft.Colors.GREEN_700)
         page.snack_bar.open = True
 
-        # --- CORRECCIÓN DEL ERROR ---
+        # CORRECCIÓN: Cierre correcto del diálogo
         page.close(dialogo)
 
         on_refrescar_click(e)
@@ -115,8 +109,6 @@ def guardar_edicion_preso(e, datos, dialogo):
 
 
 def on_abrir_crear_preso(e):
-    """Abre el diálogo para crear."""
-    # Pasamos el callback que maneja el guardado
     dialogo = vista_gestion_presos.crear_dialogo_preso(
         titulo="Nuevo Ingreso",
         on_guardar=guardar_nuevo_preso
@@ -125,7 +117,6 @@ def on_abrir_crear_preso(e):
 
 
 def on_abrir_editar_preso(e, preso):
-    """Abre el diálogo para editar con datos cargados."""
     dialogo = vista_gestion_presos.crear_dialogo_preso(
         titulo="Editar Expediente",
         on_guardar=guardar_edicion_preso,
@@ -189,11 +180,13 @@ def main(page: ft.Page):
             page.views.append(vista_login.crear_vista_login(on_login_click))
 
         elif route == "/dashboard":
+            # 1. Obtener datos
             datos_act = modelo.get_estado_actuadores()
             datos_presos = modelo.get_presos()
             datos_user = modelo.get_usuarios()
             datos_sens = modelo.get_log_sensores()
 
+            # 2. Crear VISTA (Fusión de todos los handlers)
             page.views.append(
                 vista_dashboard_sensores.crear_dashboard_view(
                     page=page,

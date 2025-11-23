@@ -19,6 +19,6 @@
         "estado": "on"
     },
     "fan": {
-        "estado": "off"
+        "estado": "on"
     }
 }

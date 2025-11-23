@@ -86,9 +86,10 @@ def get_presos():
     return _leer_json(PRESOS_FILE)
 
 
-def add_preso(nombre, delito, celda):
+def add_preso(nombre, delito, celda="Sin asignar"):
     """
-    Añade un nuevo preso con fecha de ingreso automática.
+    Añade un nuevo preso.
+    Si no se pasa celda, se pone por defecto.
     """
     presos = _leer_json(PRESOS_FILE)
 

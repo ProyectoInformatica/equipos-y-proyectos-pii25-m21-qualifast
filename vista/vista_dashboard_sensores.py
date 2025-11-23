@@ -17,13 +17,15 @@ def crear_dashboard_view(
         on_crear_usuario_click,
         on_borrar_preso_click,
         on_ver_camaras_click,
-        # Nuevos argumentos para gestión avanzada de presos
         on_abrir_crear_preso,
         on_abrir_editar_preso
 ):
     """
-    Crea la estructura principal del Dashboard.
+    Crea la estructura principal del Dashboard fusionado.
     """
+
+    # --- PERMISOS ---
+    puede_controlar = (rol_usuario != 'policia')
 
     # --- TOPBAR ---
     title = ft.Text("Planta Comisaría", size=18, weight=ft.FontWeight.BOLD, color=COLORS['text'])
@@ -71,7 +73,7 @@ def crear_dashboard_view(
     # --- BOTTOM ROW (Gestión) ---
     bottom_row = ft.Row(spacing=12, expand=False)
 
-    # 1. Tarjeta de Presos (ACTUALIZADA)
+    # 1. Tarjeta de Presos (TU VERSIÓN AVANZADA)
     bottom_row.controls.append(
         vista.vista_gestion_presos.crear_vista_presos(
             lista_presos=datos_presos,
@@ -98,23 +100,54 @@ def crear_dashboard_view(
         controls=[topbar, map_card, bottom_row]
     )
 
-    # --- PANEL DERECHO (Log) ---
+    # --- PANEL DERECHO (Log y Controles) ---
     right_content = ft.Column(spacing=12, expand=True)
 
     right_content.controls.append(
         ft.Text("Panel de Control y Sensores", size=12, weight=ft.FontWeight.BOLD, color=COLORS['text'])
     )
 
-    right_content.controls.append(
-        ft.Container(
-            content=ft.Text("Controles Actuadores", size=10, color=COLORS['muted']),
-            padding=5, bgcolor=COLORS['glass'], border_radius=5
-        )
+    # -- CONTROLES DE ACTUADORES (Fusión: Recuperados del código base) --
+    led_estado = datos_actuadores.get("leds", {}).get("estado", "off")
+    fan_estado = datos_actuadores.get("fan", {}).get("estado", "off")
+
+    control_leds = ft.Container(
+        bgcolor=COLORS['glass'], padding=10, border_radius=5,
+        content=ft.Row([
+            ft.Text(f"{DEVICE_ICONS['leds']} Luces Generales", color=COLORS['text']),
+            ft.Container(expand=True),
+            ft.Switch(
+                value=(led_estado == "on"),
+                on_change=lambda e, est=led_estado: on_control_actuador_click(
+                    e, "leds", "off" if est == "on" else "on"
+                ),
+                disabled=(not puede_controlar)
+            )
+        ])
     )
+
+    control_fan = ft.Container(
+        bgcolor=COLORS['glass'], padding=10, border_radius=5,
+        content=ft.Row([
+            ft.Text(f"{DEVICE_ICONS['fan']} Ventilación", color=COLORS['text']),
+            ft.Container(expand=True),
+            ft.Switch(
+                value=(fan_estado == "on"),
+                on_change=lambda e, est=fan_estado: on_control_actuador_click(
+                    e, "fan", "off" if est == "on" else "on"
+                ),
+                disabled=(not puede_controlar)
+            )
+        ])
+    )
+
+    right_content.controls.append(control_leds)
+    right_content.controls.append(control_fan)
 
     right_content.controls.append(ft.Divider(height=10, color=COLORS['muted']))
     right_content.controls.append(ft.Text("Log de Sensores (Últimos registros)", size=10, color=COLORS['muted']))
 
+    # -- LOG DE SENSORES --
     log_list = ft.ListView(expand=True, spacing=5, padding=5)
 
     if not datos_sensores:
