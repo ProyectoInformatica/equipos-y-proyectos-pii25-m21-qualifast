@@ -4,7 +4,6 @@ import vista.vista_gestion_presos
 import vista.vista_gestion_usuarios
 
 
-# Definir crear_dashboard_view() que acepte rol, datos y handlers
 def crear_dashboard_view(
         page: ft.Page,
         rol_usuario: str,
@@ -27,7 +26,6 @@ def crear_dashboard_view(
     title = ft.Text("Planta Comisaría", size=18, weight=ft.FontWeight.BOLD, color=COLORS['text'])
     legend = ft.Text("🟢 Puerta abierta 🔴 Puerta cerrada", size=10, color=COLORS['muted'])
 
-    # Etiqueta de usuario y botón salir
     user_label = ft.Container(
         content=ft.Text(f"Usuario: {rol_usuario.upper()}", size=10, weight=ft.FontWeight.BOLD, color=COLORS['text']),
         bgcolor=COLORS['glass'],
@@ -44,7 +42,6 @@ def crear_dashboard_view(
     ])
 
     # --- MAPA (Placeholder - Columna Izquierda) ---
-    # Aquí va la representación visual de la comisaría
     map_card = ft.Container(
         content=ft.Column([
             ft.Text("Mapa de la comisaría", color=COLORS['text'], size=16),
@@ -60,7 +57,7 @@ def crear_dashboard_view(
     # --- BOTTOM ROW (Gestión - Columna Izquierda) ---
     bottom_row = ft.Row(spacing=12, expand=False)
 
-    # 1. Tarjeta de Presos (Reutilizamos la vista creada en el sprint anterior)
+    # 1. Tarjeta de Presos
     bottom_row.controls.append(
         vista.vista_gestion_presos.crear_vista_presos(
             lista_presos=datos_presos,
@@ -85,21 +82,82 @@ def crear_dashboard_view(
         controls=[topbar, map_card, bottom_row]
     )
 
-    # --- PREPARACIÓN COLUMNA DERECHA (Placeholder para la siguiente tarea) ---
-    # Esta columna contendrá el Log y los controles, que haremos en el siguiente paso.
+    # ---------------------------------------------------------
+    # TAREA: IMPLEMENTAR PANEL DE LOG (PANEL DERECHO)
+    # ---------------------------------------------------------
+
+    # [Subtarea] Diseñar la right_column (Estructura interna)
+    right_content = ft.Column(spacing=12, expand=True)
+
+    # Cabecera del panel
+    right_content.controls.append(
+        ft.Text("Panel de Control y Sensores", size=12, weight=ft.FontWeight.BOLD, color=COLORS['text'])
+    )
+
+    # Placeholder para controles 
+    right_content.controls.append(
+        ft.Container(
+            content=ft.Text("Controles (Sprint 3)", size=10, color=COLORS['muted'], italic=True),
+            padding=5, bgcolor=COLORS['glass'], border_radius=5
+        )
+    )
+
+    right_content.controls.append(ft.Divider(height=10, color=COLORS['muted']))
+
+    # Título del Log
+    right_content.controls.append(
+        ft.Text("Log de Sensores (Últimos registros)", size=10, color=COLORS['muted'])
+    )
+
+    # [Subtarea] Añadir ft.ListView para el log de sensores
+    log_list = ft.ListView(expand=True, spacing=5, padding=5)
+
+    if not datos_sensores:
+        log_list.controls.append(ft.Text("Esperando datos...", color=COLORS['muted'], size=10))
+    else:
+        # [Subtarea] Iterar sobre datos_sensores (en reverso)
+        # Mostramos los últimos 15 para no saturar la vista
+        for log in reversed(datos_sensores[-15:]):
+
+            # Icono según el tipo de sensor
+            icono = "📝"
+            if log['sensor'] == "DHT11":
+                icono = DEVICE_ICONS['dht']
+            elif log['sensor'] == "MQ-2":
+                icono = DEVICE_ICONS['mq2']
+            elif log['sensor'] == "MQ-135":
+                icono = DEVICE_ICONS['mq135']
+            elif log['sensor'] == "LDR":
+                icono = DEVICE_ICONS['ldr']
+
+            # Diseño de cada fila del log
+            log_item = ft.Container(
+                content=ft.Row([
+                    ft.Text(f"{log['timestamp'].split(' ')[1]}", size=9, color=COLORS['muted']),  # Hora
+                    ft.Text(icono, size=12),
+                    ft.Text(f"{log['sensor']}:", size=10, weight=ft.FontWeight.BOLD, color=COLORS['accent']),
+                    ft.Text(f"{log['valor']}", size=10, color=COLORS['text']),
+                ], spacing=5),
+                bgcolor=COLORS['glass'],
+                padding=5,
+                border_radius=4
+            )
+            log_list.controls.append(log_item)
+
+    # Añadimos la lista al contenido derecho
+    right_content.controls.append(ft.Container(content=log_list, expand=True))
+
+    # [Subtarea] Diseñar la right_column (Contenedor Principal)
     right_column = ft.Container(
         width=380,
         bgcolor=COLORS['card'],
         padding=14,
-        expand=False,
-        border=ft.border.all(1, COLORS['glass']),
-        content=ft.Column([
-            ft.Text("Panel Lateral", color=COLORS['muted']),
-            ft.Text("(Aquí irá el Log en el siguiente paso)", size=10, color=COLORS['muted'])
-        ])
+        expand=False,  # Fijo a 380px
+        content=right_content,
+        border=ft.border.all(1, COLORS['glass'])
     )
 
-    # --- VISTA FINAL ---
+    # --- ENSAMBLAJE FINAL ---
     main_row = ft.Row([left_column, right_column], spacing=18, expand=True)
 
     return ft.View(
