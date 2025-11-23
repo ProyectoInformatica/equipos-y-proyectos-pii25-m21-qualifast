@@ -151,6 +151,7 @@ def main(page: ft.Page):
                     on_control_actuador_click=on_control_actuador_click,
                     on_crear_preso_click=on_crear_preso_click,
                     on_crear_usuario_click=on_crear_usuario_click,
+                    on_borrar_preso_click=on_borrar_preso_click
 
                 )
             )
