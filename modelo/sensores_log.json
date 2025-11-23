@@ -1,0 +1,32 @@
+[
+    {
+        "timestamp": "2025-11-23 10:00:01",
+        "sensor": "DHT11",
+        "valor": 22.5
+    },
+    {
+        "timestamp": "2025-11-23 10:00:05",
+        "sensor": "MQ-2",
+        "valor": 120
+    },
+    {
+        "timestamp": "2025-11-23 10:00:10",
+        "sensor": "LDR",
+        "valor": 800
+    },
+    {
+        "timestamp": "2025-11-23 10:00:15",
+        "sensor": "MQ-135",
+        "valor": 45
+    },
+    {
+        "timestamp": "2025-11-23 10:00:20",
+        "sensor": "DHT11",
+        "valor": 23.0
+    },
+    {
+        "timestamp": "2025-11-23 10:00:25",
+        "sensor": "MQ-2",
+        "valor": 125
+    }
+]

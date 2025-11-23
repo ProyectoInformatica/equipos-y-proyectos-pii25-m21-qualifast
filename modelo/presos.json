@@ -1,17 +1,22 @@
 [
     {
         "id": 1,
-        "nombre": "Juan P\u00e9rez",
-        "delito": "Robo"
+        "nombre": "Roberto Casas",
+        "delito": "Robo con fuerza"
     },
     {
         "id": 2,
-        "nombre": "pedro sanchez",
-        "delito": "ME CAGO EN SU PUTA MADRE"
+        "nombre": "Elena M.",
+        "delito": "Vandalismo y alteración del orden"
     },
     {
         "id": 3,
-        "nombre": "sanchez pedro",
-        "delito": "Delito Pendiente"
+        "nombre": "Sánchez Pedro",
+        "delito": "Fraude fiscal"
+    },
+    {
+        "id": 4,
+        "nombre": "Marcos Alonso",
+        "delito": "Conducción temeraria"
     }
 ]
