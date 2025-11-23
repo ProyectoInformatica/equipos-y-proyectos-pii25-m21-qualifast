@@ -1,9 +1,7 @@
 [
     {
         "id": 1,
-        "nombre": "S\u00e1nchez Pedro",
-        "delito": "Atraco",
-        "celda": "1",
-        "fecha_ingreso": "23/11/2025 18:36"
+        "nombre": "Juan Pérez",
+        "delito": "Robo"
     }
 ]

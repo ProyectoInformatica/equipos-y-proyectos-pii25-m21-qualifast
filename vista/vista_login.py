@@ -1,33 +1,34 @@
 import flet as ft
 
+
 def crear_vista_login(on_login_click_handler):
     """
     Crea la ft.View para el login.
     Recibe la función del controlador que debe ejecutar al hacer clic.
     """
-    
+
     campo_usuario = ft.TextField(
         label="Usuario",
         width=300,
         border_color="white"
     )
-    
+
     campo_password = ft.TextField(
         label="Contraseña",
         password=True,
         width=300,
         border_color="white"
     )
-    
+
     texto_error = ft.Text(value="", color=ft.Colors.RED)
-    
+
     boton_entrar = ft.ElevatedButton(
         text="Entrar",
         on_click=lambda e: on_login_click_handler(
-            e, # El evento
-            campo_usuario, # Pasa el control de usuario
-            campo_password, # Pasa el control de password
-            texto_error # Pasa el control de error
+            e,  # El evento
+            campo_usuario,  # Pasa el control de usuario
+            campo_password,  # Pasa el control de password
+            texto_error  # Pasa el control de error
         ),
         bgcolor=ft.Colors.BLUE_700,
         color="white",
