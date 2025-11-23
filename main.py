@@ -1,4 +1,6 @@
 import flet as ft
+import flet_webview
+from pathlib import Path
 import modelo.manejador_datos as modelo
 from vista import vista_login, vista_dashboard_sensores, vista_camaras, vista_gestion_presos
 
@@ -7,38 +9,33 @@ from vista import vista_login, vista_dashboard_sensores, vista_camaras, vista_ge
 
 def on_login_click(e, campo_usuario, campo_password, texto_error):
     page = e.page
-    usuario = campo_usuario.value
-    password = campo_password.value
-    rol = modelo.validar_usuario(usuario, password)
-
+    rol = modelo.validar_usuario(campo_usuario.value, campo_password.value)
     if rol:
         page.session.set("user_rol", rol)
-        page.session.set("user_name", usuario)
+        page.session.set("user_name", campo_usuario.value)
         texto_error.value = ""
         page.go("/dashboard")
     else:
-        texto_error.value = "Usuario o contraseña incorrectos."
+        texto_error.value = "Datos incorrectos."
         page.update()
 
 
 def on_logout_click(e):
-    page = e.page
-    page.session.clear()
-    page.go("/login")
+    e.page.session.clear()
+    e.page.go("/login")
 
 
 def on_refrescar_click(e):
-    """Refresca la página forzando la recarga de la ruta actual."""
     if hasattr(e, 'page') and e.page:
-        route = e.page.route
-        e.page.on_route_change(ft.RouteChangeEvent(route))
+        ruta = e.page.route
+        e.page.go("/temp")
+        e.page.go(ruta)
 
 
 def on_control_actuador_click(e, actuador_id, nuevo_estado):
     page = e.page
-    rol = page.session.get("user_rol")
-    if rol == "policia":
-        page.snack_bar = ft.SnackBar(ft.Text("Permiso denegado.", color="white"), bgcolor=ft.Colors.RED_700)
+    if page.session.get("user_rol") == "policia":
+        page.snack_bar = ft.SnackBar(ft.Text("Permiso denegado."), bgcolor="red")
         page.snack_bar.open = True
         page.update()
         return
@@ -46,132 +43,58 @@ def on_control_actuador_click(e, actuador_id, nuevo_estado):
     on_refrescar_click(e)
 
 
-# --- GESTIÓN DE CÁMARAS ---
-def on_ver_camaras_click(e):
-    e.page.go("/camaras")
+# --- NAVEGACIÓN ---
+def on_ver_camaras_click(e): e.page.go("/camaras")
 
 
-def on_volver_dashboard_click(e):
-    e.page.go("/dashboard")
+def on_volver_dashboard_click(e): e.page.go("/dashboard")
 
 
-# --- GESTIÓN DE PRESOS (FUSIÓN: Lógica avanzada) ---
+def on_ver_grabacion_video_click(e): e.page.go("/video")
 
+
+# --- GESTIÓN DATOS ---
 def guardar_nuevo_preso(e, datos, dialogo):
-    """Guarda un nuevo preso desde el diálogo."""
-    page = e.page
-    nombre = datos.get("nombre")
-    delito = datos.get("delito")
-    celda = datos.get("celda")
-
-    if not nombre:
-        page.snack_bar = ft.SnackBar(ft.Text("El nombre es obligatorio."), bgcolor=ft.Colors.RED_700)
-        page.snack_bar.open = True
-        page.update()
-        return
-
-    if modelo.add_preso(nombre, delito, celda):
-        page.snack_bar = ft.SnackBar(ft.Text(f"Preso {nombre} añadido."), bgcolor=ft.Colors.GREEN_700)
-        page.snack_bar.open = True
-
-        # CORRECCIÓN: Cierre correcto del diálogo
-        page.close(dialogo)
-
+    if modelo.add_preso(datos.get("nombre"), datos.get("delito"), datos.get("celda")):
+        e.page.close(dialogo)
         on_refrescar_click(e)
-    else:
-        page.snack_bar = ft.SnackBar(ft.Text("Error al añadir."), bgcolor=ft.Colors.RED_700)
-        page.snack_bar.open = True
-        page.update()
 
 
 def guardar_edicion_preso(e, datos, dialogo):
-    """Guarda la edición de un preso."""
-    page = e.page
-    id_preso = datos.get("id")
-    datos_nuevos = {
-        "nombre": datos.get("nombre"),
-        "delito": datos.get("delito"),
-        "celda": datos.get("celda")
-    }
-
-    if modelo.update_preso(id_preso, datos_nuevos):
-        page.snack_bar = ft.SnackBar(ft.Text("Datos actualizados."), bgcolor=ft.Colors.GREEN_700)
-        page.snack_bar.open = True
-
-        # CORRECCIÓN: Cierre correcto del diálogo
-        page.close(dialogo)
-
+    if modelo.update_preso(datos.get("id"), datos):
+        e.page.close(dialogo)
         on_refrescar_click(e)
-    else:
-        page.snack_bar = ft.SnackBar(ft.Text("Error al actualizar."), bgcolor=ft.Colors.RED_700)
-        page.snack_bar.open = True
-        page.update()
 
 
 def on_abrir_crear_preso(e):
-    dialogo = vista_gestion_presos.crear_dialogo_preso(
-        titulo="Nuevo Ingreso",
-        on_guardar=guardar_nuevo_preso
-    )
-    e.page.open(dialogo)
+    e.page.open(vista_gestion_presos.crear_dialogo_preso("Nuevo", guardar_nuevo_preso))
 
 
 def on_abrir_editar_preso(e, preso):
-    dialogo = vista_gestion_presos.crear_dialogo_preso(
-        titulo="Editar Expediente",
-        on_guardar=guardar_edicion_preso,
-        preso_actual=preso
-    )
-    e.page.open(dialogo)
+    e.page.open(vista_gestion_presos.crear_dialogo_preso("Editar", guardar_edicion_preso, preso))
 
 
 def on_borrar_preso_click(e, id_preso):
-    page = e.page
-    if modelo.delete_preso(id_preso):
-        page.snack_bar = ft.SnackBar(ft.Text(f"Preso eliminado."), bgcolor=ft.Colors.GREEN_700)
-        page.snack_bar.open = True
-        on_refrescar_click(e)
-    else:
-        page.snack_bar = ft.SnackBar(ft.Text("Error al eliminar."), bgcolor=ft.Colors.RED_700)
-        page.snack_bar.open = True
-        page.update()
+    if modelo.delete_preso(id_preso): on_refrescar_click(e)
 
 
-# --- GESTIÓN DE USUARIOS ---
-
-def on_crear_usuario_click(e, campo_user, campo_pass, dd_rol):
-    page = e.page
-    rol_actual = page.session.get("user_rol")
-    if rol_actual != "comisario":
-        return
-    username = campo_user.value
-    password = campo_pass.value
-    rol_nuevo = dd_rol.value
-
-    if modelo.add_usuario(username, password, rol_nuevo):
-        page.snack_bar = ft.SnackBar(ft.Text(f"Usuario {username} creado."), bgcolor=ft.Colors.GREEN_700)
-    else:
-        page.snack_bar = ft.SnackBar(ft.Text("Error al crear usuario."), bgcolor=ft.Colors.RED_700)
-
-    page.snack_bar.open = True
-    campo_user.value = ""
-    campo_pass.value = ""
-    on_refrescar_click(e)
+def on_crear_usuario_click(e, u, p, r):
+    if modelo.add_usuario(u.value, p.value, r.value): on_refrescar_click(e)
 
 
-# --- ROUTING PRINCIPAL ---
+# --- ROUTER PRINCIPAL ---
 
 def main(page: ft.Page):
-    page.title = "Sistema de Comisaría"
-    page.window_width = 1600
-    page.window_height = 900
+    page.title = "Comisaría IoT"
     page.theme_mode = ft.ThemeMode.DARK
+    page.padding = 0
 
-    def route_change(route_event):
-        route = route_event.route if isinstance(route_event, ft.RouteChangeEvent) else route_event
+    def route_change(evt):
+        route = evt.route
+        if route == "/temp": return
         page.views.clear()
-        rol = page.session.get("user_rol")
 
+        rol = page.session.get("user_rol")
         if not rol and route != "/login":
             page.go("/login")
             return
@@ -180,42 +103,44 @@ def main(page: ft.Page):
             page.views.append(vista_login.crear_vista_login(on_login_click))
 
         elif route == "/dashboard":
-            # 1. Obtener datos
-            datos_act = modelo.get_estado_actuadores()
-            datos_presos = modelo.get_presos()
-            datos_user = modelo.get_usuarios()
-            datos_sens = modelo.get_log_sensores()
-
-            # 2. Crear VISTA (Fusión de todos los handlers)
-            page.views.append(
-                vista_dashboard_sensores.crear_dashboard_view(
-                    page=page,
-                    rol_usuario=rol,
-                    datos_actuadores=datos_act,
-                    datos_presos=datos_presos,
-                    datos_usuarios=datos_user,
-                    datos_sensores=datos_sens,
-                    on_logout_click=on_logout_click,
-                    on_refrescar_click=on_refrescar_click,
-                    on_control_actuador_click=on_control_actuador_click,
-                    on_crear_usuario_click=on_crear_usuario_click,
-                    on_borrar_preso_click=on_borrar_preso_click,
-                    on_ver_camaras_click=on_ver_camaras_click,
-                    on_abrir_crear_preso=on_abrir_crear_preso,
-                    on_abrir_editar_preso=on_abrir_editar_preso
-                )
-            )
+            page.views.append(vista_dashboard_sensores.crear_dashboard_view(
+                page, rol,
+                modelo.get_estado_actuadores(), modelo.get_presos(), modelo.get_usuarios(), modelo.get_log_sensores(),
+                on_logout_click, on_refrescar_click, on_control_actuador_click, on_crear_usuario_click,
+                on_borrar_preso_click, on_ver_camaras_click, on_abrir_crear_preso, on_abrir_editar_preso
+            ))
 
         elif route == "/camaras":
+            page.views.append(vista_camaras.crear_vista_camaras(
+                on_refrescar_click, on_volver_dashboard_click, on_ver_grabacion_video_click
+            ))
+
+        elif route == "/video":
+            # --- VIDEO CON WEBVIEW (El rápido) ---
+            video_path = Path("assets/videoGato.mp4").resolve()
+            video_url = video_path.as_uri()
+
             page.views.append(
-                vista_camaras.crear_vista_camaras(
-                    on_refrescar_click=on_refrescar_click,
-                    on_volver_dashboard=on_volver_dashboard_click
+                ft.View(
+                    route="/video",
+                    bgcolor="#0f1724",
+                    appbar=ft.AppBar(
+                        title=ft.Text("Grabación - Sala de Vigilancia"),
+                        bgcolor="#0f1724",
+                        leading=ft.IconButton(
+                            icon=ft.Icons.ARROW_BACK,
+                            on_click=lambda e: page.go("/camaras")
+                        )
+                    ),
+                    controls=[
+                        flet_webview.WebView(
+                            url=video_url,
+                            expand=True,
+                        )
+                    ],
+                    padding=0
                 )
             )
-
-        else:
-            page.go("/login")
 
         page.update()
 
@@ -224,4 +149,4 @@ def main(page: ft.Page):
 
 
 if __name__ == "__main__":
-    ft.app(target=main)
+    ft.app(target=main, assets_dir="assets")
