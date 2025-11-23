@@ -4,7 +4,20 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f6f11da1-8d5f-4223-91f5-f1b21610e87e" name="Changes" comment="" />
+    <list default="true" id="f6f11da1-8d5f-4223-91f5-f1b21610e87e" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modelo/actuadores_estado.json" beforeDir="false" afterPath="$PROJECT_DIR$/modelo/actuadores_estado.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modelo/manejador_datos.py" beforeDir="false" afterPath="$PROJECT_DIR$/modelo/manejador_datos.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modelo/presos.json" beforeDir="false" afterPath="$PROJECT_DIR$/modelo/presos.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modelo/sensores_log.json" beforeDir="false" afterPath="$PROJECT_DIR$/modelo/sensores_log.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modelo/usuarios.json" beforeDir="false" afterPath="$PROJECT_DIR$/modelo/usuarios.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/simulador_iot.py" beforeDir="false" afterPath="$PROJECT_DIR$/simulador_iot.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/vista/vista_camaras.py" beforeDir="false" afterPath="$PROJECT_DIR$/vista/vista_camaras.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/vista/vista_dashboard_sensores.py" beforeDir="false" afterPath="$PROJECT_DIR$/vista/vista_dashboard_sensores.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/vista/vista_gestion_presos.py" beforeDir="false" afterPath="$PROJECT_DIR$/vista/vista_gestion_presos.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -33,22 +46,22 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Python.main.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;feature/Controlador__de__Camara__Fernando&quot;,
-    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Python.main.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
+    "git-widget-placeholder": "Issue__codigoNicolas__Daniel",
+    "junie.onboarding.icon.badge.shown": "true",
+    "node.js.detected.package.eslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "to.speed.mode.migration.done": "true",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RunManager">
     <configuration default="true" type="DjangoTestsConfigurationType">
       <option name="ENV_FILES" value="" />
@@ -206,7 +219,7 @@
     <option name="version" value="3" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/equipos_y_proyectos_pii25_m21_qualifast$main.coverage" NAME="main Coverage Results" MODIFIED="1763864189433" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/equipos_y_proyectos_pii25_m21_qualifast$main.coverage" NAME="main Coverage Results" MODIFIED="1763931762405" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/_git$main.coverage" NAME="main Coverage Results" MODIFIED="1763921759934" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>
