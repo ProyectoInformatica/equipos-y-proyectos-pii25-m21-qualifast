@@ -31,7 +31,9 @@ def on_refrescar_click(e):
     """Refresca la página forzando la recarga de la ruta actual."""
     print("Controlador: Refrescando página...")
     # Truco para forzar la recarga real: llamamos manualmente al evento de cambio de ruta
-    e.page.on_route_change(ft.RouteChangeEvent(e.page.route))
+    if hasattr(e, 'page') and e.page:
+        route = e.page.route
+        e.page.on_route_change(ft.RouteChangeEvent(route))
 
 
 def on_control_actuador_click(e, actuador_id, nuevo_estado):
@@ -67,7 +69,7 @@ def on_crear_preso_click(e, campo_nombre):
 
 
 def on_borrar_preso_click(e, id_preso):
-    """Nueva función para borrar presos."""
+    """Función para borrar presos."""
     page = e.page
     print(f"Controlador: Borrando preso {id_preso}")
 
@@ -110,13 +112,14 @@ def main(page: ft.Page):
     page.theme_mode = ft.ThemeMode.DARK
 
     def route_change(route_event):
-        # route_event puede ser un objeto evento o un string, normalizamos
+        # Normalizar el evento de ruta
         route = route_event.route if isinstance(route_event, ft.RouteChangeEvent) else route_event
 
         print(f"Navegando a: {route}")
         page.views.clear()
         rol = page.session.get("user_rol")
 
+        # Redirección si no hay sesión
         if not rol and route != "/login":
             page.go("/login")
             return
@@ -125,12 +128,15 @@ def main(page: ft.Page):
             page.views.append(vista_login.crear_vista_login(on_login_click))
 
         elif route == "/dashboard":
-            # Carga de datos
+            # 1. Obtener datos del MODELO
             datos_act = modelo.get_estado_actuadores()
             datos_presos = modelo.get_presos()
             datos_user = modelo.get_usuarios()
+
+            # Obtener datos de sensores
             datos_sens = modelo.get_log_sensores()
 
+            # 2. Crear la VISTA pasando datos y handlers
             page.views.append(
                 vista_dashboard_sensores.crear_dashboard_view(
                     page=page,
@@ -138,13 +144,14 @@ def main(page: ft.Page):
                     datos_actuadores=datos_act,
                     datos_presos=datos_presos,
                     datos_usuarios=datos_user,
+                    # Pasar datos de sensores a la vista
                     datos_sensores=datos_sens,
                     on_logout_click=on_logout_click,
                     on_refrescar_click=on_refrescar_click,
                     on_control_actuador_click=on_control_actuador_click,
                     on_crear_preso_click=on_crear_preso_click,
                     on_crear_usuario_click=on_crear_usuario_click,
-                    on_borrar_preso_click=on_borrar_preso_click  # <--- ¡NUEVO!
+
                 )
             )
         else:
