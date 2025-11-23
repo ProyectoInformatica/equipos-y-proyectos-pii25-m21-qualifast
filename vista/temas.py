@@ -1,25 +1,25 @@
+import flet as ft
+
 COLORS = {
-    'bg': '#0f1724',
-    'card': '#0b1220',
-    'accent': '#60a5fa',
-    'muted': '#9aa7bf',
-    'ok': '#16a34a',
-    'bad': '#ef4444',
-    'glass': '#19202d',
-    'room_bg': '#11222f',
-    'text': '#e6eef8',
-    'door_closed': '#ef4444',
-    'door_open': '#16a34a',
+    'bg': '#0f1724',         # Fondo principal muy oscuro
+    'card': '#1f2937',       # Fondo de tarjetas (gris azulado oscuro)
+    'room_bg': '#374151',    # Fondo de habitaciones en el mapa
+    'text': '#f3f4f6',       # Texto blanco/gris claro
+    'muted': '#9ca3af',      # Texto secundario
+    'accent': '#38bdf8',     # Azul brillante para acentos
+    'bad': '#ef4444',        # Rojo para errores/borrar
+    'good': '#22c55e',       # Verde para éxito
+    'glass': '#374151',      # Color semitransparente (simulado sólido por ahora)
+    'door_open': '#22c55e',  # Verde
+    'door_closed': '#ef4444' # Rojo
 }
 
 DEVICE_ICONS = {
-    'dht': '🌡',
-    'ldr': '💡',
+    'dht': '🌡️',
     'mq2': '🔥',
-    'mq135': '🌫',
-    'leds': '🔆',
-    'motor': '⚙',
-    'fan': '🌀',
-    'esp32': '🖧',
+    'mq135': '💨',
+    'ldr': '☀️',
+    'leds': '💡',
+    'fan': '❄️',
     'cam': '📷'
 }

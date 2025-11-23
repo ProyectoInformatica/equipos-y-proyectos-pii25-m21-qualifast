@@ -19,174 +19,91 @@ def crear_dashboard_view(
     on_ver_camara_click
 ):
     """
-    Crea la vista principal del Dashboard.
-    Recibe el rol, todos los datos del modelo y todas las funciones del controlador.
+    Dashboard Ajustado:
+    - Panel derecho: 460px (más ancho)
+    - Mapa: 340px altura (más pequeño)
+    - Tablas abajo: expand=True (más largas)
     """
-    
-    # --- PERMISOS ---
-    # Define si el usuario actual puede controlar cosas
+
     puede_controlar = (rol_usuario != 'policia')
 
     # --- TOPBAR ---
     title = ft.Text("Planta Comisaría", size=18, weight=ft.FontWeight.BOLD, color=COLORS['text'])
     legend = ft.Text("🟢 Puerta abierta 🔴 Puerta cerrada", size=10, color=COLORS['muted'])
-    left_side = ft.Row([title, legend])
+
+    boton_camaras = ft.ElevatedButton(
+        "Ver Cámaras",
+        icon=ft.Icons.VIDEOCAM,
+        bgcolor=COLORS['glass'],
+        color=COLORS['text'],
+        on_click=on_ver_camaras_click
+    )
 
     user_label = ft.Container(
         content=ft.Text(f"Usuario: {rol_usuario.upper()}", size=10, weight=ft.FontWeight.BOLD, color=COLORS['text']),
-        bgcolor=COLORS['glass'],
-        padding=10,
-        border_radius=5
+        bgcolor=COLORS['glass'], padding=10, border_radius=5
     )
     logout_btn = ft.ElevatedButton("Cerrar sesión", bgcolor=COLORS['bg'], color=COLORS['accent'], on_click=on_logout_click)
     right_side = ft.Row([user_label, logout_btn])
 
     topbar = ft.Row([left_side, ft.Container(expand=True), right_side])
 
-    # --- MAPA ---
-    map_card = ft.Container(bgcolor=COLORS['card'], border=ft.border.all(2, COLORS['glass']), expand=True, padding=14)
-    map_stack = ft.Stack(expand=True)
-    map_content = ft.Container(width=1000, height=700)
-    inner_stack = ft.Stack(expand=True)
+    # --- MAPA INTERACTIVO ---
+    # Altura del lienzo reducida para hacer el mapa más compacto
+    map_stack = ft.Stack(width=800, height=280)
 
-    # Habitaciones (igual que tu archivo)
     rooms = [
-        {"name": "Recepción", "left": 40, "top": 40, "width": 420, "height": 300},
-        {"name": "Sala de Vigilancia", "left": 520, "top": 40, "width": 420, "height": 300},
-        {"name": "Despacho", "left": 40, "top": 380, "width": 420, "height": 260},
-        {"name": "Celdas", "left": 520, "top": 380, "width": 420, "height": 260},
+        {"name": "Recepción", "l": 20, "t": 20, "w": 350, "h": 110},
+        {"name": "Vigilancia", "l": 390, "t": 20, "w": 350, "h": 110},
+        {"name": "Despacho", "l": 20, "t": 150, "w": 350, "h": 110},
+        {"name": "Celdas", "l": 390, "t": 150, "w": 350, "h": 110},
     ]
-    for room in rooms:
-        inner_stack.controls.append(ft.Container(
-            left=room["left"], top=room["top"], width=room["width"], height=room["height"],
+    for r in rooms:
+        map_stack.controls.append(ft.Container(
+            left=r["l"], top=r["t"], width=r["w"], height=r["h"],
             bgcolor=COLORS['room_bg'], border=ft.border.all(2, '#5a7a9e'),
-            content=ft.Container(
-                content=ft.Text(room["name"], color='#cfe7ff', size=16, text_align=ft.TextAlign.CENTER),
-                alignment=ft.alignment.top_center, padding=ft.padding.only(top=20)
-            )
+            content=ft.Text(r["name"], color='#cfe7ff', size=16, weight="bold"),
+            alignment=ft.alignment.center
         ))
 
-    # Puertas (¡AHORA CONECTADAS!)
-    # Itera sobre los datos REALES del modelo, no una config estática
-    doors_config = [
-        {"id": "door-1", "left": 460, "top": 160, "width": 40, "height": 20},
-        {"id": "door-2", "left": 460, "top": 100, "width": 40, "height": 20},
-        {"id": "door-3", "left": 460, "top": 420, "width": 40, "height": 20},
-        {"id": "door-4", "left": 460, "top": 480, "width": 40, "height": 20},
+    doors = [
+        {"id": "door-1", "l": 370, "t": 50},
+        {"id": "door-2", "l": 370, "t": 20},
+        {"id": "door-3", "l": 370, "t": 180},
+        {"id": "door-4", "l": 370, "t": 220}
     ]
-    for door in doors_config:
-        door_id = door["id"]
-        estado_actual = datos_actuadores.get(door_id, {}).get("estado", "cerrada")
-        color_actual = COLORS['door_open'] if estado_actual == "abierta" else COLORS['door_closed']
-        
-        door_container = ft.Container(
-            left=door["left"], top=door["top"], width=door["width"], height=door["height"],
-            bgcolor=color_actual, border=ft.border.all(2, 'white'),
-            # ¡CONECTADO AL CONTROLADOR!
-            # Pasa el ID de la puerta y el estado opuesto al que tiene
-            on_click=lambda e, d_id=door_id, est=estado_actual: on_control_actuador_click(
-                e, 
-                d_id, 
-                "cerrada" if est == "abierta" else "abierta"
-            ),
-            # ¡PERMISOS! No se puede hacer clic si es policía
-            disabled=(not puede_controlar) 
-        )
-        inner_stack.controls.append(door_container)
-        
-        # Etiqueta (P1, P2...)
-        label_container = ft.Container(
-            left=door["left"], top=door["top"] - 20, width=door["width"], height=20,
-            content=ft.Text(datos_actuadores.get(door_id, {}).get("label", "??"), color='#cfe7ff', size=11, text_align=ft.TextAlign.CENTER)
-        )
-        inner_stack.controls.append(label_container)
+    for d in doors:
+        est = datos_actuadores.get(d["id"], {}).get("estado", "cerrada")
+        col = COLORS['door_open'] if est == "abierta" else COLORS['door_closed']
+        map_stack.controls.append(ft.Container(
+            left=d["l"], top=d["t"], width=40, height=20, bgcolor=col, border=ft.border.all(1, "white"),
+            on_click=lambda e, did=d["id"], s=est: on_control_actuador_click(e, did, "cerrada" if s == "abierta" else "abierta"),
+            disabled=not puede_controlar, tooltip=f"Puerta {d['id']}"
+        ))
 
-    # Dispositivos (igual que tu archivo)
-# Dispositivos (¡AHORA CON CÁMARA CLICABLE!)
-    devices_config = [
-        {"id": "dht", "left": 220, "top": 180, "label": "DHT", "color": "#fbbf24"},
-        {"id": "cam", "left": 860, "top": 120, "label": "Cam", "color": "#fb7185"},
-        # ... (añade el resto de tu config de devices) ...
-    ]
-    
-    for dev in devices_config:
-        
-        # Creamos los controles visuales
-        device_icon = ft.Container(
-            width=20, height=20,
-            border_radius=10, bgcolor=dev["color"], border=ft.border.all(2, 'white'),
-            content=ft.Text(DEVICE_ICONS.get(dev["id"], '●'), text_align=ft.TextAlign.CENTER),
-            alignment=ft.alignment.center
-        )
-        
-        device_label = ft.Container(
-            width=40, height=20,
-            content=ft.Text(dev["label"], color='white', size=11, text_align=ft.TextAlign.CENTER)
-        )
+    map_stack.controls.append(ft.Container(
+        left=700, top=30, width=30, height=30,
+        content=ft.Icon(ft.Icons.VIDEOCAM, color="red", size=20),
+        bgcolor="white", border_radius=15,
+        on_click=on_ver_camaras_click
+    ))
 
-        if dev["id"] == "cam":
-            # --- ¡NUEVO! CÁMARA CLICABLE ---
-            # Envolvemos el icono y la etiqueta en un Container
-            # que SÍ tiene un evento on_click
-            clickable_cam_area = ft.Container(
-                left=dev["left"] - 20, # Posición X (840)
-                top=dev["top"] - 10,  # Posición Y (110)
-                width=40,
-                height=40, # Área total 40x40
-                content=ft.Column(
-                    [device_icon, device_label],
-                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                    spacing=0 
-                ),
-                on_click=on_ver_camara_click, # <--- ¡LA CONEXIÓN AL CONTROLADOR!
-                border_radius=5,
-                ink=True # Efecto visual al hacer clic
-            )
-            inner_stack.controls.append(clickable_cam_area)
-            
-        else:
-            # --- OTROS DISPOSITIVOS (como estaban antes) ---
-            # Los añadimos por separado con sus posiciones originales
-            icon_container = ft.Container(
-                content=device_icon,
-                left=dev["left"] - 10, top=dev["top"] - 10, width=20, height=20
-            )
-            label_container = ft.Container(
-                content=device_label,
-                left=dev["left"] - 20, top=dev["top"] + 10, width=40, height=20
-            )
-            inner_stack.controls.append(icon_container)
-            inner_stack.controls.append(label_container)
-    
-    map_content.content = inner_stack
+    # Contenedor del Mapa
+    map_card = ft.Container(
+        content=ft.Column([
+            ft.Text("Mapa de la comisaría", color=COLORS['text'], size=16),
+            ft.Row([map_stack], scroll=ft.ScrollMode.AUTO, alignment=ft.MainAxisAlignment.CENTER)
+        ], alignment=ft.MainAxisAlignment.CENTER),
+        bgcolor=COLORS['card'],
+        border=ft.border.all(2, COLORS['glass']),
+        height=340, # ALTURA FIJA REDUCIDA (Da más espacio abajo)
+        padding=10,
+        alignment=ft.alignment.center
+    )
 
-    # Scroll 2D
-    map_scroll_horizontal = ft.Row([map_content], scroll=ft.ScrollMode.ALWAYS)
-    map_scroll_container = ft.Column([map_scroll_horizontal], scroll=ft.ScrollMode.ALWAYS, expand=True)
-    map_stack.controls.append(map_scroll_container)
+    # --- BOTTOM ROW (Tablas) ---
+    bottom_row = ft.Row(spacing=12, expand=True) # expand=True para que sean LARGAS
 
-    # Overlay (¡AHORA CONECTADO!)
-    # Busca la última lectura del sensor de humo
-    ultima_lectura_humo = "OK"
-    if datos_sensores:
-        # Esto es un ejemplo, deberías buscar el sensor correcto
-        ultima_lectura_humo = datos_sensores[-1].get("valor", "N/A")
-
-    summary_header = ft.Row([
-        ft.Text("Estado general", size=9, color=COLORS['muted']),
-        ft.ElevatedButton("Refrescar", on_click=on_refrescar_click, style=ft.ButtonStyle(bgcolor=COLORS['bg'], color=COLORS['accent']))
-    ])
-    summary_label = ft.Text(f"Humo: {ultima_lectura_humo} PPM", size=10, weight=ft.FontWeight.BOLD, color=COLORS['text'])
-    overlay_content = ft.Column([summary_header, summary_label], spacing=5)
-    overlay = ft.Container(content=overlay_content, width=320, height=70, bgcolor=COLORS['glass'], border=ft.border.all(1), padding=10, right=20, bottom=20)
-    map_stack.controls.append(overlay)
-
-    map_card.content = map_stack
-
-    # --- BOTTOM ROW (Tarjetas de Presos y Usuarios) ---
-    bottom_row = ft.Row(spacing=12, expand=False)
-
-    # ¡REEMPLAZO! Llama a la vista de presos
     bottom_row.controls.append(
         vista.vista_gestion_presos.crear_vista_presos(
             lista_presos=datos_presos,
@@ -195,16 +112,15 @@ def crear_dashboard_view(
         )
     )
 
-    # ¡REEMPLAZO! Llama a la vista de usuarios
-    bottom_row.controls.append(
-        vista.vista_gestion_usuarios.crear_vista_usuarios(
-            rol_actual=rol_usuario,
-            lista_usuarios=datos_usuarios,
-            on_crear_usuario_handler=on_crear_usuario_click
+    if rol_usuario == "comisario":
+        bottom_row.controls.append(
+            vista.vista_gestion_usuarios.crear_vista_usuarios(
+                rol_actual=rol_usuario,
+                lista_usuarios=datos_usuarios,
+                on_crear_usuario_handler=on_crear_usuario_click
+            )
         )
-    )
-    
-    # --- COLUMNA IZQUIERDA (Contenedor principal) ---
+
     left_column = ft.Column(
         spacing=12, 
         expand=True,
@@ -215,23 +131,10 @@ def crear_dashboard_view(
         ]
     )
 
-    # --- RIGHT PANEL: (Log de Sensores y Control) ---
-    # (Hemos movido la lógica de control de puertas al mapa,
-    # así que aquí solo mostramos el log y el control de LEDs/Ventilador)
-    
-    right_column = ft.Container(
-        width=380,
-        bgcolor=COLORS['card'],
-        padding=14,
-        expand=True,
-        content=ft.Column(spacing=12, expand=True, scroll=ft.ScrollMode.ADAPTIVE)
-    )
-    
-    right_column.content.controls.append(
-        ft.Text("Panel de Control y Sensores", size=12, weight=ft.FontWeight.BOLD, color=COLORS['text'])
-    )
+    # --- PANEL DERECHO (MÁS ANCHO) ---
+    right_content = ft.Column(spacing=12, expand=True)
+    right_content.controls.append(ft.Text("Panel de Control y Sensores", size=12, weight=ft.FontWeight.BOLD, color=COLORS['text']))
 
-    # Controles de actuadores (LEDs, Ventilador)
     led_estado = datos_actuadores.get("leds", {}).get("estado", "off")
     fan_estado = datos_actuadores.get("fan", {}).get("estado", "off")
     
@@ -240,17 +143,7 @@ def crear_dashboard_view(
         content=ft.Row([
             ft.Text(f"{DEVICE_ICONS['leds']} Luces Generales", color=COLORS['text']),
             ft.Container(expand=True),
-            ft.Switch(
-                value=(led_estado == "on"),
-                # ¡CONECTADO!
-                on_change=lambda e, est=led_estado: on_control_actuador_click(
-                    e, 
-                    "leds", 
-                    "off" if est == "on" else "on"
-                ),
-                # ¡PERMISOS!
-                disabled=(not puede_controlar)
-            )
+            ft.Switch(value=(led_estado == "on"), on_change=lambda e, est=led_estado: on_control_actuador_click(e, "leds", "off" if est == "on" else "on"), disabled=(not puede_controlar))
         ])
     )
     
@@ -259,17 +152,7 @@ def crear_dashboard_view(
         content=ft.Row([
             ft.Text(f"{DEVICE_ICONS['fan']} Ventilación", color=COLORS['text']),
             ft.Container(expand=True),
-            ft.Switch(
-                value=(fan_estado == "on"),
-                # ¡CONECTADO!
-                on_change=lambda e, est=fan_estado: on_control_actuador_click(
-                    e, 
-                    "fan", 
-                    "off" if est == "on" else "on"
-                ),
-                # ¡PERMISOS!
-                disabled=(not puede_controlar)
-            )
+            ft.Switch(value=(fan_estado == "on"), on_change=lambda e, est=fan_estado: on_control_actuador_click(e, "fan", "off" if est == "on" else "on"), disabled=(not puede_controlar))
         ])
     )
     
@@ -277,25 +160,40 @@ def crear_dashboard_view(
     right_column.content.controls.append(control_fan)
     right_column.content.controls.append(ft.Divider(height=10))
 
-    # Log de Sensores
-    right_column.content.controls.append(
-        ft.Text("Log de Sensores (Últimos 10)", size=10, color=COLORS['muted'])
-    )
-    
-    log_list = ft.ListView(expand=True, spacing=5)
+    right_content.controls.append(control_leds)
+    right_content.controls.append(control_fan)
+    right_content.controls.append(ft.Divider(height=10, color=COLORS['muted']))
+    right_content.controls.append(ft.Text("Log de Sensores (Últimos registros)", size=10, color=COLORS['muted']))
+
+    log_list = ft.ListView(expand=True, spacing=5, padding=5)
     if not datos_sensores:
         log_list.controls.append(ft.Text("No hay datos de sensores.", color=COLORS['muted']))
     else:
-        # Mostramos solo los últimos 10
-        for log in reversed(datos_sensores[-10:]):
-            log_list.controls.append(
-                ft.Text(f"[{log['timestamp']}] {log['sensor']}: {log['valor']}", color=COLORS['text'], size=9)
+        for log in reversed(datos_sensores[-15:]):
+            icono = DEVICE_ICONS.get(log['sensor'].lower().replace("-", "") if log['sensor'] != 'DHT11' else 'dht', "📝")
+            log_item = ft.Container(
+                content=ft.Row([
+                    ft.Text(f"{log.get('timestamp','').split(' ')[-1]}", size=9, color=COLORS['muted']),
+                    ft.Text(icono, size=12),
+                    ft.Text(f"{log['sensor']}:", size=10, weight=ft.FontWeight.BOLD, color=COLORS['accent']),
+                    ft.Text(f"{log['valor']}", size=10, color=COLORS['text']),
+                ], spacing=5),
+                bgcolor=COLORS['glass'], padding=5, border_radius=4
             )
             
     right_column.content.controls.append(ft.Container(content=log_list, expand=True))
 
+    right_content.controls.append(ft.Container(content=log_list, expand=True))
 
-    # --- FINAL VIEW ASSEMBLY ---
+    right_column = ft.Container(
+        width=460,  # AUMENTADO EL ANCHO (Antes 420)
+        bgcolor=COLORS['card'],
+        padding=14,
+        expand=False,
+        content=right_content,
+        border=ft.border.all(1, COLORS['glass'])
+    )
+
     main_row = ft.Row([left_column, right_column], spacing=18, expand=True)
 
     return ft.View(
