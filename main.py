@@ -4,21 +4,22 @@ from pathlib import Path
 import modelo.manejador_datos as modelo
 from vista import vista_login, vista_dashboard_sensores, vista_camaras, vista_gestion_presos
 
-
-# --- FUNCIONES DEL CONTROLADOR ---
+# --- FUNCIONES DEL CONTROLADOR (Lógica de botones) ---
 
 def on_login_click(e, campo_usuario, campo_password, texto_error):
+    """Se ejecuta al pulsar 'Entrar' en la vista de login."""
     page = e.page
     rol = modelo.validar_usuario(campo_usuario.value, campo_password.value)
     if rol:
         page.session.set("user_rol", rol)
         page.session.set("user_name", campo_usuario.value)
         texto_error.value = ""
-        page.go("/dashboard")
+        campo_usuario.value = ""
+        campo_password.value = ""
+        page.go("/dashboard") # Navega al dashboard
     else:
         texto_error.value = "Datos incorrectos."
         page.update()
-
 
 def on_logout_click(e):
     e.page.session.clear()
@@ -33,12 +34,15 @@ def on_refrescar_click(e):
 
 
 def on_control_actuador_click(e, actuador_id, nuevo_estado):
+    """Maneja el clic en puertas, luces, ventilador, etc."""
     page = e.page
     if page.session.get("user_rol") == "policia":
         page.snack_bar = ft.SnackBar(ft.Text("Permiso denegado."), bgcolor="red")
         page.snack_bar.open = True
         page.update()
         return
+
+    print(f"Controlador: Cambiando {actuador_id} a {nuevo_estado}")
     modelo.set_estado_actuador(actuador_id, nuevo_estado)
     on_refrescar_click(e)
 
@@ -97,10 +101,7 @@ def main(page: ft.Page):
         rol = page.session.get("user_rol")
         if not rol and route != "/login":
             page.go("/login")
-            return
-
-        if route == "/login":
-            page.views.append(vista_login.crear_vista_login(on_login_click))
+            return # Detiene la ejecución
 
         elif route == "/dashboard":
             page.views.append(vista_dashboard_sensores.crear_dashboard_view(
@@ -145,8 +146,8 @@ def main(page: ft.Page):
         page.update()
 
     page.on_route_change = route_change
-    page.go(page.route)
+    page.go(page.route) # Carga la ruta inicial (o /login si no hay sesión)
 
-
+# --- Iniciar la aplicación ---
 if __name__ == "__main__":
     ft.app(target=main, assets_dir="assets")

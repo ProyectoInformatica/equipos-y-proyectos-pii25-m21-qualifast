@@ -1,5 +1,5 @@
 import flet as ft
-from vista.temas import COLORS
+from vista.temas import COLORS # Importamos los colores
 
 
 def crear_dialogo_preso(titulo, on_guardar, preso_actual=None):
@@ -54,11 +54,11 @@ def crear_vista_presos(lista_presos, on_abrir_crear_handler, on_abrir_editar_han
     )
 
     boton_nuevo_preso = ft.ElevatedButton(
-        "Nuevo preso",
-        icon=ft.Icons.ADD,
-        bgcolor=COLORS['accent'],
+        "Nuevo preso", 
+        bgcolor=COLORS['accent'], 
         color='#06203a',
-        on_click=on_abrir_crear_handler
+        # Llama al handler del controlador pasándole el campo de texto
+        on_click=lambda e: on_crear_preso_handler(e, campo_nombre_preso)
     )
 
     header_title = ft.Text("Gestión de Presos", size=14, weight=ft.FontWeight.BOLD, color=COLORS['text'])
@@ -76,10 +76,9 @@ def crear_vista_presos(lista_presos, on_abrir_crear_handler, on_abrir_editar_han
         expand=True
     )
 
-    top_row = ft.Row([
-        header_title,
-        ft.Container(width=10),
-        campo_busqueda,
+    prisoner_header = ft.Row([
+        ft.Text("Registros de presos", size=12, weight=ft.FontWeight.BOLD, color=COLORS['text']),
+        ft.Container(expand=True),
         boton_refrescar,
         boton_nuevo_preso
     ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
@@ -165,3 +164,5 @@ def crear_vista_presos(lista_presos, on_abrir_crear_handler, on_abrir_editar_han
             list_view
         ])
     )
+    
+    return prisoner_card

@@ -1,3 +1,5 @@
+# simulador_iot.py
+
 import json
 import time
 import random
@@ -30,7 +32,6 @@ def _leer_json(archivo):
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         return []
-
 
 def _escribir_json(archivo, data):
     try:
@@ -91,8 +92,7 @@ def simular_datos():
         try:
             # 1. SIMULACIÓN DE SENSORES (Tu código original)
             sensor_elegido = random.choice(sensores)
-            valor = 0
-
+            
             if sensor_elegido == "DHT11":
                 valor = round(random.uniform(18.0, 25.0), 1)
             elif sensor_elegido == "MQ-2":
@@ -125,7 +125,7 @@ def simular_datos():
 
             # Espera aleatoria
             time.sleep(random.randint(3, 8))
-
+            
         except KeyboardInterrupt:
             print("\nSimulador detenido.")
             break

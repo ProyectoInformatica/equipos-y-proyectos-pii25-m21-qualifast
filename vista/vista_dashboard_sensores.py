@@ -1,24 +1,22 @@
 import flet as ft
-from vista.temas import COLORS, DEVICE_ICONS
+
 import vista.vista_gestion_presos
 import vista.vista_gestion_usuarios
-
+from vista.temas import COLORS, DEVICE_ICONS # Importamos los temas
 
 def crear_dashboard_view(
-        page: ft.Page,
-        rol_usuario: str,
-        datos_actuadores: dict,
-        datos_presos: list,
-        datos_usuarios: list,
-        datos_sensores: list,
-        on_logout_click,
-        on_refrescar_click,
-        on_control_actuador_click,
-        on_crear_usuario_click,
-        on_borrar_preso_click,
-        on_ver_camaras_click,
-        on_abrir_crear_preso,
-        on_abrir_editar_preso
+    page: ft.Page,
+    rol_usuario: str,
+    datos_actuadores: dict,
+    datos_presos: list,
+    datos_usuarios: list,
+    datos_sensores: list,
+    on_logout_click,
+    on_refrescar_click,
+    on_control_actuador_click,
+    on_crear_preso_click,
+    on_crear_usuario_click,
+    on_ver_camara_click
 ):
     """
     Dashboard Ajustado:
@@ -45,17 +43,10 @@ def crear_dashboard_view(
         content=ft.Text(f"Usuario: {rol_usuario.upper()}", size=10, weight=ft.FontWeight.BOLD, color=COLORS['text']),
         bgcolor=COLORS['glass'], padding=10, border_radius=5
     )
-    logout_btn = ft.ElevatedButton("Cerrar sesión", bgcolor=COLORS['bg'], color=COLORS['accent'],
-                                   on_click=on_logout_click)
+    logout_btn = ft.ElevatedButton("Cerrar sesión", bgcolor=COLORS['bg'], color=COLORS['accent'], on_click=on_logout_click)
+    right_side = ft.Row([user_label, logout_btn])
 
-    topbar = ft.Row([
-        ft.Column([title, legend], spacing=2),
-        ft.Container(expand=True),
-        boton_camaras,
-        ft.Container(width=10),
-        user_label,
-        logout_btn
-    ], alignment=ft.MainAxisAlignment.CENTER, vertical_alignment=ft.CrossAxisAlignment.CENTER)
+    topbar = ft.Row([left_side, ft.Container(expand=True), right_side])
 
     # --- MAPA INTERACTIVO ---
     # Altura del lienzo reducida para hacer el mapa más compacto
@@ -116,10 +107,8 @@ def crear_dashboard_view(
     bottom_row.controls.append(
         vista.vista_gestion_presos.crear_vista_presos(
             lista_presos=datos_presos,
-            on_abrir_crear_handler=on_abrir_crear_preso,
-            on_abrir_editar_handler=on_abrir_editar_preso,
-            on_refrescar_handler=on_refrescar_click,
-            on_borrar_preso_handler=on_borrar_preso_click
+            on_crear_preso_handler=on_crear_preso_click,
+            on_refrescar_handler=on_refrescar_click
         )
     )
 
@@ -133,9 +122,13 @@ def crear_dashboard_view(
         )
 
     left_column = ft.Column(
-        spacing=12,
+        spacing=12, 
         expand=True,
-        controls=[topbar, map_card, bottom_row]
+        controls=[
+            topbar,
+            map_card,
+            bottom_row
+        ]
     )
 
     # --- PANEL DERECHO (MÁS ANCHO) ---
@@ -144,7 +137,7 @@ def crear_dashboard_view(
 
     led_estado = datos_actuadores.get("leds", {}).get("estado", "off")
     fan_estado = datos_actuadores.get("fan", {}).get("estado", "off")
-
+    
     control_leds = ft.Container(
         bgcolor=COLORS['glass'], padding=10, border_radius=5,
         content=ft.Row([
@@ -153,7 +146,7 @@ def crear_dashboard_view(
             ft.Switch(value=(led_estado == "on"), on_change=lambda e, est=led_estado: on_control_actuador_click(e, "leds", "off" if est == "on" else "on"), disabled=(not puede_controlar))
         ])
     )
-
+    
     control_fan = ft.Container(
         bgcolor=COLORS['glass'], padding=10, border_radius=5,
         content=ft.Row([
@@ -162,6 +155,10 @@ def crear_dashboard_view(
             ft.Switch(value=(fan_estado == "on"), on_change=lambda e, est=fan_estado: on_control_actuador_click(e, "fan", "off" if est == "on" else "on"), disabled=(not puede_controlar))
         ])
     )
+    
+    right_column.content.controls.append(control_leds)
+    right_column.content.controls.append(control_fan)
+    right_column.content.controls.append(ft.Divider(height=10))
 
     right_content.controls.append(control_leds)
     right_content.controls.append(control_fan)
@@ -170,7 +167,7 @@ def crear_dashboard_view(
 
     log_list = ft.ListView(expand=True, spacing=5, padding=5)
     if not datos_sensores:
-        log_list.controls.append(ft.Text("Esperando datos...", color=COLORS['muted'], size=10))
+        log_list.controls.append(ft.Text("No hay datos de sensores.", color=COLORS['muted']))
     else:
         for log in reversed(datos_sensores[-15:]):
             icono = DEVICE_ICONS.get(log['sensor'].lower().replace("-", "") if log['sensor'] != 'DHT11' else 'dht', "📝")
@@ -183,7 +180,8 @@ def crear_dashboard_view(
                 ], spacing=5),
                 bgcolor=COLORS['glass'], padding=5, border_radius=4
             )
-            log_list.controls.append(log_item)
+            
+    right_column.content.controls.append(ft.Container(content=log_list, expand=True))
 
     right_content.controls.append(ft.Container(content=log_list, expand=True))
 
@@ -200,7 +198,9 @@ def crear_dashboard_view(
 
     return ft.View(
         "/dashboard",
-        controls=[main_row],
+        controls=[
+            main_row
+        ],
         bgcolor=COLORS['bg'],
         padding=18
     )
