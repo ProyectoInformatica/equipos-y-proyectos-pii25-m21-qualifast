@@ -32,13 +32,16 @@ def crear_vista_camaras(on_refrescar_click, on_volver_dashboard):
     # --- CONTENIDO PRINCIPAL ---
 
     # Imagen de la cámara
+    # NOTA: Asegúrate de que el archivo 'camara_sim.jpg' esté en la carpeta 'assets'
+    # o en la raíz, dependiendo de cómo ejecutes flet.
     camara_display = ft.Container(
         content=ft.Image(
-            src="camara_sim.jpg",  # Asegúrate de tener esta imagen en la raíz o assets
+            src="camara_sim.jpg",
             width=800,
             height=500,
             fit=ft.ImageFit.CONTAIN,
             border_radius=10,
+            error_content=ft.Text("No se encuentra la señal de video (falta imagen)", color="red")
         ),
         alignment=ft.alignment.center,
         expand=True
@@ -47,10 +50,11 @@ def crear_vista_camaras(on_refrescar_click, on_volver_dashboard):
     # Panel de estado (simulado)
     status_panel = ft.Container(
         content=ft.Row([
-            ft.Icon(ft.Icons.CIRCLE, color=COLORS['bad'], size=12),  # 'bad' es rojo en tus temas (REC)
+            ft.Icon(ft.Icons.CIRCLE, color=COLORS['bad'], size=12),  # 'bad' es rojo (REC)
             ft.Text("GRABANDO EN VIVO", color=COLORS['bad'], weight=ft.FontWeight.BOLD),
             ft.Container(width=20),
-            ft.Icon(ft.Icons.WIFI, color=COLORS['ok'], size=16),
+            # CORRECCIÓN AQUÍ: Usamos 'good' que sí existe en temas.py
+            ft.Icon(ft.Icons.WIFI, color=COLORS['good'], size=16),
             ft.Text("Señal Estable", color=COLORS['muted'])
         ], alignment=ft.MainAxisAlignment.CENTER),
         padding=10

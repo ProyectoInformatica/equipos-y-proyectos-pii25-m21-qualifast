@@ -38,5 +38,20 @@
         "user": "23234",
         "password": "2342",
         "rol": "inspector"
+    },
+    {
+        "user": "asdasd",
+        "password": "asdasd",
+        "rol": "policia"
+    },
+    {
+        "user": "sdasd",
+        "password": "asda",
+        "rol": "policia"
+    },
+    {
+        "user": "asdasda",
+        "password": "asd",
+        "rol": "policia"
     }
 ]

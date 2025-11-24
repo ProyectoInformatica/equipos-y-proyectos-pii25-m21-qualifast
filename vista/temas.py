@@ -9,6 +9,7 @@ COLORS = {
     'accent': '#38bdf8',     # Azul brillante para acentos
     'bad': '#ef4444',        # Rojo para errores/borrar
     'good': '#22c55e',       # Verde para éxito
+    'ok': '#22c55e',         # <--- AÑADIDO: Alias para evitar el KeyError
     'glass': '#374151',      # Color semitransparente (simulado sólido por ahora)
     'door_open': '#22c55e',  # Verde
     'door_closed': '#ef4444' # Rojo
