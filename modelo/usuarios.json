@@ -1,17 +1,42 @@
 [
-  {
-    "user": "comisario",
-    "password": "1234",
-    "rol": "comisario"
-  },
-  {
-    "user": "inspector",
-    "password": "1234",
-    "rol": "inspector"
-  },
-  {
-    "user": "policia",
-    "password": "1234",
-    "rol": "policia"
-  }
+    {
+        "user": "comisario",
+        "password": "1234",
+        "rol": "comisario"
+    },
+    {
+        "user": "inspector",
+        "password": "1234",
+        "rol": "inspector"
+    },
+    {
+        "user": "policia",
+        "password": "1234",
+        "rol": "policia"
+    },
+    {
+        "user": "asdasdasd",
+        "password": "asdasdasd",
+        "rol": "policia"
+    },
+    {
+        "user": "asd",
+        "password": "asda qwe c32e2d",
+        "rol": "policia"
+    },
+    {
+        "user": "3v3",
+        "password": "34v5",
+        "rol": "policia"
+    },
+    {
+        "user": "v345v3",
+        "password": "v345v345",
+        "rol": "policia"
+    },
+    {
+        "user": "23234",
+        "password": "2342",
+        "rol": "inspector"
+    }
 ]

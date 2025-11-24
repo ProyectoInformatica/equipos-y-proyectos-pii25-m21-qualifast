@@ -1,7 +1,37 @@
 [
     {
         "id": 1,
-        "nombre": "Juan Pérez",
-        "delito": "Robo"
+        "nombre": "sanchez",
+        "delito": "robo",
+        "celda": "1",
+        "fecha_ingreso": "24/11/2025 13:53"
+    },
+    {
+        "id": 2,
+        "nombre": "prueba",
+        "delito": "123",
+        "celda": "1",
+        "fecha_ingreso": "24/11/2025 13:53"
+    },
+    {
+        "id": 3,
+        "nombre": "asd",
+        "delito": "asd",
+        "celda": "asd",
+        "fecha_ingreso": "24/11/2025 13:54"
+    },
+    {
+        "id": 4,
+        "nombre": "asd",
+        "delito": "asd",
+        "celda": "asd",
+        "fecha_ingreso": "24/11/2025 13:54"
+    },
+    {
+        "id": 5,
+        "nombre": "asd",
+        "delito": "asd",
+        "celda": "asd",
+        "fecha_ingreso": "24/11/2025 13:54"
     }
 ]
