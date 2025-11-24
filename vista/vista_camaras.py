@@ -4,8 +4,7 @@ from vista.temas import COLORS
 
 def crear_vista_camaras(on_refrescar_click, on_volver_dashboard):
     """
-    Crea la vista de cámaras de seguridad.
-    Muestra una imagen simulada y controles básicos.
+    Crea la vista de cámaras de seguridad reproduciendo video local.
     """
 
     # --- APP BAR (Barra superior) ---
@@ -16,14 +15,14 @@ def crear_vista_camaras(on_refrescar_click, on_volver_dashboard):
             on_click=on_volver_dashboard,
             tooltip="Volver al Dashboard"
         ),
-        title=ft.Text("Cámara de Seguridad - Acceso Remoto", color=COLORS['text'], size=16),
+        title=ft.Text("Cámara de Seguridad - Grabación", color=COLORS['text'], size=16),
         bgcolor=COLORS['card'],
         actions=[
             ft.IconButton(
                 icon=ft.Icons.REFRESH,
                 icon_color=COLORS['accent'],
                 on_click=on_refrescar_click,
-                tooltip="Actualizar imagen"
+                tooltip="Reiniciar video"
             ),
             ft.Container(width=10)  # Espaciador
         ]
@@ -31,31 +30,27 @@ def crear_vista_camaras(on_refrescar_click, on_volver_dashboard):
 
     # --- CONTENIDO PRINCIPAL ---
 
-    # Imagen de la cámara
-    # NOTA: Asegúrate de que el archivo 'camara_sim.jpg' esté en la carpeta 'assets'
-    # o en la raíz, dependiendo de cómo ejecutes flet.
-    camara_display = ft.Container(
-        content=ft.Image(
-            src="camara_sim.jpg",
-            width=800,
-            height=500,
-            fit=ft.ImageFit.CONTAIN,
-            border_radius=10,
-            error_content=ft.Text("No se encuentra la señal de video (falta imagen)", color="red")
-        ),
-        alignment=ft.alignment.center,
-        expand=True
+    # Reproductor de Video
+    # Flet buscará "videoGato.mp4" dentro de la carpeta 'assets' automáticamente
+    video_player = ft.Video(
+        expand=True,
+        playlist=[ft.VideoMedia("videoGato.mp4")],
+        playlist_mode=ft.PlaylistMode.LOOP,
+        fill_color=COLORS['bg'],
+        aspect_ratio=16/9,
+        volume=100,
+        autoplay=True,
+        filter_quality=ft.FilterQuality.HIGH
     )
 
-    # Panel de estado (simulado)
+    # Panel de estado
     status_panel = ft.Container(
         content=ft.Row([
             ft.Icon(ft.Icons.CIRCLE, color=COLORS['bad'], size=12),  # 'bad' es rojo (REC)
-            ft.Text("GRABANDO EN VIVO", color=COLORS['bad'], weight=ft.FontWeight.BOLD),
+            ft.Text("REPRODUCIENDO GRABACIÓN", color=COLORS['bad'], weight=ft.FontWeight.BOLD),
             ft.Container(width=20),
-            # CORRECCIÓN AQUÍ: Usamos 'good' que sí existe en temas.py
-            ft.Icon(ft.Icons.WIFI, color=COLORS['good'], size=16),
-            ft.Text("Señal Estable", color=COLORS['muted'])
+            ft.Icon(ft.Icons.HD, color=COLORS['good'], size=16),  # 'good' es verde
+            ft.Text("Calidad 1080p", color=COLORS['muted'])
         ], alignment=ft.MainAxisAlignment.CENTER),
         padding=10
     )
@@ -65,7 +60,7 @@ def crear_vista_camaras(on_refrescar_click, on_volver_dashboard):
         controls=[
             app_bar,
             status_panel,
-            camara_display
+            ft.Container(content=video_player, expand=True, padding=20)
         ],
         bgcolor=COLORS['bg'],
         padding=0
