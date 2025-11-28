@@ -1,8 +1,9 @@
 import flet as ft
-import flet_video as fv  # Librería externa de video
+import flet_video as fv
 from pathlib import Path
 import modelo.manejador_datos as modelo
-from vista import vista_login, vista_dashboard_sensores, vista_camaras, vista_gestion_presos
+from vista import vista_login, vista_dashboard_sensores, vista_camaras, vista_gestion_presos, \
+    vista_historico  # Import nuevo
 
 
 # --- FUNCIONES DEL CONTROLADOR ---
@@ -51,6 +52,9 @@ def on_volver_dashboard_click(e): e.page.go("/dashboard")
 
 
 def on_ver_grabacion_video_click(e): e.page.go("/video")
+
+
+def on_ver_historico_click(e): e.page.go("/historico")  # Nueva funcion nav
 
 
 # --- GESTIÓN DATOS ---
@@ -107,7 +111,9 @@ def main(page: ft.Page):
                 page, rol,
                 modelo.get_estado_actuadores(), modelo.get_presos(), modelo.get_usuarios(), modelo.get_log_sensores(),
                 on_logout_click, on_refrescar_click, on_control_actuador_click, on_crear_usuario_click,
-                on_borrar_preso_click, on_ver_camaras_click, on_abrir_crear_preso, on_abrir_editar_preso
+                on_borrar_preso_click, on_ver_camaras_click,
+                on_abrir_crear_preso, on_abrir_editar_preso,
+                on_ver_historico_click  # Pasamos el handler
             ))
 
         elif route == "/camaras":
@@ -115,9 +121,14 @@ def main(page: ft.Page):
                 on_refrescar_click, on_volver_dashboard_click, on_ver_grabacion_video_click
             ))
 
-        elif route == "/video":
-            # --- VIDEO CORREGIDO ---
+        elif route == "/historico":
+            page.views.append(vista_historico.crear_vista_historico(
+                modelo.get_log_sensores(limite=200),  # Pasamos más datos para historial
+                modelo.get_estado_actuadores(),
+                on_volver_dashboard_click
+            ))
 
+        elif route == "/video":
             video_player = fv.Video(
                 expand=True,
                 playlist=[fv.VideoMedia("assets/videoGato.mp4")],
@@ -126,7 +137,6 @@ def main(page: ft.Page):
                 aspect_ratio=16 / 9,
                 volume=100,
                 autoplay=True
-                # HE BORRADO filter_quality PORQUE DABA EL ERROR
             )
 
             page.views.append(
