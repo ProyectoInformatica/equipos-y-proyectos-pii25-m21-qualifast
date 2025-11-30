@@ -1,0 +1,492 @@
+[
+    {
+        "timestamp": "2025-11-30 14:14:19",
+        "id": "door-2",
+        "label": "P2",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 14:14:20",
+        "id": "door-2",
+        "label": "P2",
+        "accion": "abierta",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 14:14:20",
+        "id": "door-4",
+        "label": "P4",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 14:14:20",
+        "id": "door-4",
+        "label": "P4",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 14:14:21",
+        "id": "door-1",
+        "label": "P1",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 14:14:22",
+        "id": "door-1",
+        "label": "P1",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:02:06",
+        "id": "door-2",
+        "label": "P2",
+        "accion": "abierta",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:02:07",
+        "id": "door-4",
+        "label": "P4",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:01",
+        "id": "door-4",
+        "label": "P4",
+        "accion": "abierta",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:04",
+        "id": "door-2",
+        "label": "P2",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:05",
+        "id": "door-4",
+        "label": "P4",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:05",
+        "id": "door-1",
+        "label": "P1",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:07",
+        "id": "door-2",
+        "label": "P2",
+        "accion": "abierta",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:08",
+        "id": "door-4",
+        "label": "P4",
+        "accion": "abierta",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:12",
+        "id": "door-3",
+        "label": "P3",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:13",
+        "id": "door-3",
+        "label": "P3",
+        "accion": "abierta",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:14",
+        "id": "door-3",
+        "label": "P3",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:14",
+        "id": "door-3",
+        "label": "P3",
+        "accion": "abierta",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:15",
+        "id": "door-3",
+        "label": "P3",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:16",
+        "id": "door-3",
+        "label": "P3",
+        "accion": "abierta",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:16",
+        "id": "door-3",
+        "label": "P3",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:17",
+        "id": "door-3",
+        "label": "P3",
+        "accion": "abierta",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:18",
+        "id": "door-3",
+        "label": "P3",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:18",
+        "id": "door-3",
+        "label": "P3",
+        "accion": "abierta",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:18",
+        "id": "door-3",
+        "label": "P3",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:19",
+        "id": "door-3",
+        "label": "P3",
+        "accion": "abierta",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:20",
+        "id": "door-1",
+        "label": "P1",
+        "accion": "abierta",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:21",
+        "id": "door-2",
+        "label": "P2",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:22",
+        "id": "door-2",
+        "label": "P2",
+        "accion": "abierta",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:22",
+        "id": "door-2",
+        "label": "P2",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:23",
+        "id": "door-2",
+        "label": "P2",
+        "accion": "abierta",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:24",
+        "id": "door-2",
+        "label": "P2",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:25",
+        "id": "door-2",
+        "label": "P2",
+        "accion": "abierta",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:26",
+        "id": "door-2",
+        "label": "P2",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:26",
+        "id": "door-2",
+        "label": "P2",
+        "accion": "abierta",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:27",
+        "id": "door-2",
+        "label": "P2",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:27",
+        "id": "door-2",
+        "label": "P2",
+        "accion": "abierta",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:28",
+        "id": "door-2",
+        "label": "P2",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:29",
+        "id": "door-4",
+        "label": "P4",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:30",
+        "id": "door-2",
+        "label": "P2",
+        "accion": "abierta",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:30",
+        "id": "door-4",
+        "label": "P4",
+        "accion": "abierta",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:30",
+        "id": "door-4",
+        "label": "P4",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:31",
+        "id": "door-4",
+        "label": "P4",
+        "accion": "abierta",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:31",
+        "id": "door-4",
+        "label": "P4",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:31",
+        "id": "door-4",
+        "label": "P4",
+        "accion": "abierta",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:31",
+        "id": "door-4",
+        "label": "P4",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:31",
+        "id": "door-4",
+        "label": "P4",
+        "accion": "abierta",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:31",
+        "id": "door-4",
+        "label": "P4",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:31",
+        "id": "door-4",
+        "label": "P4",
+        "accion": "abierta",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:32",
+        "id": "door-4",
+        "label": "P4",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:32",
+        "id": "door-4",
+        "label": "P4",
+        "accion": "abierta",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:32",
+        "id": "door-4",
+        "label": "P4",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:32",
+        "id": "door-4",
+        "label": "P4",
+        "accion": "abierta",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:32",
+        "id": "door-4",
+        "label": "P4",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:32",
+        "id": "door-4",
+        "label": "P4",
+        "accion": "abierta",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:33",
+        "id": "door-4",
+        "label": "P4",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:33",
+        "id": "door-4",
+        "label": "P4",
+        "accion": "abierta",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:33",
+        "id": "door-4",
+        "label": "P4",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:33",
+        "id": "door-4",
+        "label": "P4",
+        "accion": "abierta",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:10:38",
+        "id": "door-4",
+        "label": "P4",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:11:07",
+        "id": "door-1",
+        "label": "P1",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:11:08",
+        "id": "door-3",
+        "label": "P3",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:11:09",
+        "id": "door-4",
+        "label": "P4",
+        "accion": "abierta",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:11:10",
+        "id": "door-3",
+        "label": "P3",
+        "accion": "abierta",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:11:11",
+        "id": "door-1",
+        "label": "P1",
+        "accion": "abierta",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:11:12",
+        "id": "door-2",
+        "label": "P2",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:30:53",
+        "id": "door-3",
+        "label": "P3",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:30:54",
+        "id": "door-1",
+        "label": "P1",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:30:54",
+        "id": "door-4",
+        "label": "P4",
+        "accion": "cerrada",
+        "usuario": "comisario"
+    },
+    {
+        "timestamp": "2025-11-30 15:30:55",
+        "id": "door-2",
+        "label": "P2",
+        "accion": "abierta",
+        "usuario": "comisario"
+    }
+]

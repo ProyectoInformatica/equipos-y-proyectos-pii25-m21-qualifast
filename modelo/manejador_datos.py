@@ -1,27 +1,23 @@
 import json
 import os
-from datetime import datetime
+import re
+from datetime import datetime, timedelta
+from collections import defaultdict
 
 # --- Ubicaciones de los archivos JSON ---
 USUARIOS_FILE = 'modelo/usuarios.json'
 PRESOS_FILE = 'modelo/presos.json'
 ACTUADORES_FILE = 'modelo/actuadores_estado.json'
 SENSORES_FILE = 'modelo/sensores_log.json'
+HISTORICO_ACTUADORES_FILE = 'modelo/puertas_log.json'
 
 
-# --- Funciones de Inicialización ---
+# --- Funciones de Inicialización (Sin cambios) ---
 def inicializar_archivos_json():
     if not os.path.exists(USUARIOS_FILE):
-        usuarios_default = [
-            {"user": "comisario", "password": "1234", "rol": "comisario"},
-            {"user": "inspector", "password": "1234", "rol": "inspector"},
-            {"user": "policia", "password": "1234", "rol": "policia"}
-        ]
+        usuarios_default = [{"user": "comisario", "password": "1234", "rol": "comisario"}]
         _escribir_json(USUARIOS_FILE, usuarios_default)
-
-    if not os.path.exists(PRESOS_FILE):
-        _escribir_json(PRESOS_FILE, [])
-
+    if not os.path.exists(PRESOS_FILE): _escribir_json(PRESOS_FILE, [])
     if not os.path.exists(ACTUADORES_FILE):
         actuadores_default = {
             "door-1": {"estado": "cerrada", "label": "P1"},
@@ -32,9 +28,8 @@ def inicializar_archivos_json():
             "fan": {"estado": "off"}
         }
         _escribir_json(ACTUADORES_FILE, actuadores_default)
-
-    if not os.path.exists(SENSORES_FILE):
-        _escribir_json(SENSORES_FILE, [])
+    if not os.path.exists(SENSORES_FILE): _escribir_json(SENSORES_FILE, [])
+    if not os.path.exists(HISTORICO_ACTUADORES_FILE): _escribir_json(HISTORICO_ACTUADORES_FILE, [])
 
 
 # --- Funciones Auxiliares ---
@@ -54,7 +49,7 @@ def _escribir_json(archivo, data):
         print(f"Error al escribir en {archivo}: {e}")
 
 
-# --- LÓGICA DE USUARIOS ---
+# --- LÓGICA DE USUARIOS Y PRESOS (Sin cambios significativos) ---
 def validar_usuario(username, password_plana):
     usuarios = _leer_json(USUARIOS_FILE)
     for user in usuarios:
@@ -63,100 +58,141 @@ def validar_usuario(username, password_plana):
     return None
 
 
-def get_usuarios():
-    usuarios = _leer_json(USUARIOS_FILE)
-    return [{"user": u["user"], "rol": u["rol"]} for u in usuarios]
+def get_usuarios(): return _leer_json(USUARIOS_FILE)
 
 
 def add_usuario(username, password_plana, rol):
-    if not username or not password_plana or not rol:
-        return False
     usuarios = _leer_json(USUARIOS_FILE)
-    if any(u['user'] == username for u in usuarios):
-        return False
-    nuevo_usuario = {"user": username, "password": password_plana, "rol": rol}
-    usuarios.append(nuevo_usuario)
+    if any(u['user'] == username for u in usuarios): return False
+    usuarios.append({"user": username, "password": password_plana, "rol": rol})
     _escribir_json(USUARIOS_FILE, usuarios)
     return True
 
 
-# --- LÓGICA DE PRESOS ---
-def get_presos():
-    """Devuelve la lista completa de presos."""
-    return _leer_json(PRESOS_FILE)
+def get_presos(): return _leer_json(PRESOS_FILE)
 
 
 def add_preso(nombre, delito, celda="Sin asignar"):
-    """
-    Añade un nuevo preso con fecha de ingreso automática y celda.
-    """
     presos = _leer_json(PRESOS_FILE)
-
-    # Generación de ID robusta
-    if presos:
-        nuevo_id = max(p["id"] for p in presos) + 1
-    else:
-        nuevo_id = 1
-
-    # Fecha actual formato: DD/MM/YYYY HH:MM
-    fecha_actual = datetime.now().strftime("%d/%m/%Y %H:%M")
-
-    nuevo_preso = {
-        "id": nuevo_id,
-        "nombre": nombre,
-        "delito": delito,
-        "celda": celda,
-        "fecha_ingreso": fecha_actual
-    }
-    presos.append(nuevo_preso)
+    nuevo_id = (max(p["id"] for p in presos) + 1) if presos else 1
+    presos.append({
+        "id": nuevo_id, "nombre": nombre, "delito": delito, "celda": celda,
+        "fecha_ingreso": datetime.now().strftime("%d/%m/%Y %H:%M")
+    })
     _escribir_json(PRESOS_FILE, presos)
     return True
 
 
 def delete_preso(id_preso):
-    """Elimina un preso por su ID."""
     presos = _leer_json(PRESOS_FILE)
-    presos_filtrados = [p for p in presos if p['id'] != id_preso]
-
-    if len(presos) == len(presos_filtrados):
-        return False  # No se encontró el ID
-
-    _escribir_json(PRESOS_FILE, presos_filtrados)
+    filtrados = [p for p in presos if p['id'] != id_preso]
+    if len(presos) == len(filtrados): return False
+    _escribir_json(PRESOS_FILE, filtrados)
     return True
 
 
 def update_preso(id_preso, datos_nuevos):
-    """Actualiza los datos de un preso existente."""
     presos = _leer_json(PRESOS_FILE)
-    encontrado = False
-
-    for preso in presos:
-        if preso['id'] == id_preso:
-            preso.update(datos_nuevos)  # Actualiza campos pasados en el dict
-            encontrado = True
-            break
-
-    if encontrado:
-        _escribir_json(PRESOS_FILE, presos)
-        return True
+    for p in presos:
+        if p['id'] == id_preso:
+            p.update(datos_nuevos)
+            _escribir_json(PRESOS_FILE, presos)
+            return True
     return False
 
 
-# --- LÓGICA DE SENSORES Y ACTUADORES ---
-def get_log_sensores(limite=50):
-    log = _leer_json(SENSORES_FILE)
-    return log[-limite:]
+# --- LÓGICA SENSORES ---
+def registrar_dato_sensor(datos_nuevos):
+    """Añade nuevos registros al log de sensores."""
+    log_actual = _leer_json(SENSORES_FILE)
+    log_actual.extend(datos_nuevos)
+    # Limitar tamaño para no saturar (últimos 1000)
+    if len(log_actual) > 1000:
+        log_actual = log_actual[-1000:]
+    _escribir_json(SENSORES_FILE, log_actual)
+
+
+def get_log_sensores_filtrado(horas=24):
+    todos = _leer_json(SENSORES_FILE)
+    filtrados = []
+    limite = datetime.now() - timedelta(hours=horas)
+    for log in todos:
+        try:
+            if datetime.strptime(log['timestamp'], "%Y-%m-%d %H:%M:%S") >= limite:
+                filtrados.append(log)
+        except ValueError:
+            continue
+    return filtrados
+
+
+def get_promedio_sensores_por_hora():
+    logs = _leer_json(SENSORES_FILE)
+    agrupacion = defaultdict(list)
+    for log in logs:
+        try:
+            dt = datetime.strptime(log['timestamp'], "%Y-%m-%d %H:%M:%S")
+            key = (log['sensor'], dt.strftime("%Y-%m-%d %H:00"))
+            # Extraer número: "23.5 °C" -> 23.5
+            match = re.match(r"([0-9\.]+)\s*(.*)", str(log['valor']))
+            if match: agrupacion[(*key, match.group(2))].append(float(match.group(1)))
+        except:
+            continue
+
+    res = defaultdict(list)
+    for (sensor, hora, unidad), vals in sorted(agrupacion.items(), key=lambda x: x[0][1]):
+        prom = sum(vals) / len(vals)
+        val_fmt = f"{int(prom) if prom.is_integer() else f'{prom:.1f}'} {unidad}"
+        res[sensor].append({"hora": hora, "valor": val_fmt})
+    return dict(res)
+
+
+# --- LÓGICA ACTUADORES ---
+def get_log_historico_completo(dias=7):
+    return _leer_json(HISTORICO_ACTUADORES_FILE)  # (simplificado, filtro opcional)
 
 
 def get_estado_actuadores():
     return _leer_json(ACTUADORES_FILE)
 
 
-def set_estado_actuador(actuador_id, nuevo_estado):
+def set_estado_actuador(actuador_id, nuevo_estado, usuario="sistema"):
+    """Fuerza un estado específico (para leds/fan)."""
+    return _actualizar_actuador(actuador_id, nuevo_estado, usuario)
+
+
+def toggle_actuador(actuador_id, usuario="sistema"):
+    """
+    Invierte el estado actual (para puertas).
+    SOLUCIÓN BUG: Lee el archivo, verifica estado REAL y lo cambia.
+    """
+    estados = _leer_json(ACTUADORES_FILE)
+    if actuador_id not in estados: return False
+
+    estado_actual = estados[actuador_id]['estado']
+    nuevo_estado = "cerrada" if estado_actual == "abierta" else "abierta"
+
+    return _actualizar_actuador(actuador_id, nuevo_estado, usuario)
+
+
+def _actualizar_actuador(actuador_id, nuevo_estado, usuario):
     estados = _leer_json(ACTUADORES_FILE)
     if actuador_id in estados:
+        # Solo guardar si hay cambio real o si queremos registrar todo click
+        # Para puertas queremos registrar cada interacción:
         estados[actuador_id]['estado'] = nuevo_estado
         _escribir_json(ACTUADORES_FILE, estados)
+
+        # Log
+        log = _leer_json(HISTORICO_ACTUADORES_FILE)
+        label = estados[actuador_id].get("label", actuador_id)
+        if actuador_id == "leds": label = "Iluminación"
+        if actuador_id == "fan": label = "Ventilación"
+
+        log.append({
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "id": actuador_id, "label": label, "accion": nuevo_estado, "usuario": usuario
+        })
+        _escribir_json(HISTORICO_ACTUADORES_FILE, log)
         return True
     return False
 
