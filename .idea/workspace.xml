@@ -5,14 +5,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f6f11da1-8d5f-4223-91f5-f1b21610e87e" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/vista/vista_historico.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modelo/presos.json" beforeDir="false" afterPath="$PROJECT_DIR$/modelo/presos.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modelo/actuadores_estado.json" beforeDir="false" afterPath="$PROJECT_DIR$/modelo/actuadores_estado.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modelo/manejador_datos.py" beforeDir="false" afterPath="$PROJECT_DIR$/modelo/manejador_datos.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modelo/sensores_log.json" beforeDir="false" afterPath="$PROJECT_DIR$/modelo/sensores_log.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/simulador_iot.py" beforeDir="false" afterPath="$PROJECT_DIR$/simulador_iot.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/vista/temas.py" beforeDir="false" afterPath="$PROJECT_DIR$/vista/temas.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/vista/vista_dashboard_sensores.py" beforeDir="false" afterPath="$PROJECT_DIR$/vista/vista_dashboard_sensores.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/vista/vista_gestion_presos.py" beforeDir="false" afterPath="$PROJECT_DIR$/vista/vista_gestion_presos.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/vista/vista_historico.py" beforeDir="false" afterPath="$PROJECT_DIR$/vista/vista_historico.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/vista/vista_login.py" beforeDir="false" afterPath="$PROJECT_DIR$/vista/vista_login.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -40,12 +41,12 @@
     &quot;assignee&quot;: &quot;Dakyen&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/ProyectoInformatica/equipos-y-proyectos-pii25-m21-qualifast.git&quot;,
-    &quot;accountId&quot;: &quot;9b66a030-f86a-45e3-a548-7f16f0cddf1d&quot;
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/ProyectoInformatica/equipos-y-proyectos-pii25-m21-qualifast.git",
+    "accountId": "df97e5a5-e623-47f0-9f06-c812f4691d68"
   }
-}</component>
+}]]></component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 8
 }</component>
@@ -58,6 +59,7 @@
   "keyToString": {
     "Python.main.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
     "git-widget-placeholder": "feature/Vista-Datos-Historicos",
@@ -216,8 +218,8 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-d6986cc7102b-9c94529fcfe0-JavaScript-PY-252.26199.168" />
-        <option value="bundled-python-sdk-b3d66beaba9a-c6efb3732140-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-252.26199.168" />
+        <option value="bundled-js-predefined-d6986cc7102b-3aa1da707db6-JavaScript-PY-252.26830.99" />
+        <option value="bundled-python-sdk-164cda30dcd9-0af03a5fa574-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-252.26830.99" />
       </set>
     </attachedChunks>
   </component>
@@ -233,6 +235,7 @@
       <workItem from="1763935573323" duration="2048000" />
       <workItem from="1763937689010" duration="37000" />
       <workItem from="1763938955701" duration="40000" />
+      <workItem from="1764506831460" duration="4723000" />
     </task>
     <servers />
   </component>
@@ -241,7 +244,7 @@
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/equipos_y_proyectos_pii25_m21_qualifast$main.coverage" NAME="main Coverage Results" MODIFIED="1763937595537" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/Nuevos_archivos_proyecto$main.coverage" NAME="main Coverage Results" MODIFIED="1764353650082" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/Nuevos_archivos_proyecto$main.coverage" NAME="main Coverage Results" MODIFIED="1764511753203" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/_git$main.coverage" NAME="main Coverage Results" MODIFIED="1763921759934" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>

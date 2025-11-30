@@ -6,12 +6,14 @@ from datetime import datetime
 
 SENSORES_FILE = 'modelo/sensores_log.json'
 
+
 def _leer_json(archivo):
     try:
         with open(archivo, 'r', encoding='utf-8') as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         return []
+
 
 def _escribir_json(archivo, data):
     try:
@@ -20,11 +22,12 @@ def _escribir_json(archivo, data):
     except IOError as e:
         print(f"Error al escribir en {archivo}: {e}")
 
-def simular_datos():
-    print("Iniciando simulador IoT (DHT11, MQ-2, MQ-135, LDR)...")
 
-    # Lista exacta basada en tu descripción técnica
-    sensores_disponibles = [
+def simular_datos():
+    print("Iniciando simulador IoT (Generando datos cada 3s)...")
+
+    # Lista de sensores definidos en el sistema
+    sensores_definidos = [
         "DHT11 - Temperatura",
         "DHT11 - Humedad",
         "LDR - Luz",
@@ -34,49 +37,54 @@ def simular_datos():
 
     while True:
         try:
-            sensor_elegido = random.choice(sensores_disponibles)
-            valor = ""
+            nuevos_datos = []
+            timestamp_actual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-            if "Temperatura" in sensor_elegido:
-                valor = f"{round(random.uniform(20.0, 26.0), 1)} °C"
-            elif "Humedad" in sensor_elegido:
-                valor = f"{random.randint(40, 60)} %"
-            elif "Luz" in sensor_elegido:
-                # LDR varía resistencia según luz
-                valor = f"{random.randint(300, 800)} Lux"
-            elif "Humo" in sensor_elegido:
-                # MQ-2 Gases combustibles
-                val_int = random.randint(10, 50) # Normal bajo
-                valor = f"{val_int} ppm"
-            elif "Aire" in sensor_elegido:
-                # MQ-135 Calidad aire (CO2, etc)
-                val_int = random.randint(400, 450)
-                valor = f"{val_int} ppm"
+            # Generamos un dato para CADA sensor en este ciclo
+            for nombre_sensor in sensores_definidos:
+                valor = ""
 
-            nueva_lectura = {
-                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "sensor": sensor_elegido,
-                "valor": valor
-            }
+                if "Temperatura" in nombre_sensor:
+                    valor = f"{round(random.uniform(20.0, 30.0), 1)} °C"
+                elif "Humedad" in nombre_sensor:
+                    valor = f"{random.randint(40, 60)} %"
+                elif "Luz" in nombre_sensor:
+                    valor = f"{random.randint(300, 800)} Lux"
+                elif "Humo" in nombre_sensor:
+                    # Ocasionalmente simular picos
+                    base = random.randint(10, 30)
+                    if random.random() > 0.95: base += 100
+                    valor = f"{base} ppm"
+                elif "Aire" in nombre_sensor:
+                    valor = f"{random.randint(400, 480)} ppm"
 
+                nuevos_datos.append({
+                    "timestamp": timestamp_actual,
+                    "sensor": nombre_sensor,
+                    "valor": valor
+                })
+                print(f"-> Generado: {nombre_sensor} = {valor}")
+
+            # Guardamos el bloque completo
             log_actual = _leer_json(SENSORES_FILE)
-            log_actual.append(nueva_lectura)
+            log_actual.extend(nuevos_datos)
 
-            # Limitamos el log para que no sea infinito
-            if len(log_actual) > 300:
-                log_actual = log_actual[-300:]
+            # Limitamos el histórico para no saturar el archivo (últimos 500 registros)
+            if len(log_actual) > 500:
+                log_actual = log_actual[-500:]
 
             _escribir_json(SENSORES_FILE, log_actual)
 
-            print(f"-> Dato generado: {sensor_elegido} = {valor}")
-            time.sleep(random.randint(3, 6))
+            print("--- Ciclo completado, esperando 3s ---")
+            time.sleep(3)
 
         except KeyboardInterrupt:
             print("\nSimulador detenido.")
             break
         except Exception as e:
             print(f"Error simulador: {e}")
-            time.sleep(5)
+            time.sleep(1)
+
 
 if __name__ == "__main__":
     if not os.path.exists(SENSORES_FILE):
