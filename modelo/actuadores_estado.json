@@ -1,6 +1,6 @@
 {
     "door-1": {
-        "estado": "cerrada",
+        "estado": "abierta",
         "label": "P1"
     },
     "door-2": {
@@ -12,11 +12,11 @@
         "label": "P3"
     },
     "door-4": {
-        "estado": "cerrada",
+        "estado": "abierta",
         "label": "P4"
     },
     "leds": {
-        "estado": "on"
+        "estado": "off"
     },
     "fan": {
         "estado": "on"
