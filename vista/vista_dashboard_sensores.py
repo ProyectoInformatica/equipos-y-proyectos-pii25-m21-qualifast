@@ -39,11 +39,7 @@ def crear_dashboard_view(
 
     legend_content = ft.Row([
         ft.Text("🟢 Abierta 🔴 Cerrada", size=10, color=COLORS['muted']),
-        ft.Container(
-            width=10,
-            height=15,
-            border=ft.border.only(left=ft.border.BorderSide(1, COLORS['muted']))
-        ),
+        ft.Container(width=10, height=15, border=ft.border.only(left=ft.border.BorderSide(1, COLORS['muted']))),
         ft.Icon(ft.Icons.PERSON, size=12, color=COLORS['accent']),
         ft.Text(f"{nombre_usuario} ({rol_usuario.upper()})", size=11, weight="bold", color=COLORS['text'])
     ], alignment="center")
@@ -55,8 +51,7 @@ def crear_dashboard_view(
     topbar = ft.Container(
         content=ft.Row([
             logo_img, ft.Container(width=10), brand_text, ft.Container(width=20),
-            legend_content,
-            ft.Container(expand=True),
+            legend_content, ft.Container(expand=True),
             boton_camaras, ft.Container(width=10), logout_btn
         ], alignment="center", vertical_alignment="center"),
         padding=ft.padding.symmetric(horizontal=5, vertical=5)
@@ -75,12 +70,14 @@ def crear_dashboard_view(
 
     map_stack_controls = []
     for r in rooms_config:
-        map_stack_controls.append(
-            ft.Container(left=r["l"], top=r["t"], width=r["w"], height=r["h"], bgcolor=COLORS['room_bg'],
-                         border=ft.border.all(2, '#5a7a9e'),
-                         content=ft.Text(r["name"], color='#cfe7ff', size=14, weight="bold"),
-                         alignment=ft.alignment.center))
+        map_stack_controls.append(ft.Container(
+            left=r["l"], top=r["t"], width=r["w"], height=r["h"],
+            bgcolor=COLORS['room_bg'], border=ft.border.all(2, '#5a7a9e'),
+            content=ft.Text(r["name"], color='#cfe7ff', size=14, weight="bold"),
+            alignment=ft.alignment.center
+        ))
 
+    # Puertas
     doors_config = [
         {"id": "door-1", "l": 320, "t": 60, "w": 20, "h": 40, "label": "P1"},
         {"id": "door-2", "l": 320, "t": 200, "w": 20, "h": 40, "label": "P2"},
@@ -89,7 +86,6 @@ def crear_dashboard_view(
     ]
 
     controles_puertas = {}
-
     for d in doors_config:
         pid = d["id"]
         estado = datos_actuadores_iniciales.get(pid, {}).get("estado", "cerrada")
@@ -97,8 +93,7 @@ def crear_dashboard_view(
 
         cnt = ft.Container(
             left=d["l"], top=d["t"], width=d["w"], height=d["h"],
-            bgcolor=color,
-            border=ft.border.all(1, "white"),
+            bgcolor=color, border=ft.border.all(1, "white"),
             on_click=lambda e, p=pid: on_control_actuador_click(e, p, None),
             content=ft.Text(d["label"], size=8, color="white", weight="bold"),
             alignment=ft.alignment.center,
@@ -107,6 +102,7 @@ def crear_dashboard_view(
         controles_puertas[pid] = cnt
         map_stack_controls.append(cnt)
 
+    # Iconos
     icon_fan_map = ft.Icon(DEVICE_ICONS['fan'], size=20, color=COLORS['muted'])
     icon_led_map = ft.Icon(DEVICE_ICONS['leds'], size=20, color=COLORS['muted'])
 
@@ -117,15 +113,15 @@ def crear_dashboard_view(
         ft.Container(left=325, top=100, content=ft.Text(DEVICE_ICONS['mq-2'], size=20), tooltip="MQ-2"),
         ft.Container(left=400, top=80, content=ft.Text(DEVICE_ICONS['mq-135'], size=20), tooltip="MQ-135"),
         ft.Container(left=350, top=180, content=ft.Text(DEVICE_ICONS['dht22'], size=16), tooltip="DHT22"),
-
-        ft.Container(left=480, top=180, content=icon_fan_map, tooltip="Ventilación"),
-        ft.Container(left=415, top=220, content=icon_led_map, tooltip="Iluminación Central"),
+        ft.Container(left=480, top=165, content=icon_fan_map, tooltip="Ventilación"),
+        ft.Container(left=480, top=210, content=icon_led_map, tooltip="Iluminación Central"),
     ])
 
-    map_card = ft.Container(content=ft.Column([ft.Text("Plano Interactivo", color=COLORS['text'], size=16),
-                                               ft.Row([ft.Stack(controls=map_stack_controls, width=680, height=320)],
-                                                      alignment="center")], alignment="center"), bgcolor=COLORS['card'],
-                            border=ft.border.all(2, COLORS['glass']), padding=10, alignment=ft.alignment.center)
+    map_card = ft.Container(content=ft.Column([
+        ft.Text("Plano Interactivo", color=COLORS['text'], size=16),
+        ft.Row([ft.Stack(controls=map_stack_controls, width=680, height=320)], alignment="center")
+    ], alignment="center"), bgcolor=COLORS['card'], border=ft.border.all(2, COLORS['glass']), padding=10,
+        alignment=ft.alignment.center)
 
     # --- BOTTOM ROW ---
     vista_presos = vista.vista_gestion_presos.crear_vista_presos(datos_presos, on_abrir_crear_preso,
@@ -136,16 +132,16 @@ def crear_dashboard_view(
     bottom_row = ft.Container(height=450, content=ft.Row(
         [ft.Container(content=vista_presos, expand=1), ft.Container(content=vista_usuarios, expand=1)], spacing=12,
         expand=True))
+
+    # Esta variable es critica para el control del hilo
     left_column = ft.Column(spacing=12, expand=True, scroll=ft.ScrollMode.AUTO, controls=[topbar, map_card, bottom_row])
 
     # --- PANEL DERECHO ---
     right_content = ft.Column(spacing=12, expand=True)
-
     if es_admin:
         right_content.controls.append(
             ft.ElevatedButton("Config. Sensores/Actuadores", icon=ft.Icons.SETTINGS, bgcolor=COLORS['glass'],
                               color=COLORS['accent'], width=280, on_click=on_configuracion_click))
-
     right_content.controls.append(
         ft.ElevatedButton("Ver Logs / Histórico", icon=ft.Icons.HISTORY, bgcolor=COLORS['accent'], color=COLORS['bg'],
                           width=280, on_click=on_ver_historico_click))
@@ -209,89 +205,93 @@ def crear_dashboard_view(
     right_column = ft.Container(width=320, bgcolor=COLORS['card'], padding=14, expand=False, content=right_content,
                                 border=ft.border.all(1, COLORS['glass']))
 
-    # --- LÓGICA DE ACTUALIZACIÓN ---
+    # --- LÓGICA DE ACTUALIZACIÓN (USANDO CACHÉ) ---
     def actualizar_estado_interfaz():
+        # Verificamos si los controles están montados en la página antes de actualizar
+        if not left_column.page:
+            return
+
+        # 1. Sensores
         try:
-            # === CAMBIO: USAMOS LA FUNCIÓN "RAW" PARA ASEGURARNOS QUE TRAE DATOS ===
             datos_sens = modelo.get_ultimos_sensores_raw()
+            ultimos = {l['sensor']: l for l in datos_sens} if datos_sens else {}
 
-            # Convertimos la lista plana en un diccionario con el último valor de cada sensor
-            ultimos_valores = {}
-            if datos_sens:
-                for log in datos_sens:
-                    ultimos_valores[log['sensor']] = log
-
-            # Imprimimos para depurar si sigue sin ir
-            print(f"Vista: {len(ultimos_valores)} sensores detectados.")
-
-            for nombre_sensor, (ctrl_val, ctrl_hora) in mapa_controles_sensores.items():
-                if nombre_sensor in ultimos_valores:
-                    d = ultimos_valores[nombre_sensor]
-
-                    # Actualizamos valor
-                    ctrl_val.value = str(d['valor'])
-                    ctrl_val.update()  # FORZAMOS UPDATE VISUAL
-
-                    # Actualizamos hora
-                    try:
-                        hora = d['timestamp'].split(' ')[1]
-                        ctrl_hora.value = f"Actualizado: {hora}"
-                    except:
-                        ctrl_hora.value = "Reciente"
-                    ctrl_hora.update()  # FORZAMOS UPDATE VISUAL
-
-                    # Alertas visuales
-                    try:
-                        val_num = float(str(d['valor']).split(' ')[0])
-                        color_nuevo = COLORS['text']
-                        if "Humo" in nombre_sensor and val_num > 50:
-                            color_nuevo = COLORS['bad']
-                        elif "Temperatura" in nombre_sensor and val_num > 30:
-                            color_nuevo = "orange"
-
-                        ctrl_val.color = color_nuevo
+            for nombre, (ctrl_val, ctrl_hora) in mapa_controles_sensores.items():
+                if nombre in ultimos:
+                    d = ultimos[nombre]
+                    if ctrl_val.value != str(d['valor']):
+                        ctrl_val.value = str(d['valor'])
                         ctrl_val.update()
+
+                    try:
+                        hora_str = f"Actualizado: {d['timestamp'].split(' ')[1]}"
+                        if ctrl_hora.value != hora_str:
+                            ctrl_hora.value = hora_str
+                            ctrl_hora.update()
                     except:
                         pass
-
         except Exception as e:
-            print(f"Error Sensores: {e}")
+            print(f"Error actualizando sensores: {e}")
 
-        # Actuadores (Igual que antes)
+        # 2. Actuadores
         try:
             estados = modelo.get_estado_actuadores()
+
+            # Puertas
             for pid, cnt in controles_puertas.items():
                 st = estados.get(pid, {}).get("estado", "cerrada")
-                cnt.bgcolor = COLORS['door_open'] if st == "abierta" else COLORS['door_closed']
-                cnt.update()
+                col = COLORS['door_open'] if st == "abierta" else COLORS['door_closed']
+                if cnt.bgcolor != col:
+                    cnt.bgcolor = col
+                    cnt.update()
 
+            # Switches
             st_led = estados.get("leds", {}).get("estado", "off")
             st_fan = estados.get("fan", {}).get("estado", "off")
 
-            if switch_led.value != (st_led == "on"):
-                switch_led.value = (st_led == "on")
+            # Verificamos valor actual para evitar updates innecesarios que causen flickering
+            nuevo_valor_led = (st_led == "on")
+            if switch_led.value != nuevo_valor_led:
+                switch_led.value = nuevo_valor_led
                 switch_led.update()
-            if switch_fan.value != (st_fan == "on"):
-                switch_fan.value = (st_fan == "on")
+
+            nuevo_valor_fan = (st_fan == "on")
+            if switch_fan.value != nuevo_valor_fan:
+                switch_fan.value = nuevo_valor_fan
                 switch_fan.update()
 
-            icon_fan_map.color = COLORS['accent'] if st_fan == "on" else COLORS['muted']
-            icon_led_map.color = "yellow" if st_led == "on" else COLORS['muted']
-            icon_fan_map.update()
-            icon_led_map.update()
+            # Iconos mapa
+            col_fan = COLORS['accent'] if st_fan == "on" else COLORS['muted']
+            if icon_fan_map.color != col_fan:
+                icon_fan_map.color = col_fan
+                icon_fan_map.update()
+
+            col_led = "yellow" if st_led == "on" else COLORS['muted']
+            if icon_led_map.color != col_led:
+                icon_led_map.color = col_led
+                icon_led_map.update()
+
         except Exception as e:
-            print(f"Error Actuadores: {e}")
+            print(f"Error actualizando actuadores: {e}")
 
     def loop_refresh():
+        # IMPORTANTE: Esperar a que la vista se monte inicialmente
+        time.sleep(1.0)
+
         while True:
-            try:
-                if not page.views or page.route != "/dashboard":
+            # Si hemos cambiado de vista (left_column ya no tiene página), paramos el hilo
+            if left_column.page is None:
+                # Doble verificación por si es un parpadeo de recarga
+                time.sleep(0.5)
+                if left_column.page is None:
                     break
+
+            try:
                 actualizar_estado_interfaz()
-                time.sleep(1)
             except Exception as e:
-                print(f"Error loop: {e}")
-                time.sleep(1)
+                print(f"Error fatal en loop dashboard: {e}")
+
+            time.sleep(0.5)
 
     threading.Thread(target=loop_refresh, daemon=True).start()
 

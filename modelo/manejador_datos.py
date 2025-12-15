@@ -13,13 +13,20 @@ SENSORES_FILE = 'modelo/sensores_log.json'
 HISTORICO_ACTUADORES_FILE = 'modelo/puertas_log.json'
 CONFIG_FILE = 'modelo/configuracion.json'
 
+# --- CACHÉ EN MEMORIA (Para velocidad real-time) ---
+# Estas variables almacenan el estado actual en RAM para que la vista no tenga que leer disco siempre.
+_CACHE_ACTUADORES = {}
+_CACHE_SENSORES = []
+
 
 # --- Funciones de Inicialización ---
 def inicializar_archivos_json():
+    global _CACHE_ACTUADORES, _CACHE_SENSORES
+
     if not os.path.exists(USUARIOS_FILE):
-        usuarios_default = [{"user": "comisario", "password": "1234", "rol": "comisario"}]
-        _escribir_json(USUARIOS_FILE, usuarios_default)
+        _escribir_json(USUARIOS_FILE, [{"user": "comisario", "password": "1234", "rol": "comisario"}])
     if not os.path.exists(PRESOS_FILE): _escribir_json(PRESOS_FILE, [])
+
     if not os.path.exists(ACTUADORES_FILE):
         actuadores_default = {
             "door-1": {"estado": "cerrada", "label": "P1"},
@@ -30,25 +37,32 @@ def inicializar_archivos_json():
             "fan": {"estado": "off"}
         }
         _escribir_json(ACTUADORES_FILE, actuadores_default)
+
     if not os.path.exists(SENSORES_FILE): _escribir_json(SENSORES_FILE, [])
     if not os.path.exists(HISTORICO_ACTUADORES_FILE): _escribir_json(HISTORICO_ACTUADORES_FILE, [])
-
     if not os.path.exists(CONFIG_FILE):
-        config_default = {"temp_max": 28.0, "luz_min": 400.0}
-        _escribir_json(CONFIG_FILE, config_default)
+        _escribir_json(CONFIG_FILE, {"temp_max": 28.0, "luz_min": 400.0})
+
+    # Cargar caché inicial desde disco
+    _CACHE_ACTUADORES = _leer_json(ACTUADORES_FILE)
+    _CACHE_SENSORES = _leer_json(SENSORES_FILE)
+    # Limitamos caché sensores en memoria para no saturar RAM
+    if len(_CACHE_SENSORES) > 200:
+        _CACHE_SENSORES = _CACHE_SENSORES[-200:]
 
 
 # --- Funciones Auxiliares ---
 def _leer_json(archivo):
+    # Intentos de lectura robusta
     intentos = 3
     while intentos > 0:
         try:
             with open(archivo, 'r', encoding='utf-8') as f:
                 contenido = f.read().strip()
-                if not contenido: return []
+                if not contenido: return [] if 'lista' in archivo or 'log' in archivo else {}
                 return json.loads(contenido)
         except (json.JSONDecodeError, IOError):
-            time.sleep(0.1)
+            time.sleep(0.05)
             intentos -= 1
         except FileNotFoundError:
             return [] if 'lista' in archivo or 'log' in archivo else {}
@@ -63,10 +77,176 @@ def _escribir_json(archivo, data):
         pass
 
 
-# --- LOGICA USUARIOS/PRESOS ---
+# --- AUTOMATIZACIÓN ---
+def get_configuracion(): return _leer_json(CONFIG_FILE)
+
+
+def save_configuracion(data):
+    _escribir_json(CONFIG_FILE, data)
+    return True
+
+
+def verificar_automatizacion(ultimos_datos):
+    """Lógica de control automático basada en los últimos datos recibidos."""
+    config = get_configuracion()
+    umbral_temp = float(config.get("temp_max", 28.0))
+    umbral_luz = float(config.get("luz_min", 400.0))
+
+    # Trabajamos sobre la caché para máxima velocidad
+    global _CACHE_ACTUADORES
+    actuadores = _CACHE_ACTUADORES
+
+    temp_val, luz_val = None, None
+    for d in ultimos_datos:
+        try:
+            val_str = str(d['valor'])
+            match = re.search(r"([0-9\.]+)", val_str)
+            if match:
+                num = float(match.group(1))
+                if "Temperatura" in d['sensor']:
+                    temp_val = num
+                elif "Luz" in d['sensor']:
+                    luz_val = num
+        except:
+            continue
+
+    cambio = False
+    # Ventilador
+    if temp_val is not None:
+        estado_fan = actuadores.get('fan', {}).get('estado', 'off')
+        if temp_val > umbral_temp and estado_fan == "off":
+            set_estado_actuador("fan", "on", "AUTO-SISTEMA")
+            cambio = True
+        elif temp_val <= umbral_temp and estado_fan == "on":
+            set_estado_actuador("fan", "off", "AUTO-SISTEMA")
+            cambio = True
+
+    # Luces
+    if luz_val is not None:
+        estado_led = actuadores.get('leds', {}).get('estado', 'off')
+        if luz_val < umbral_luz and estado_led == "off":
+            set_estado_actuador("leds", "on", "AUTO-SISTEMA")
+            cambio = True
+        elif luz_val >= umbral_luz and estado_led == "on":
+            set_estado_actuador("leds", "off", "AUTO-SISTEMA")
+            cambio = True
+
+
+# --- SENSORES ---
+def registrar_dato_sensor(datos):
+    """Guarda en RAM (para la vista) y en DISCO (para historial)."""
+    global _CACHE_SENSORES
+
+    # 1. Actualizar RAM (Instantáneo)
+    _CACHE_SENSORES.extend(datos)
+    if len(_CACHE_SENSORES) > 200:
+        _CACHE_SENSORES = _CACHE_SENSORES[-200:]
+
+    # 2. Actualizar DISCO (Persistencia)
+    # Leemos el disco completo para no perder datos viejos que no estén en caché RAM
+    log_disco = _leer_json(SENSORES_FILE)
+    log_disco.extend(datos)
+    if len(log_disco) > 1000: log_disco = log_disco[-1000:]
+    _escribir_json(SENSORES_FILE, log_disco)
+
+    # 3. Automatización
+    verificar_automatizacion(datos)
+
+
+def get_ultimos_sensores_raw():
+    """Devuelve datos desde la CACHÉ DE MEMORIA. Cero latencia."""
+    global _CACHE_SENSORES
+    # Devolvemos una copia de los últimos 20 para el dashboard
+    return list(_CACHE_SENSORES[-20:])
+
+
+def get_log_sensores_filtrado(horas=24):
+    """Para históricos usamos el disco porque necesitamos más datos."""
+    todos = _leer_json(SENSORES_FILE)
+    res = []
+    limite = datetime.now() - timedelta(hours=horas)
+    for l in todos:
+        try:
+            if datetime.strptime(l['timestamp'], "%Y-%m-%d %H:%M:%S") >= limite:
+                res.append(l)
+        except:
+            continue
+    return res
+
+
+def get_promedio_sensores_por_hora():
+    logs = _leer_json(SENSORES_FILE)
+    data = defaultdict(list)
+    for l in logs:
+        try:
+            dt = datetime.strptime(l['timestamp'], "%Y-%m-%d %H:%M:%S")
+            key = (l['sensor'], dt.strftime("%Y-%m-%d %H:00"))
+            match = re.search(r"([0-9\.]+)\s*(.*)", str(l['valor']))
+            if match: data[(*key, match.group(2))].append(float(match.group(1)))
+        except:
+            continue
+
+    res = defaultdict(list)
+    for (sen, hora, unid), vals in sorted(data.items(), key=lambda x: x[0][1]):
+        prom = sum(vals) / len(vals)
+        fmt = f"{int(prom) if prom.is_integer() else f'{prom:.1f}'} {unid}"
+        res[sen].append({"hora": hora, "valor": fmt})
+    return dict(res)
+
+
+# --- ACTUADORES ---
+def get_estado_actuadores():
+    """Devuelve estado desde CACHÉ DE MEMORIA."""
+    global _CACHE_ACTUADORES
+    return dict(_CACHE_ACTUADORES)
+
+
+def get_log_historico_completo(dias=7): return _leer_json(HISTORICO_ACTUADORES_FILE)
+
+
+def toggle_actuador(uid, user="sistema"):
+    global _CACHE_ACTUADORES
+    curr = _CACHE_ACTUADORES.get(uid, {}).get("estado", "cerrada")
+    nuevo = "abierta" if curr == "cerrada" else "cerrada"
+    return _actualizar_actuador(uid, nuevo, user)
+
+
+def set_estado_actuador(uid, estado, user="sistema"):
+    return _actualizar_actuador(uid, estado, user)
+
+
+def _actualizar_actuador(uid, estado, user):
+    global _CACHE_ACTUADORES
+
+    # 1. Actualizar RAM primero
+    if uid in _CACHE_ACTUADORES:
+        if _CACHE_ACTUADORES[uid]['estado'] == estado: return True  # Sin cambios
+        _CACHE_ACTUADORES[uid]['estado'] = estado
+
+    # 2. Actualizar DISCO
+    actuadores_disco = _leer_json(ACTUADORES_FILE)
+    if uid in actuadores_disco:
+        actuadores_disco[uid]['estado'] = estado
+        _escribir_json(ACTUADORES_FILE, actuadores_disco)
+
+        hist = _leer_json(HISTORICO_ACTUADORES_FILE)
+        lbl = actuadores_disco[uid].get("label", uid)
+        if uid == "leds": lbl = "Iluminación"
+        if uid == "fan": lbl = "Ventilación"
+
+        hist.append({
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "id": uid, "label": lbl, "accion": estado, "usuario": user
+        })
+        _escribir_json(HISTORICO_ACTUADORES_FILE, hist)
+        return True
+    return False
+
+
+# --- USUARIOS/PRESOS ---
 def validar_usuario(u, p):
-    for user in _leer_json(USUARIOS_FILE):
-        if user['user'] == u and user['password'] == p: return user['rol']
+    for x in _leer_json(USUARIOS_FILE):
+        if x['user'] == u and x['password'] == p: return x['rol']
     return None
 
 
@@ -74,171 +254,39 @@ def get_usuarios(): return _leer_json(USUARIOS_FILE)
 
 
 def add_usuario(u, p, r):
-    users = _leer_json(USUARIOS_FILE)
-    if any(x['user'] == u for x in users): return False
-    users.append({"user": u, "password": p, "rol": r})
-    _escribir_json(USUARIOS_FILE, users)
+    lst = _leer_json(USUARIOS_FILE)
+    if any(x['user'] == u for x in lst): return False
+    lst.append({"user": u, "password": p, "rol": r})
+    _escribir_json(USUARIOS_FILE, lst)
     return True
 
 
 def get_presos(): return _leer_json(PRESOS_FILE)
 
 
-def add_preso(n, d, c="Sin asignar"):
-    presos = _leer_json(PRESOS_FILE)
-    nid = (max(p["id"] for p in presos) + 1) if presos else 1
-    presos.append(
+def add_preso(n, d, c):
+    lst = _leer_json(PRESOS_FILE)
+    nid = (max(x['id'] for x in lst) + 1) if lst else 1
+    lst.append(
         {"id": nid, "nombre": n, "delito": d, "celda": c, "fecha_ingreso": datetime.now().strftime("%d/%m/%Y %H:%M")})
-    _escribir_json(PRESOS_FILE, presos)
+    _escribir_json(PRESOS_FILE, lst)
     return True
 
 
-def delete_preso(pid):
-    presos = [p for p in _leer_json(PRESOS_FILE) if p['id'] != pid]
-    _escribir_json(PRESOS_FILE, presos)
-    return True
-
-
-def update_preso(pid, datos):
-    presos = _leer_json(PRESOS_FILE)
-    for p in presos:
+def update_preso(pid, dat):
+    lst = _leer_json(PRESOS_FILE)
+    for p in lst:
         if p['id'] == pid:
-            p.update(datos)
-            _escribir_json(PRESOS_FILE, presos)
+            p.update(dat)
+            _escribir_json(PRESOS_FILE, lst)
             return True
     return False
 
 
-# --- CONFIGURACIÓN Y AUTOMATIZACIÓN ---
-def get_configuracion(): return _leer_json(CONFIG_FILE)
-
-
-def save_configuracion(nuevos_datos):
-    _escribir_json(CONFIG_FILE, nuevos_datos)
+def delete_preso(pid):
+    lst = [p for p in _leer_json(PRESOS_FILE) if p['id'] != pid]
+    _escribir_json(PRESOS_FILE, lst)
     return True
-
-
-def verificar_automatizacion(ultimos_datos_sensores):
-    config = get_configuracion()
-    umbral_temp = float(config.get("temp_max", 28.0))
-    umbral_luz = float(config.get("luz_min", 400.0))
-    actuadores = _leer_json(ACTUADORES_FILE)
-
-    temp_val = None
-    luz_val = None
-
-    for dato in ultimos_datos_sensores:
-        try:
-            match = re.search(r"([0-9\.]+)", str(dato['valor']))
-            if match:
-                val_num = float(match.group(1))
-                if "Temperatura" in dato['sensor']:
-                    temp_val = val_num
-                elif "Luz" in dato['sensor']:
-                    luz_val = val_num
-        except:
-            continue
-
-    if temp_val is not None:
-        estado_fan_actual = actuadores.get('fan', {}).get('estado', 'off')
-        if temp_val > umbral_temp and estado_fan_actual == "off":
-            set_estado_actuador("fan", "on", "AUTO-SISTEMA")
-        elif temp_val <= umbral_temp and estado_fan_actual == "on":
-            set_estado_actuador("fan", "off", "AUTO-SISTEMA")
-
-    if luz_val is not None:
-        estado_led_actual = actuadores.get('leds', {}).get('estado', 'off')
-        if luz_val < umbral_luz and estado_led_actual == "off":
-            set_estado_actuador("leds", "on", "AUTO-SISTEMA")
-        elif luz_val >= umbral_luz and estado_led_actual == "on":
-            set_estado_actuador("leds", "off", "AUTO-SISTEMA")
-
-
-# --- SENSORES ---
-def registrar_dato_sensor(datos_nuevos):
-    log_actual = _leer_json(SENSORES_FILE)
-    log_actual.extend(datos_nuevos)
-    if len(log_actual) > 1000: log_actual = log_actual[-1000:]
-    _escribir_json(SENSORES_FILE, log_actual)
-    verificar_automatizacion(datos_nuevos)
-
-
-def get_log_sensores_filtrado(horas=24):
-    todos = _leer_json(SENSORES_FILE)
-    filtrados = []
-    limite = datetime.now() - timedelta(hours=horas)
-    for log in todos:
-        try:
-            if datetime.strptime(log['timestamp'], "%Y-%m-%d %H:%M:%S") >= limite:
-                filtrados.append(log)
-        except:
-            continue
-    return filtrados
-
-
-def get_ultimos_sensores_raw():
-    """
-    NUEVA FUNCIÓN: Obtiene los últimos 100 registros SIN filtrar por fecha.
-    Esto asegura que siempre lleguen datos al dashboard.
-    """
-    todos = _leer_json(SENSORES_FILE)
-    if not todos: return []
-    # Devolvemos los últimos 100
-    return todos[-100:]
-
-
-def get_promedio_sensores_por_hora():
-    logs = _leer_json(SENSORES_FILE)
-    agrupacion = defaultdict(list)
-    for log in logs:
-        try:
-            dt = datetime.strptime(log['timestamp'], "%Y-%m-%d %H:%M:%S")
-            key = (log['sensor'], dt.strftime("%Y-%m-%d %H:00"))
-            match = re.match(r"([0-9\.]+)\s*(.*)", str(log['valor']))
-            if match: agrupacion[(*key, match.group(2))].append(float(match.group(1)))
-        except:
-            continue
-    res = defaultdict(list)
-    for (sensor, hora, unidad), vals in sorted(agrupacion.items(), key=lambda x: x[0][1]):
-        prom = sum(vals) / len(vals)
-        val_fmt = f"{int(prom) if prom.is_integer() else f'{prom:.1f}'} {unidad}"
-        res[sensor].append({"hora": hora, "valor": val_fmt})
-    return dict(res)
-
-
-# --- ACTUADORES ---
-def get_log_historico_completo(dias=7): return _leer_json(HISTORICO_ACTUADORES_FILE)
-
-
-def get_estado_actuadores(): return _leer_json(ACTUADORES_FILE)
-
-
-def set_estado_actuador(actuador_id, nuevo_estado, usuario="sistema"):
-    return _actualizar_actuador(actuador_id, nuevo_estado, usuario)
-
-
-def toggle_actuador(actuador_id, usuario="sistema"):
-    estados = _leer_json(ACTUADORES_FILE)
-    if actuador_id not in estados: return False
-    nuevo = "cerrada" if estados[actuador_id]['estado'] == "abierta" else "abierta"
-    return _actualizar_actuador(actuador_id, nuevo, usuario)
-
-
-def _actualizar_actuador(actuador_id, nuevo_estado, usuario):
-    estados = _leer_json(ACTUADORES_FILE)
-    if actuador_id in estados:
-        if estados[actuador_id]['estado'] == nuevo_estado: return True
-        estados[actuador_id]['estado'] = nuevo_estado
-        _escribir_json(ACTUADORES_FILE, estados)
-        log = _leer_json(HISTORICO_ACTUADORES_FILE)
-        lbl = estados[actuador_id].get("label", actuador_id)
-        if actuador_id == "leds": lbl = "Iluminación"
-        if actuador_id == "fan": lbl = "Ventilación"
-        log.append({"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "id": actuador_id, "label": lbl,
-                    "accion": nuevo_estado, "usuario": usuario})
-        _escribir_json(HISTORICO_ACTUADORES_FILE, log)
-        return True
-    return False
 
 
 inicializar_archivos_json()

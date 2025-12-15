@@ -4,11 +4,11 @@
         "label": "P1"
     },
     "door-2": {
-        "estado": "abierta",
+        "estado": "cerrada",
         "label": "P2"
     },
     "door-3": {
-        "estado": "cerrada",
+        "estado": "abierta",
         "label": "P3"
     },
     "door-4": {
