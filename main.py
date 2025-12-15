@@ -19,7 +19,6 @@ def ejecutar_simulador():
             datos = []
             for s in sensores:
                 val = ""
-                # Rango ampliado ligeramente para probar la automatización
                 if "Temperatura" in s:
                     val = f"{round(random.uniform(20, 35), 1)} °C"
                 elif "Humedad" in s:
@@ -32,7 +31,6 @@ def ejecutar_simulador():
                     val = f"{random.randint(400, 480)} ppm"
                 datos.append({"timestamp": timestamp, "sensor": s, "valor": val})
 
-            # Al registrar, el modelo verifica la automatización automáticamente
             modelo.registrar_dato_sensor(datos)
             print(f"[{timestamp}] Simulador: Datos generados y guardados.")
             time.sleep(5)
@@ -74,17 +72,43 @@ def on_refrescar_click(e):
 def on_control_actuador_click(e, actuador_id, valor_objetivo=None):
     page = e.page
     usuario = page.session.get("user_name") or "desconocido"
-    if page.session.get("user_rol") == "policia":
+    rol = page.session.get("user_rol")
+
+    if rol == "policia":
         page.snack_bar = ft.SnackBar(ft.Text("Permiso denegado."), bgcolor="red")
         page.snack_bar.open = True
         page.update()
         return
 
+    # Verificar si está en modo AUTO, en cuyo caso no se debería tocar manualmente (doble check)
+    if "door" not in actuador_id:  # Puertas no tienen modo auto completo en este ejemplo
+        datos_actuales = modelo.get_estado_actuadores().get(actuador_id, {})
+        if datos_actuales.get("mode") == "auto":
+            page.snack_bar = ft.SnackBar(ft.Text("Dispositivo en modo AUTO. Cambie a manual para operar."),
+                                         bgcolor="orange")
+            page.snack_bar.open = True
+            page.update()
+            return
+
     if "door" in actuador_id:
         modelo.toggle_actuador(actuador_id, usuario)
     else:
         modelo.set_estado_actuador(actuador_id, valor_objetivo, usuario)
-    # No forzamos refresco completo porque el hilo del dashboard actualiza la UI en <1s
+
+
+# --- NUEVO HANDLER PARA EL BOTÓN AUTO/MANUAL ---
+def on_cambiar_modo_click(e, actuador_id):
+    page = e.page
+    if page.session.get("user_rol") == "policia":
+        return  # Policia no toca modos
+
+    # Obtenemos estado actual para invertirlo
+    estado_actual = modelo.get_estado_actuadores().get(actuador_id, {})
+    modo_actual = estado_actual.get("mode", "manual")
+    nuevo_modo = "manual" if modo_actual == "auto" else "auto"
+
+    modelo.set_modo_actuador(actuador_id, nuevo_modo)
+    # No hace falta refrescar pagina completa, el hilo del dashboard actualizará el color del boton
 
 
 def on_ver_camaras_click(e): e.page.go("/camaras")
@@ -99,7 +123,6 @@ def on_ver_grabacion_video_click(e): e.page.go("/video")
 def on_ver_historico_click(e): e.page.go("/historico")
 
 
-# --- Nuevos Handlers Configuración ---
 def on_configuracion_click(e): e.page.go("/config")
 
 
@@ -171,7 +194,8 @@ def main(page: ft.Page):
                 on_borrar_preso_click, on_ver_camaras_click,
                 on_abrir_crear_preso, on_abrir_editar_preso,
                 on_ver_historico_click,
-                on_configuracion_click
+                on_configuracion_click,
+                on_cambiar_modo_click  # <--- NUEVO PARAMETRO AÑADIDO
             ))
 
         elif route == "/config":

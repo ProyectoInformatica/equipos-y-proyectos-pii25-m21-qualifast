@@ -13,8 +13,7 @@ SENSORES_FILE = 'modelo/sensores_log.json'
 HISTORICO_ACTUADORES_FILE = 'modelo/puertas_log.json'
 CONFIG_FILE = 'modelo/configuracion.json'
 
-# --- CACHÉ EN MEMORIA (Para velocidad real-time) ---
-# Estas variables almacenan el estado actual en RAM para que la vista no tenga que leer disco siempre.
+# --- CACHÉ EN MEMORIA ---
 _CACHE_ACTUADORES = {}
 _CACHE_SENSORES = []
 
@@ -28,13 +27,14 @@ def inicializar_archivos_json():
     if not os.path.exists(PRESOS_FILE): _escribir_json(PRESOS_FILE, [])
 
     if not os.path.exists(ACTUADORES_FILE):
+        # AHORA INCLUYEN "mode": "auto" POR DEFECTO
         actuadores_default = {
-            "door-1": {"estado": "cerrada", "label": "P1"},
-            "door-2": {"estado": "cerrada", "label": "P2"},
-            "door-3": {"estado": "cerrada", "label": "P3"},
-            "door-4": {"estado": "cerrada", "label": "P4"},
-            "leds": {"estado": "off"},
-            "fan": {"estado": "off"}
+            "door-1": {"estado": "cerrada", "label": "P1", "mode": "manual"},  # Puertas suelen ser manuales/rfid
+            "door-2": {"estado": "cerrada", "label": "P2", "mode": "manual"},
+            "door-3": {"estado": "cerrada", "label": "P3", "mode": "manual"},
+            "door-4": {"estado": "cerrada", "label": "P4", "mode": "manual"},
+            "leds": {"estado": "off", "mode": "auto"},
+            "fan": {"estado": "off", "mode": "auto"}
         }
         _escribir_json(ACTUADORES_FILE, actuadores_default)
 
@@ -46,14 +46,12 @@ def inicializar_archivos_json():
     # Cargar caché inicial desde disco
     _CACHE_ACTUADORES = _leer_json(ACTUADORES_FILE)
     _CACHE_SENSORES = _leer_json(SENSORES_FILE)
-    # Limitamos caché sensores en memoria para no saturar RAM
     if len(_CACHE_SENSORES) > 200:
         _CACHE_SENSORES = _CACHE_SENSORES[-200:]
 
 
 # --- Funciones Auxiliares ---
 def _leer_json(archivo):
-    # Intentos de lectura robusta
     intentos = 3
     while intentos > 0:
         try:
@@ -87,12 +85,11 @@ def save_configuracion(data):
 
 
 def verificar_automatizacion(ultimos_datos):
-    """Lógica de control automático basada en los últimos datos recibidos."""
+    """Lógica de control automático revisada."""
     config = get_configuracion()
     umbral_temp = float(config.get("temp_max", 28.0))
     umbral_luz = float(config.get("luz_min", 400.0))
 
-    # Trabajamos sobre la caché para máxima velocidad
     global _CACHE_ACTUADORES
     actuadores = _CACHE_ACTUADORES
 
@@ -111,8 +108,10 @@ def verificar_automatizacion(ultimos_datos):
             continue
 
     cambio = False
-    # Ventilador
-    if temp_val is not None:
+
+    # Ventilador - SOLO SI ESTÁ EN MODO AUTO
+    modo_fan = actuadores.get('fan', {}).get('mode', 'auto')
+    if modo_fan == "auto" and temp_val is not None:
         estado_fan = actuadores.get('fan', {}).get('estado', 'off')
         if temp_val > umbral_temp and estado_fan == "off":
             set_estado_actuador("fan", "on", "AUTO-SISTEMA")
@@ -121,8 +120,9 @@ def verificar_automatizacion(ultimos_datos):
             set_estado_actuador("fan", "off", "AUTO-SISTEMA")
             cambio = True
 
-    # Luces
-    if luz_val is not None:
+    # Luces - SOLO SI ESTÁ EN MODO AUTO
+    modo_led = actuadores.get('leds', {}).get('mode', 'auto')
+    if modo_led == "auto" and luz_val is not None:
         estado_led = actuadores.get('leds', {}).get('estado', 'off')
         if luz_val < umbral_luz and estado_led == "off":
             set_estado_actuador("leds", "on", "AUTO-SISTEMA")
@@ -134,34 +134,25 @@ def verificar_automatizacion(ultimos_datos):
 
 # --- SENSORES ---
 def registrar_dato_sensor(datos):
-    """Guarda en RAM (para la vista) y en DISCO (para historial)."""
     global _CACHE_SENSORES
-
-    # 1. Actualizar RAM (Instantáneo)
     _CACHE_SENSORES.extend(datos)
     if len(_CACHE_SENSORES) > 200:
         _CACHE_SENSORES = _CACHE_SENSORES[-200:]
 
-    # 2. Actualizar DISCO (Persistencia)
-    # Leemos el disco completo para no perder datos viejos que no estén en caché RAM
     log_disco = _leer_json(SENSORES_FILE)
     log_disco.extend(datos)
     if len(log_disco) > 1000: log_disco = log_disco[-1000:]
     _escribir_json(SENSORES_FILE, log_disco)
 
-    # 3. Automatización
     verificar_automatizacion(datos)
 
 
 def get_ultimos_sensores_raw():
-    """Devuelve datos desde la CACHÉ DE MEMORIA. Cero latencia."""
     global _CACHE_SENSORES
-    # Devolvemos una copia de los últimos 20 para el dashboard
     return list(_CACHE_SENSORES[-20:])
 
 
 def get_log_sensores_filtrado(horas=24):
-    """Para históricos usamos el disco porque necesitamos más datos."""
     todos = _leer_json(SENSORES_FILE)
     res = []
     limite = datetime.now() - timedelta(hours=horas)
@@ -196,7 +187,6 @@ def get_promedio_sensores_por_hora():
 
 # --- ACTUADORES ---
 def get_estado_actuadores():
-    """Devuelve estado desde CACHÉ DE MEMORIA."""
     global _CACHE_ACTUADORES
     return dict(_CACHE_ACTUADORES)
 
@@ -215,18 +205,43 @@ def set_estado_actuador(uid, estado, user="sistema"):
     return _actualizar_actuador(uid, estado, user)
 
 
+def set_modo_actuador(uid, modo):
+    """Cambia entre 'auto' y 'manual'."""
+    global _CACHE_ACTUADORES
+
+    # 1. Actualizar RAM
+    if uid in _CACHE_ACTUADORES:
+        _CACHE_ACTUADORES[uid]['mode'] = modo
+
+    # 2. Actualizar Disco
+    actuadores_disco = _leer_json(ACTUADORES_FILE)
+    if uid in actuadores_disco:
+        actuadores_disco[uid]['mode'] = modo
+        _escribir_json(ACTUADORES_FILE, actuadores_disco)
+        return True
+    return False
+
+
 def _actualizar_actuador(uid, estado, user):
     global _CACHE_ACTUADORES
 
-    # 1. Actualizar RAM primero
+    # 1. Actualizar RAM
     if uid in _CACHE_ACTUADORES:
-        if _CACHE_ACTUADORES[uid]['estado'] == estado: return True  # Sin cambios
+        # Aseguramos que existe la clave mode si no estaba
+        if 'mode' not in _CACHE_ACTUADORES[uid]:
+            _CACHE_ACTUADORES[uid]['mode'] = 'manual'
+
+        if _CACHE_ACTUADORES[uid]['estado'] == estado: return True
         _CACHE_ACTUADORES[uid]['estado'] = estado
 
     # 2. Actualizar DISCO
     actuadores_disco = _leer_json(ACTUADORES_FILE)
     if uid in actuadores_disco:
         actuadores_disco[uid]['estado'] = estado
+        # Si venía de una versión vieja sin 'mode', lo preservamos o ponemos default
+        if 'mode' not in actuadores_disco[uid]:
+            actuadores_disco[uid]['mode'] = 'manual'
+
         _escribir_json(ACTUADORES_FILE, actuadores_disco)
 
         hist = _leer_json(HISTORICO_ACTUADORES_FILE)
