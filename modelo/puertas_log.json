@@ -14173,5 +14173,33 @@
         "label": "Iluminaci\u00f3n",
         "accion": "on",
         "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2025-12-16 18:45:41",
+        "id": "fan",
+        "label": "Ventilaci\u00f3n",
+        "accion": "on",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2025-12-16 18:45:41",
+        "id": "leds",
+        "label": "Iluminaci\u00f3n",
+        "accion": "off",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2025-12-16 18:45:46",
+        "id": "fan",
+        "label": "Ventilaci\u00f3n",
+        "accion": "off",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2025-12-16 18:45:51",
+        "id": "fan",
+        "label": "Ventilaci\u00f3n",
+        "accion": "on",
+        "usuario": "AUTO-SISTEMA"
     }
 ]
