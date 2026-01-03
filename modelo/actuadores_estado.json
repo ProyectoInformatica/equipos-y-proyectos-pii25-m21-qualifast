@@ -5,7 +5,7 @@
         "mode": "manual"
     },
     "door-2": {
-        "estado": "abierta",
+        "estado": "cerrada",
         "label": "P2",
         "mode": "manual"
     },

@@ -19,5 +19,12 @@
         "delito": "corrupcion",
         "celda": "Celda 1",
         "fecha_ingreso": "28/11/2025 19:15"
+    },
+    {
+        "id": 10,
+        "nombre": "Maduro",
+        "delito": "Narcoterrorismo",
+        "celda": "Celda 4",
+        "fecha_ingreso": "03/01/2026 17:02"
     }
 ]

@@ -32,7 +32,6 @@ def ejecutar_simulador():
                 datos.append({"timestamp": timestamp, "sensor": s, "valor": val})
 
             modelo.registrar_dato_sensor(datos)
-            print(f"[{timestamp}] Simulador: Datos generados y guardados.")
             time.sleep(5)
         except Exception as e:
             print(f"Error simulador: {e}")
@@ -72,23 +71,11 @@ def on_refrescar_click(e):
 def on_control_actuador_click(e, actuador_id, valor_objetivo=None):
     page = e.page
     usuario = page.session.get("user_name") or "desconocido"
-    rol = page.session.get("user_rol")
-
-    if rol == "policia":
+    if page.session.get("user_rol") == "policia":
         page.snack_bar = ft.SnackBar(ft.Text("Permiso denegado."), bgcolor="red")
         page.snack_bar.open = True
         page.update()
         return
-
-    # Verificar si está en modo AUTO, en cuyo caso no se debería tocar manualmente (doble check)
-    if "door" not in actuador_id:  # Puertas no tienen modo auto completo en este ejemplo
-        datos_actuales = modelo.get_estado_actuadores().get(actuador_id, {})
-        if datos_actuales.get("mode") == "auto":
-            page.snack_bar = ft.SnackBar(ft.Text("Dispositivo en modo AUTO. Cambie a manual para operar."),
-                                         bgcolor="orange")
-            page.snack_bar.open = True
-            page.update()
-            return
 
     if "door" in actuador_id:
         modelo.toggle_actuador(actuador_id, usuario)
@@ -96,21 +83,24 @@ def on_control_actuador_click(e, actuador_id, valor_objetivo=None):
         modelo.set_estado_actuador(actuador_id, valor_objetivo, usuario)
 
 
-# --- NUEVO HANDLER PARA EL BOTÓN AUTO/MANUAL ---
+# --- NUEVO: Controlador para el botón de Modo ---
 def on_cambiar_modo_click(e, actuador_id):
-    page = e.page
-    if page.session.get("user_rol") == "policia":
-        return  # Policia no toca modos
+    """Alterna entre Auto y Manual"""
+    estados = modelo.get_estado_actuadores()
+    modo_actual = estados.get(actuador_id, {}).get("mode", "manual")
 
-    # Obtenemos estado actual para invertirlo
-    estado_actual = modelo.get_estado_actuadores().get(actuador_id, {})
-    modo_actual = estado_actual.get("mode", "manual")
     nuevo_modo = "manual" if modo_actual == "auto" else "auto"
-
     modelo.set_modo_actuador(actuador_id, nuevo_modo)
-    # No hace falta refrescar pagina completa, el hilo del dashboard actualizará el color del boton
+
+    # Notificar usuario
+    e.page.snack_bar = ft.SnackBar(ft.Text(f"{actuador_id.upper()} cambiado a modo {nuevo_modo.upper()}"),
+                                   bgcolor="blue")
+    e.page.snack_bar.open = True
+    e.page.update()
+    # No hace falta refrescar toda la página, el hilo del dashboard actualizará el botón
 
 
+# --- NAVEGACIÓN Y OTROS HANDLERS ---
 def on_ver_camaras_click(e): e.page.go("/camaras")
 
 
@@ -133,7 +123,6 @@ def on_guardar_config_click(e, nuevos_datos):
     e.page.go("/dashboard")
 
 
-# --- Handlers Presos/Usuarios ---
 def guardar_nuevo_preso(e, datos, dialogo):
     if modelo.add_preso(datos.get("nombre"), datos.get("delito"), datos.get("celda")):
         e.page.close(dialogo);
@@ -195,7 +184,7 @@ def main(page: ft.Page):
                 on_abrir_crear_preso, on_abrir_editar_preso,
                 on_ver_historico_click,
                 on_configuracion_click,
-                on_cambiar_modo_click  # <--- NUEVO PARAMETRO AÑADIDO
+                on_cambiar_modo_click  # Pasamos el handler nuevo
             ))
 
         elif route == "/config":

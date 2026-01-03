@@ -25,7 +25,7 @@ def crear_dashboard_view(
         on_abrir_editar_preso,
         on_ver_historico_click,
         on_configuracion_click,
-        on_cambiar_modo_click  # <--- NUEVO PARAMETRO
+        on_cambiar_modo_click
 ):
     puede_controlar = (rol_usuario != 'policia')
     es_admin = (rol_usuario in ['comisario', 'inspector'])
@@ -114,6 +114,7 @@ def crear_dashboard_view(
         ft.Container(left=325, top=100, content=ft.Text(DEVICE_ICONS['mq-2'], size=20), tooltip="MQ-2"),
         ft.Container(left=400, top=80, content=ft.Text(DEVICE_ICONS['mq-135'], size=20), tooltip="MQ-135"),
         ft.Container(left=350, top=180, content=ft.Text(DEVICE_ICONS['dht22'], size=16), tooltip="DHT22"),
+        # Ubicaciones corregidas
         ft.Container(left=480, top=165, content=icon_fan_map, tooltip="Ventilación"),
         ft.Container(left=480, top=210, content=icon_led_map, tooltip="Iluminación Central"),
     ])
@@ -147,19 +148,19 @@ def crear_dashboard_view(
                           width=280, on_click=on_ver_historico_click))
     right_content.controls.append(ft.Divider(color=COLORS['muted']))
 
-    # --- INTERRUPTORES MANUALES ---
-    # Inicialmente disabled será controlado dinámicamente, pero empezamos asumiendo 'puede_controlar'
+    # --- INTERRUPTORES MANUALES (LÓGICA CORREGIDA) ---
+    # Corrección: Enviamos "on" si el valor es True, y "off" si es False.
     switch_led = ft.Switch(value=False, disabled=(not puede_controlar),
                            on_change=lambda e: on_control_actuador_click(e, "leds",
-                                                                         "off" if switch_led.value else "on"))
+                                                                         "on" if e.control.value else "off"))
     switch_fan = ft.Switch(value=False, disabled=(not puede_controlar),
-                           on_change=lambda e: on_control_actuador_click(e, "fan", "off" if switch_fan.value else "on"))
+                           on_change=lambda e: on_control_actuador_click(e, "fan",
+                                                                         "on" if e.control.value else "off"))
 
     # --- BOTONES AUTO/MANUAL ---
-    # Definimos los botones. Su color (verde/rojo) se actualizará en loop_refresh
     btn_auto_led = ft.Container(
         content=ft.Text("AUTO", size=10, weight="bold", color="white"),
-        bgcolor=COLORS['muted'],  # Color inicial temporal
+        bgcolor=COLORS['muted'],
         padding=5, border_radius=4,
         on_click=lambda e: on_cambiar_modo_click(e, "leds") if puede_controlar else None,
         tooltip="Click para alternar Auto/Manual"
@@ -167,7 +168,7 @@ def crear_dashboard_view(
 
     btn_auto_fan = ft.Container(
         content=ft.Text("AUTO", size=10, weight="bold", color="white"),
-        bgcolor=COLORS['muted'],  # Color inicial temporal
+        bgcolor=COLORS['muted'],
         padding=5, border_radius=4,
         on_click=lambda e: on_cambiar_modo_click(e, "fan") if puede_controlar else None,
         tooltip="Click para alternar Auto/Manual"
@@ -191,7 +192,7 @@ def crear_dashboard_view(
             [
                 ft.Text(f"{DEVICE_ICONS['leds']} Iluminación LED", color=COLORS['text'], size=12),
                 ft.Container(expand=True),
-                btn_auto_led,  # Botón AUTO
+                btn_auto_led,
                 ft.Container(width=5),
                 switch_led
             ])),
@@ -201,7 +202,7 @@ def crear_dashboard_view(
             [
                 ft.Text(f"{DEVICE_ICONS['fan']} Ventilador 5V", color=COLORS['text'], size=12),
                 ft.Container(expand=True),
-                btn_auto_fan,  # Botón AUTO
+                btn_auto_fan,
                 ft.Container(width=5),
                 switch_fan
             ])),
@@ -244,12 +245,13 @@ def crear_dashboard_view(
     right_column = ft.Container(width=320, bgcolor=COLORS['card'], padding=14, expand=False, content=right_content,
                                 border=ft.border.all(1, COLORS['glass']))
 
-    # --- LÓGICA DE ACTUALIZACIÓN (USANDO CACHÉ) ---
+    # --- LÓGICA DE ACTUALIZACIÓN ---
     def actualizar_estado_interfaz():
+        # Verificación de seguridad: si la columna no está en la página, no actualizamos nada
         if not left_column.page:
             return
 
-        # 1. Sensores
+        # 1. Actualizar Sensores
         try:
             datos_sens = modelo.get_ultimos_sensores_raw()
             ultimos = {l['sensor']: l for l in datos_sens} if datos_sens else {}
@@ -257,20 +259,23 @@ def crear_dashboard_view(
             for nombre, (ctrl_val, ctrl_hora) in mapa_controles_sensores.items():
                 if nombre in ultimos:
                     d = ultimos[nombre]
+
+                    # Corrección Error: Comprobar si el control sigue en la página antes de update
                     if ctrl_val.value != str(d['valor']):
                         ctrl_val.value = str(d['valor'])
-                        ctrl_val.update()
+                        if ctrl_val.page: ctrl_val.update()
+
                     try:
                         hora_str = f"Actualizado: {d['timestamp'].split(' ')[1]}"
                         if ctrl_hora.value != hora_str:
                             ctrl_hora.value = hora_str
-                            ctrl_hora.update()
+                            if ctrl_hora.page: ctrl_hora.update()
                     except:
                         pass
         except Exception as e:
-            print(f"Error actualizando sensores: {e}")
+            print(f"Error leve actualizando sensores: {e}")
 
-        # 2. Actuadores
+        # 2. Actualizar Actuadores
         try:
             estados = modelo.get_estado_actuadores()
 
@@ -280,80 +285,75 @@ def crear_dashboard_view(
                 col = COLORS['door_open'] if st == "abierta" else COLORS['door_closed']
                 if cnt.bgcolor != col:
                     cnt.bgcolor = col
-                    cnt.update()
+                    if cnt.page: cnt.update()
 
-            # --- GESTIÓN DE MODO AUTO/MANUAL (LED y FAN) ---
-
-            # --- LEDS ---
+            # LEDS
             data_led = estados.get("leds", {})
             st_led = data_led.get("estado", "off")
-            mode_led = data_led.get("mode", "manual")  # Default manual por si acaso
+            mode_led = data_led.get("mode", "manual")
 
-            # Actualizar Switch Visual
             nuevo_valor_led = (st_led == "on")
             if switch_led.value != nuevo_valor_led:
                 switch_led.value = nuevo_valor_led
-                switch_led.update()
+                if switch_led.page: switch_led.update()
 
-            # Actualizar Botón AUTO (LED)
             color_btn_led = COLORS['good'] if mode_led == "auto" else COLORS['bad']
             if btn_auto_led.bgcolor != color_btn_led:
                 btn_auto_led.bgcolor = color_btn_led
-                btn_auto_led.update()
+                if btn_auto_led.page: btn_auto_led.update()
 
-            # Bloquear Switch si está en AUTO (o si es policía)
             should_disable_led = (not puede_controlar) or (mode_led == "auto")
             if switch_led.disabled != should_disable_led:
                 switch_led.disabled = should_disable_led
-                switch_led.update()
+                if switch_led.page: switch_led.update()
 
-            # --- FAN ---
+            # FAN
             data_fan = estados.get("fan", {})
             st_fan = data_fan.get("estado", "off")
             mode_fan = data_fan.get("mode", "manual")
 
-            # Actualizar Switch Visual
             nuevo_valor_fan = (st_fan == "on")
             if switch_fan.value != nuevo_valor_fan:
                 switch_fan.value = nuevo_valor_fan
-                switch_fan.update()
+                if switch_fan.page: switch_fan.update()
 
-            # Actualizar Botón AUTO (FAN)
             color_btn_fan = COLORS['good'] if mode_fan == "auto" else COLORS['bad']
             if btn_auto_fan.bgcolor != color_btn_fan:
                 btn_auto_fan.bgcolor = color_btn_fan
-                btn_auto_fan.update()
+                if btn_auto_fan.page: btn_auto_fan.update()
 
-            # Bloquear Switch si está en AUTO (o si es policía)
             should_disable_fan = (not puede_controlar) or (mode_fan == "auto")
             if switch_fan.disabled != should_disable_fan:
                 switch_fan.disabled = should_disable_fan
-                switch_fan.update()
+                if switch_fan.page: switch_fan.update()
 
             # Iconos mapa
             col_fan = COLORS['accent'] if st_fan == "on" else COLORS['muted']
             if icon_fan_map.color != col_fan:
                 icon_fan_map.color = col_fan
-                icon_fan_map.update()
+                if icon_fan_map.page: icon_fan_map.update()
 
             col_led = "yellow" if st_led == "on" else COLORS['muted']
             if icon_led_map.color != col_led:
                 icon_led_map.color = col_led
-                icon_led_map.update()
+                if icon_led_map.page: icon_led_map.update()
 
         except Exception as e:
-            print(f"Error actualizando actuadores: {e}")
+            print(f"Error leve actualizando actuadores: {e}")
 
     def loop_refresh():
+        # Espera inicial para asegurar montaje
         time.sleep(1.0)
         while True:
+            # Si el componente principal ya no tiene página, se ha desmontado -> salir
             if left_column.page is None:
-                time.sleep(0.5)
-                if left_column.page is None: break
+                break
+
             try:
                 actualizar_estado_interfaz()
-            except Exception as e:
-                print(f"Error fatal loop: {e}")
+            except Exception:
+                pass  # Ignorar errores transitorios de renderizado
+
             time.sleep(0.5)
 
     threading.Thread(target=loop_refresh, daemon=True).start()
