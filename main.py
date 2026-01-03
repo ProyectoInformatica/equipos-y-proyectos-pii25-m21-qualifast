@@ -9,7 +9,7 @@ from vista import vista_login, vista_dashboard_sensores, vista_camaras, vista_ge
     vista_configuracion
 
 
-# --- SIMULADOR IOT ---
+# --- SIMULADOR IOT (Back-end task) ---
 def ejecutar_simulador():
     sensores = ["DHT11 - Temperatura", "DHT11 - Humedad", "LDR - Luz", "MQ-2 - Humo", "MQ-135 - Aire"]
     print(">>> INICIANDO SIMULADOR IOT (2º Plano) <<<")
@@ -42,7 +42,43 @@ hilo_simulador = threading.Thread(target=ejecutar_simulador, daemon=True)
 hilo_simulador.start()
 
 
-# --- CONTROLADORES ---
+# --- HILO CONTROLADOR DE UI (MVC STRICT) ---
+def loop_controlador_ui(page):
+    """
+    Este hilo pertenece al CONTROLADOR.
+    1. Obtiene datos del MODELO.
+    2. Actualiza la VISTA activa si corresponde.
+    """
+    while True:
+        try:
+            # Solo trabajamos si hay vistas y estamos en dashboard
+            if not page.views or page.route != "/dashboard":
+                time.sleep(1)
+                continue
+
+            # Obtenemos la vista actual
+            vista_actual = page.views[-1]
+
+            # Verificamos si la vista tiene el "puerto" de entrada de datos (callback)
+            if hasattr(vista_actual, 'data') and isinstance(vista_actual.data, dict):
+                callback = vista_actual.data.get("update_callback")
+
+                if callback:
+                    # 1. PEDIR DATOS AL MODELO (RAM Cache = Rápido)
+                    datos_sensores = modelo.get_ultimos_sensores_raw()
+                    datos_actuadores = modelo.get_estado_actuadores()
+
+                    # 2. INYECTAR DATOS A LA VISTA
+                    callback(datos_sensores, datos_actuadores)
+
+            time.sleep(0.5)  # Refresco controlado por el Controlador
+
+        except Exception as e:
+            print(f"Error Loop Controlador: {e}")
+            time.sleep(1)
+
+
+# --- HANDLERS (CONTROLADOR) ---
 def on_login_click(e, campo_usuario, campo_password, texto_error):
     page = e.page
     rol = modelo.validar_usuario(campo_usuario.value, campo_password.value)
@@ -83,24 +119,20 @@ def on_control_actuador_click(e, actuador_id, valor_objetivo=None):
         modelo.set_estado_actuador(actuador_id, valor_objetivo, usuario)
 
 
-# --- NUEVO: Controlador para el botón de Modo ---
 def on_cambiar_modo_click(e, actuador_id):
     """Alterna entre Auto y Manual"""
     estados = modelo.get_estado_actuadores()
     modo_actual = estados.get(actuador_id, {}).get("mode", "manual")
-
     nuevo_modo = "manual" if modo_actual == "auto" else "auto"
     modelo.set_modo_actuador(actuador_id, nuevo_modo)
 
-    # Notificar usuario
     e.page.snack_bar = ft.SnackBar(ft.Text(f"{actuador_id.upper()} cambiado a modo {nuevo_modo.upper()}"),
                                    bgcolor="blue")
     e.page.snack_bar.open = True
     e.page.update()
-    # No hace falta refrescar toda la página, el hilo del dashboard actualizará el botón
 
 
-# --- NAVEGACIÓN Y OTROS HANDLERS ---
+# Navegación
 def on_ver_camaras_click(e): e.page.go("/camaras")
 
 
@@ -123,6 +155,7 @@ def on_guardar_config_click(e, nuevos_datos):
     e.page.go("/dashboard")
 
 
+# Gestión Datos CRUD
 def guardar_nuevo_preso(e, datos, dialogo):
     if modelo.add_preso(datos.get("nombre"), datos.get("delito"), datos.get("celda")):
         e.page.close(dialogo);
@@ -150,11 +183,14 @@ def on_crear_usuario_click(e, u, p, r):
     if modelo.add_usuario(u.value, p.value, r.value): on_refrescar_click(e)
 
 
-# --- ROUTER ---
+# --- ROUTER PRINCIPAL ---
 def main(page: ft.Page):
     page.title = "Comisaría IoT"
     page.theme_mode = ft.ThemeMode.DARK
     page.padding = 0
+
+    # Iniciamos el hilo Controlador de UI
+    threading.Thread(target=loop_controlador_ui, args=(page,), daemon=True).start()
 
     def route_change(evt):
         route = evt.route
@@ -172,6 +208,7 @@ def main(page: ft.Page):
             page.views.append(vista_login.crear_vista_login(on_login_click))
 
         elif route == "/dashboard":
+            # Pasamos datos iniciales, pero el hilo se encargará de refrescar
             logs_recientes = modelo.get_log_sensores_filtrado(horas=24)
             page.views.append(vista_dashboard_sensores.crear_dashboard_view(
                 page, rol, user_name,
@@ -184,7 +221,7 @@ def main(page: ft.Page):
                 on_abrir_crear_preso, on_abrir_editar_preso,
                 on_ver_historico_click,
                 on_configuracion_click,
-                on_cambiar_modo_click  # Pasamos el handler nuevo
+                on_cambiar_modo_click
             ))
 
         elif route == "/config":
@@ -199,6 +236,8 @@ def main(page: ft.Page):
                                                                 on_ver_grabacion_video_click))
 
         elif route == "/historico":
+            # La vista paginada ya se encarga de pedir más datos si es necesario (MVC Híbrido aceptable para listas largas)
+            # Idealmente, el "Cargar más" debería llamar a un handler del controlador, pero por rendimiento pasamos todo al inicio.
             page.views.append(vista_historico.crear_vista_historico(
                 datos_promedio_sensores=modelo.get_promedio_sensores_por_hora(),
                 datos_log_actuadores=modelo.get_log_historico_completo(dias=7),

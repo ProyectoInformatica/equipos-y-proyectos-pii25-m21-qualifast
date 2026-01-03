@@ -1,11 +1,10 @@
 import flet as ft
-import threading
-import time
 from vista.temas import COLORS, DEVICE_ICONS
 import vista.vista_gestion_presos
 import vista.vista_gestion_usuarios
-import modelo.manejador_datos as modelo
 
+
+# NOTA MVC: Esta vista NO importa el modelo. Solo recibe datos y emite eventos.
 
 def crear_dashboard_view(
         page: ft.Page,
@@ -114,7 +113,6 @@ def crear_dashboard_view(
         ft.Container(left=325, top=100, content=ft.Text(DEVICE_ICONS['mq-2'], size=20), tooltip="MQ-2"),
         ft.Container(left=400, top=80, content=ft.Text(DEVICE_ICONS['mq-135'], size=20), tooltip="MQ-135"),
         ft.Container(left=350, top=180, content=ft.Text(DEVICE_ICONS['dht22'], size=16), tooltip="DHT22"),
-        # Ubicaciones corregidas
         ft.Container(left=480, top=165, content=icon_fan_map, tooltip="Ventilación"),
         ft.Container(left=480, top=210, content=icon_led_map, tooltip="Iluminación Central"),
     ])
@@ -134,10 +132,9 @@ def crear_dashboard_view(
     bottom_row = ft.Container(height=450, content=ft.Row(
         [ft.Container(content=vista_presos, expand=1), ft.Container(content=vista_usuarios, expand=1)], spacing=12,
         expand=True))
-
     left_column = ft.Column(spacing=12, expand=True, scroll=ft.ScrollMode.AUTO, controls=[topbar, map_card, bottom_row])
 
-    # --- PANEL DERECHO (ACTUADORES) ---
+    # --- PANEL DERECHO ---
     right_content = ft.Column(spacing=12, expand=True)
     if es_admin:
         right_content.controls.append(
@@ -148,65 +145,34 @@ def crear_dashboard_view(
                           width=280, on_click=on_ver_historico_click))
     right_content.controls.append(ft.Divider(color=COLORS['muted']))
 
-    # --- INTERRUPTORES MANUALES (LÓGICA CORREGIDA) ---
-    # Corrección: Enviamos "on" si el valor es True, y "off" si es False.
     switch_led = ft.Switch(value=False, disabled=(not puede_controlar),
-                           on_change=lambda e: on_control_actuador_click(e, "leds",
-                                                                         "on" if e.control.value else "off"))
+                           on_change=lambda e: on_control_actuador_click(e, "leds", "on" if e.control.value else "off"))
     switch_fan = ft.Switch(value=False, disabled=(not puede_controlar),
-                           on_change=lambda e: on_control_actuador_click(e, "fan",
-                                                                         "on" if e.control.value else "off"))
+                           on_change=lambda e: on_control_actuador_click(e, "fan", "on" if e.control.value else "off"))
 
-    # --- BOTONES AUTO/MANUAL ---
-    btn_auto_led = ft.Container(
-        content=ft.Text("AUTO", size=10, weight="bold", color="white"),
-        bgcolor=COLORS['muted'],
-        padding=5, border_radius=4,
-        on_click=lambda e: on_cambiar_modo_click(e, "leds") if puede_controlar else None,
-        tooltip="Click para alternar Auto/Manual"
-    )
-
-    btn_auto_fan = ft.Container(
-        content=ft.Text("AUTO", size=10, weight="bold", color="white"),
-        bgcolor=COLORS['muted'],
-        padding=5, border_radius=4,
-        on_click=lambda e: on_cambiar_modo_click(e, "fan") if puede_controlar else None,
-        tooltip="Click para alternar Auto/Manual"
-    )
+    btn_auto_led = ft.Container(content=ft.Text("AUTO", size=10, weight="bold", color="white"), bgcolor=COLORS['muted'],
+                                padding=5, border_radius=4,
+                                on_click=lambda e: on_cambiar_modo_click(e, "leds") if puede_controlar else None,
+                                tooltip="Click para alternar Auto/Manual")
+    btn_auto_fan = ft.Container(content=ft.Text("AUTO", size=10, weight="bold", color="white"), bgcolor=COLORS['muted'],
+                                padding=5, border_radius=4,
+                                on_click=lambda e: on_cambiar_modo_click(e, "fan") if puede_controlar else None,
+                                tooltip="Click para alternar Auto/Manual")
 
     right_content.controls.extend([
         ft.Text("Actuadores y Sistema", size=12, weight="bold", color=COLORS['text']),
-
-        # ESP32
         ft.Container(bgcolor=COLORS['glass'], padding=5, border_radius=5, content=ft.Row(
             [ft.Text(f"{DEVICE_ICONS['esp32']} ESP32 Controller", color=COLORS['text'], size=12),
              ft.Container(expand=True), ft.Text("ONLINE", color=COLORS['good'], size=10, weight="bold")])),
-
-        # Puertas
         ft.Container(bgcolor=COLORS['glass'], padding=5, border_radius=5, content=ft.Row(
             [ft.Text(f"{DEVICE_ICONS['motor']} Motor DC (Puertas)", color=COLORS['text'], size=12),
              ft.Container(expand=True), ft.Text("MANUAL", color=COLORS['accent'], size=10, weight="bold")])),
-
-        # Iluminación
         ft.Container(bgcolor=COLORS['glass'], padding=5, border_radius=5, content=ft.Row(
-            [
-                ft.Text(f"{DEVICE_ICONS['leds']} Iluminación LED", color=COLORS['text'], size=12),
-                ft.Container(expand=True),
-                btn_auto_led,
-                ft.Container(width=5),
-                switch_led
-            ])),
-
-        # Ventilador
+            [ft.Text(f"{DEVICE_ICONS['leds']} Iluminación LED", color=COLORS['text'], size=12),
+             ft.Container(expand=True), btn_auto_led, ft.Container(width=5), switch_led])),
         ft.Container(bgcolor=COLORS['glass'], padding=5, border_radius=5, content=ft.Row(
-            [
-                ft.Text(f"{DEVICE_ICONS['fan']} Ventilador 5V", color=COLORS['text'], size=12),
-                ft.Container(expand=True),
-                btn_auto_fan,
-                ft.Container(width=5),
-                switch_fan
-            ])),
-
+            [ft.Text(f"{DEVICE_ICONS['fan']} Ventilador 5V", color=COLORS['text'], size=12), ft.Container(expand=True),
+             btn_auto_fan, ft.Container(width=5), switch_fan])),
         ft.Divider(height=10, color=COLORS['muted']),
         ft.Text("Monitor de Sensores (Tiempo Real)", size=12, weight="bold", color=COLORS['text'])
     ])
@@ -245,118 +211,95 @@ def crear_dashboard_view(
     right_column = ft.Container(width=320, bgcolor=COLORS['card'], padding=14, expand=False, content=right_content,
                                 border=ft.border.all(1, COLORS['glass']))
 
-    # --- LÓGICA DE ACTUALIZACIÓN ---
-    def actualizar_estado_interfaz():
-        # Verificación de seguridad: si la columna no está en la página, no actualizamos nada
-        if not left_column.page:
-            return
+    # --- FUNCIÓN DE ACTUALIZACIÓN MVC ---
+    # Esta función será llamada por el Controlador (Main), no por un hilo interno.
+    def actualizar_datos_externos(nuevos_sensores, nuevos_actuadores):
+        if not left_column.page: return  # Seguridad
 
-        # 1. Actualizar Sensores
+        # 1. Sensores
         try:
-            datos_sens = modelo.get_ultimos_sensores_raw()
-            ultimos = {l['sensor']: l for l in datos_sens} if datos_sens else {}
-
+            ultimos = {l['sensor']: l for l in nuevos_sensores} if nuevos_sensores else {}
             for nombre, (ctrl_val, ctrl_hora) in mapa_controles_sensores.items():
                 if nombre in ultimos:
                     d = ultimos[nombre]
-
-                    # Corrección Error: Comprobar si el control sigue en la página antes de update
                     if ctrl_val.value != str(d['valor']):
                         ctrl_val.value = str(d['valor'])
-                        if ctrl_val.page: ctrl_val.update()
-
+                        ctrl_val.update()
                     try:
-                        hora_str = f"Actualizado: {d['timestamp'].split(' ')[1]}"
-                        if ctrl_hora.value != hora_str:
-                            ctrl_hora.value = hora_str
-                            if ctrl_hora.page: ctrl_hora.update()
+                        h = f"Actualizado: {d['timestamp'].split(' ')[1]}"
+                        if ctrl_hora.value != h:
+                            ctrl_hora.value = h
+                            ctrl_hora.update()
                     except:
                         pass
-        except Exception as e:
-            print(f"Error leve actualizando sensores: {e}")
+        except Exception:
+            pass
 
-        # 2. Actualizar Actuadores
+        # 2. Actuadores
         try:
-            estados = modelo.get_estado_actuadores()
-
             # Puertas
             for pid, cnt in controles_puertas.items():
-                st = estados.get(pid, {}).get("estado", "cerrada")
+                st = nuevos_actuadores.get(pid, {}).get("estado", "cerrada")
                 col = COLORS['door_open'] if st == "abierta" else COLORS['door_closed']
                 if cnt.bgcolor != col:
                     cnt.bgcolor = col
-                    if cnt.page: cnt.update()
+                    cnt.update()
 
             # LEDS
-            data_led = estados.get("leds", {})
-            st_led = data_led.get("estado", "off")
-            mode_led = data_led.get("mode", "manual")
+            d_led = nuevos_actuadores.get("leds", {})
+            st_led = d_led.get("estado", "off")
+            mode_led = d_led.get("mode", "manual")
 
-            nuevo_valor_led = (st_led == "on")
-            if switch_led.value != nuevo_valor_led:
-                switch_led.value = nuevo_valor_led
-                if switch_led.page: switch_led.update()
+            if switch_led.value != (st_led == "on"):
+                switch_led.value = (st_led == "on")
+                switch_led.update()
 
-            color_btn_led = COLORS['good'] if mode_led == "auto" else COLORS['bad']
-            if btn_auto_led.bgcolor != color_btn_led:
-                btn_auto_led.bgcolor = color_btn_led
-                if btn_auto_led.page: btn_auto_led.update()
+            c_mode_led = COLORS['good'] if mode_led == "auto" else COLORS['bad']
+            if btn_auto_led.bgcolor != c_mode_led:
+                btn_auto_led.bgcolor = c_mode_led
+                btn_auto_led.update()
 
-            should_disable_led = (not puede_controlar) or (mode_led == "auto")
-            if switch_led.disabled != should_disable_led:
-                switch_led.disabled = should_disable_led
-                if switch_led.page: switch_led.update()
+            dis_led = (not puede_controlar) or (mode_led == "auto")
+            if switch_led.disabled != dis_led:
+                switch_led.disabled = dis_led
+                switch_led.update()
 
             # FAN
-            data_fan = estados.get("fan", {})
-            st_fan = data_fan.get("estado", "off")
-            mode_fan = data_fan.get("mode", "manual")
+            d_fan = nuevos_actuadores.get("fan", {})
+            st_fan = d_fan.get("estado", "off")
+            mode_fan = d_fan.get("mode", "manual")
 
-            nuevo_valor_fan = (st_fan == "on")
-            if switch_fan.value != nuevo_valor_fan:
-                switch_fan.value = nuevo_valor_fan
-                if switch_fan.page: switch_fan.update()
+            if switch_fan.value != (st_fan == "on"):
+                switch_fan.value = (st_fan == "on")
+                switch_fan.update()
 
-            color_btn_fan = COLORS['good'] if mode_fan == "auto" else COLORS['bad']
-            if btn_auto_fan.bgcolor != color_btn_fan:
-                btn_auto_fan.bgcolor = color_btn_fan
-                if btn_auto_fan.page: btn_auto_fan.update()
+            c_mode_fan = COLORS['good'] if mode_fan == "auto" else COLORS['bad']
+            if btn_auto_fan.bgcolor != c_mode_fan:
+                btn_auto_fan.bgcolor = c_mode_fan
+                btn_auto_fan.update()
 
-            should_disable_fan = (not puede_controlar) or (mode_fan == "auto")
-            if switch_fan.disabled != should_disable_fan:
-                switch_fan.disabled = should_disable_fan
-                if switch_fan.page: switch_fan.update()
+            dis_fan = (not puede_controlar) or (mode_fan == "auto")
+            if switch_fan.disabled != dis_fan:
+                switch_fan.disabled = dis_fan
+                switch_fan.update()
 
-            # Iconos mapa
-            col_fan = COLORS['accent'] if st_fan == "on" else COLORS['muted']
-            if icon_fan_map.color != col_fan:
-                icon_fan_map.color = col_fan
-                if icon_fan_map.page: icon_fan_map.update()
+            # Iconos
+            c_fan = COLORS['accent'] if st_fan == "on" else COLORS['muted']
+            if icon_fan_map.color != c_fan:
+                icon_fan_map.color = c_fan
+                icon_fan_map.update()
 
-            col_led = "yellow" if st_led == "on" else COLORS['muted']
-            if icon_led_map.color != col_led:
-                icon_led_map.color = col_led
-                if icon_led_map.page: icon_led_map.update()
+            c_led = "yellow" if st_led == "on" else COLORS['muted']
+            if icon_led_map.color != c_led:
+                icon_led_map.color = c_led
+                icon_led_map.update()
 
-        except Exception as e:
-            print(f"Error leve actualizando actuadores: {e}")
+        except Exception:
+            pass
 
-    def loop_refresh():
-        # Espera inicial para asegurar montaje
-        time.sleep(1.0)
-        while True:
-            # Si el componente principal ya no tiene página, se ha desmontado -> salir
-            if left_column.page is None:
-                break
-
-            try:
-                actualizar_estado_interfaz()
-            except Exception:
-                pass  # Ignorar errores transitorios de renderizado
-
-            time.sleep(0.5)
-
-    threading.Thread(target=loop_refresh, daemon=True).start()
-
-    return ft.View("/dashboard", controls=[ft.Row([left_column, right_column], spacing=18, expand=True)],
+    # Creamos la Vista y le adjuntamos el callback para el controlador
+    view = ft.View("/dashboard", controls=[ft.Row([left_column, right_column], spacing=18, expand=True)],
                    bgcolor=COLORS['bg'], padding=18)
+    view.data = {"update_callback": actualizar_datos_externos}
+
+    return view

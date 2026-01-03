@@ -20,7 +20,7 @@
         "mode": "manual"
     },
     "leds": {
-        "estado": "off",
+        "estado": "on",
         "mode": "auto"
     },
     "fan": {
