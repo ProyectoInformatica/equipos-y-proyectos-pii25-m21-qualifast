@@ -3708,5 +3708,383 @@
         "label": "Iluminaci\u00f3n",
         "accion": "on",
         "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:29:18",
+        "id": "fan",
+        "label": "Ventilaci\u00f3n",
+        "accion": "on",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:29:18",
+        "id": "leds",
+        "label": "Iluminaci\u00f3n",
+        "accion": "off",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:29:28",
+        "id": "fan",
+        "label": "Ventilaci\u00f3n",
+        "accion": "off",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:29:28",
+        "id": "leds",
+        "label": "Iluminaci\u00f3n",
+        "accion": "on",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:29:33",
+        "id": "fan",
+        "label": "Ventilaci\u00f3n",
+        "accion": "on",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:29:54",
+        "id": "fan",
+        "label": "Ventilaci\u00f3n",
+        "accion": "off",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:29:54",
+        "id": "leds",
+        "label": "Iluminaci\u00f3n",
+        "accion": "off",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:29:59",
+        "id": "leds",
+        "label": "Iluminaci\u00f3n",
+        "accion": "on",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:30:09",
+        "id": "fan",
+        "label": "Ventilaci\u00f3n",
+        "accion": "on",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:30:34",
+        "id": "fan",
+        "label": "Ventilaci\u00f3n",
+        "accion": "off",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:30:34",
+        "id": "leds",
+        "label": "Iluminaci\u00f3n",
+        "accion": "off",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:30:39",
+        "id": "leds",
+        "label": "Iluminaci\u00f3n",
+        "accion": "on",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:30:44",
+        "id": "fan",
+        "label": "Ventilaci\u00f3n",
+        "accion": "on",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:30:49",
+        "id": "fan",
+        "label": "Ventilaci\u00f3n",
+        "accion": "off",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:30:54",
+        "id": "leds",
+        "label": "Iluminaci\u00f3n",
+        "accion": "off",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:30:59",
+        "id": "leds",
+        "label": "Iluminaci\u00f3n",
+        "accion": "on",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:31:04",
+        "id": "fan",
+        "label": "Ventilaci\u00f3n",
+        "accion": "on",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:31:20",
+        "id": "fan",
+        "label": "Ventilaci\u00f3n",
+        "accion": "off",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:31:25",
+        "id": "leds",
+        "label": "Iluminaci\u00f3n",
+        "accion": "off",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:31:30",
+        "id": "leds",
+        "label": "Iluminaci\u00f3n",
+        "accion": "on",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:31:35",
+        "id": "leds",
+        "label": "Iluminaci\u00f3n",
+        "accion": "off",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:31:40",
+        "id": "fan",
+        "label": "Ventilaci\u00f3n",
+        "accion": "on",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:31:40",
+        "id": "leds",
+        "label": "Iluminaci\u00f3n",
+        "accion": "on",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:31:55",
+        "id": "leds",
+        "label": "Iluminaci\u00f3n",
+        "accion": "off",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:32:00",
+        "id": "leds",
+        "label": "Iluminaci\u00f3n",
+        "accion": "on",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:32:05",
+        "id": "fan",
+        "label": "Ventilaci\u00f3n",
+        "accion": "off",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:32:10",
+        "id": "leds",
+        "label": "Iluminaci\u00f3n",
+        "accion": "off",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:32:15",
+        "id": "leds",
+        "label": "Iluminaci\u00f3n",
+        "accion": "on",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:32:25",
+        "id": "fan",
+        "label": "Ventilaci\u00f3n",
+        "accion": "on",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:32:30",
+        "id": "fan",
+        "label": "Ventilaci\u00f3n",
+        "accion": "off",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:32:36",
+        "id": "fan",
+        "label": "Ventilaci\u00f3n",
+        "accion": "on",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:32:36",
+        "id": "leds",
+        "label": "Iluminaci\u00f3n",
+        "accion": "off",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:32:41",
+        "id": "leds",
+        "label": "Iluminaci\u00f3n",
+        "accion": "on",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:32:51",
+        "id": "leds",
+        "label": "Iluminaci\u00f3n",
+        "accion": "off",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:32:56",
+        "id": "fan",
+        "label": "Ventilaci\u00f3n",
+        "accion": "off",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:32:56",
+        "id": "leds",
+        "label": "Iluminaci\u00f3n",
+        "accion": "on",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:34:12",
+        "id": "fan",
+        "label": "Ventilaci\u00f3n",
+        "accion": "on",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:34:37",
+        "id": "fan",
+        "label": "Ventilaci\u00f3n",
+        "accion": "off",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:34:47",
+        "id": "fan",
+        "label": "Ventilaci\u00f3n",
+        "accion": "on",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:34:52",
+        "id": "fan",
+        "label": "Ventilaci\u00f3n",
+        "accion": "off",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:34:52",
+        "id": "leds",
+        "label": "Iluminaci\u00f3n",
+        "accion": "off",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:34:57",
+        "id": "fan",
+        "label": "Ventilaci\u00f3n",
+        "accion": "on",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:34:57",
+        "id": "leds",
+        "label": "Iluminaci\u00f3n",
+        "accion": "on",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:35:02",
+        "id": "fan",
+        "label": "Ventilaci\u00f3n",
+        "accion": "off",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:35:12",
+        "id": "fan",
+        "label": "Ventilaci\u00f3n",
+        "accion": "on",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:35:17",
+        "id": "leds",
+        "label": "Iluminaci\u00f3n",
+        "accion": "off",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:35:23",
+        "id": "fan",
+        "label": "Ventilaci\u00f3n",
+        "accion": "off",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:35:23",
+        "id": "leds",
+        "label": "Iluminaci\u00f3n",
+        "accion": "on",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:35:28",
+        "id": "fan",
+        "label": "Ventilaci\u00f3n",
+        "accion": "on",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:35:28",
+        "id": "leds",
+        "label": "Iluminaci\u00f3n",
+        "accion": "off",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:35:33",
+        "id": "fan",
+        "label": "Ventilaci\u00f3n",
+        "accion": "off",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:35:33",
+        "id": "leds",
+        "label": "Iluminaci\u00f3n",
+        "accion": "on",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:35:38",
+        "id": "fan",
+        "label": "Ventilaci\u00f3n",
+        "accion": "on",
+        "usuario": "AUTO-SISTEMA"
+    },
+    {
+        "timestamp": "2026-01-04 23:35:43",
+        "id": "fan",
+        "label": "Ventilaci\u00f3n",
+        "accion": "off",
+        "usuario": "AUTO-SISTEMA"
     }
 ]

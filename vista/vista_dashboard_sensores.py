@@ -109,11 +109,11 @@ def crear_dashboard_view(
     map_stack_controls.extend([
         ft.Container(left=580, top=30, content=ft.Icon(ft.Icons.VIDEOCAM, color="#fb7185", size=20), bgcolor="white",
                      border_radius=15, on_click=on_ver_camaras_click),
-        ft.Container(left=150, top=200, content=ft.Text(DEVICE_ICONS['ldr'], size=20), tooltip="LDR"),
-        ft.Container(left=325, top=100, content=ft.Text(DEVICE_ICONS['mq-2'], size=20), tooltip="MQ-2"),
-        ft.Container(left=400, top=80, content=ft.Text(DEVICE_ICONS['mq-135'], size=20), tooltip="MQ-135"),
-        ft.Container(left=350, top=180, content=ft.Text(DEVICE_ICONS['dht22'], size=16), tooltip="DHT22"),
-        ft.Container(left=480, top=165, content=icon_fan_map, tooltip="Ventilación"),
+        ft.Container(left=477, top=206, content=ft.Text(DEVICE_ICONS['ldr'], size=20), tooltip="LDR"),
+        ft.Container(left=600, top=179, content=ft.Text(DEVICE_ICONS['mq-2'], size=20), tooltip="MQ-2"),
+        ft.Container(left=345, top=245, content=ft.Text(DEVICE_ICONS['mq-135'], size=20), tooltip="MQ-135"),
+        ft.Container(left=345, top=180, content=ft.Text(DEVICE_ICONS['dht22'], size=16), tooltip="DHT22"),
+        ft.Container(left=400, top=165, content=icon_fan_map, tooltip="Ventilación"),
         ft.Container(left=480, top=210, content=icon_led_map, tooltip="Iluminación Central"),
     ])
 
