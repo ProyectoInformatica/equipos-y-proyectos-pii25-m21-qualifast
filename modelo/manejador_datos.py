@@ -2,6 +2,7 @@ import json
 import os
 import re
 import time
+import csv
 from datetime import datetime, timedelta
 from collections import defaultdict
 
@@ -296,6 +297,44 @@ def delete_preso(pid):
     lst = [p for p in _leer_json(PRESOS_FILE) if p['id'] != pid]
     _escribir_json(PRESOS_FILE, lst)
     return True
+
+
+def exportar_a_csv(nombre_archivo_json, ruta_destino):
+    """
+    Lee un archivo JSON de la carpeta modelo y lo guarda como CSV
+    en la ruta destino especificada.
+    """
+    try:
+        # Usamos tu función interna para leer
+        datos = _leer_json(nombre_archivo_json)
+
+        if not datos:
+            return False, "No hay datos para exportar."
+
+        # Convertir a lista si es un diccionario (para actuadores o config)
+        if isinstance(datos, dict):
+            # Transformamos dict a lista de filas para el CSV
+            datos_preparados = []
+            for k, v in datos.items():
+                if isinstance(v, dict):
+                    fila = {"id": k}
+                    fila.update(v)
+                    datos_preparados.append(fila)
+                else:
+                    datos_preparados.append({"parametro": k, "valor": v})
+            datos = datos_preparados
+
+        if isinstance(datos, list) and len(datos) > 0:
+            columnas = datos[0].keys()
+            with open(ruta_destino, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.DictWriter(f, fieldnames=columnas)
+                writer.writeheader()
+                writer.writerows(datos)
+            return True, f"Exportado correctamente a: {os.path.basename(ruta_destino)}"
+
+        return False, "Formato de datos no compatible."
+    except Exception as e:
+        return False, f"Error: {str(e)}"
 
 
 inicializar_archivos_json()
