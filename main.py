@@ -9,7 +9,7 @@ from vista import vista_login, vista_dashboard_sensores, vista_camaras, vista_ge
     vista_configuracion
 
 
-# --- SIMULADOR IOT (Back-end task) ---
+# --- SIMULADOR IOT (Hilo de Background) ---
 def ejecutar_simulador():
     sensores = ["DHT11 - Temperatura", "DHT11 - Humedad", "LDR - Luz", "MQ-2 - Humo", "MQ-135 - Aire"]
     print(">>> INICIANDO SIMULADOR IOT (2º Plano) <<<")
@@ -236,8 +236,6 @@ def main(page: ft.Page):
                                                                 on_ver_grabacion_video_click))
 
         elif route == "/historico":
-            # La vista paginada ya se encarga de pedir más datos si es necesario (MVC Híbrido aceptable para listas largas)
-            # Idealmente, el "Cargar más" debería llamar a un handler del controlador, pero por rendimiento pasamos todo al inicio.
             page.views.append(vista_historico.crear_vista_historico(
                 datos_promedio_sensores=modelo.get_promedio_sensores_por_hora(),
                 datos_log_actuadores=modelo.get_log_historico_completo(dias=7),

@@ -4,7 +4,7 @@ import vista.vista_gestion_presos
 import vista.vista_gestion_usuarios
 
 
-# NOTA MVC: Esta vista NO importa el modelo. Solo recibe datos y emite eventos.
+# NOTA: Ya no importamos 'modelo' ni 'threading'. Cumplimos MVC.
 
 def crear_dashboard_view(
         page: ft.Page,
@@ -30,7 +30,7 @@ def crear_dashboard_view(
     es_admin = (rol_usuario in ['comisario', 'inspector'])
 
     # --- HEADER ---
-    logo_img = ft.Image(src="logo.png", height=50, fit=ft.ImageFit.CONTAIN)
+    logo_img = ft.Image(src="logo.png", height=40, fit=ft.ImageFit.CONTAIN)
     brand_text = ft.Column([
         ft.Text("QUALIFAST BUILDINGS", size=16, weight=ft.FontWeight.W_900, color=COLORS['text'],
                 font_family="Verdana"),
@@ -211,88 +211,103 @@ def crear_dashboard_view(
     right_column = ft.Container(width=320, bgcolor=COLORS['card'], padding=14, expand=False, content=right_content,
                                 border=ft.border.all(1, COLORS['glass']))
 
-    # --- FUNCIÓN DE ACTUALIZACIÓN MVC ---
-    # Esta función será llamada por el Controlador (Main), no por un hilo interno.
-    def actualizar_datos_externos(nuevos_sensores, nuevos_actuadores):
-        if not left_column.page: return  # Seguridad
+    # --- FUNCIÓN PÚBLICA DE ACTUALIZACIÓN (MVC STRICT) ---
+    # Esta función NO llama al modelo. Recibe los datos ya procesados.
+    def actualizar_datos_ui(datos_sensores_raw, estados_actuadores):
+        if not left_column.page: return
 
-        # 1. Sensores
+        # 1. Actualizar Sensores
         try:
-            ultimos = {l['sensor']: l for l in nuevos_sensores} if nuevos_sensores else {}
+            ultimos = {l['sensor']: l for l in datos_sensores_raw} if datos_sensores_raw else {}
             for nombre, (ctrl_val, ctrl_hora) in mapa_controles_sensores.items():
                 if nombre in ultimos:
                     d = ultimos[nombre]
                     if ctrl_val.value != str(d['valor']):
                         ctrl_val.value = str(d['valor'])
-                        ctrl_val.update()
+                        if ctrl_val.page: ctrl_val.update()
+
                     try:
-                        h = f"Actualizado: {d['timestamp'].split(' ')[1]}"
-                        if ctrl_hora.value != h:
-                            ctrl_hora.value = h
-                            ctrl_hora.update()
+                        hora_str = f"Actualizado: {d['timestamp'].split(' ')[1]}"
+                        if ctrl_hora.value != hora_str:
+                            ctrl_hora.value = hora_str
+                            if ctrl_hora.page: ctrl_hora.update()
+                    except:
+                        pass
+
+                    # Alertas
+                    try:
+                        val_num = float(str(d['valor']).split(' ')[0])
+                        color_new = COLORS['text']
+                        if "Humo" in nombre and val_num > 50:
+                            color_new = COLORS['bad']
+                        elif "Temperatura" in nombre and val_num > 30:
+                            color_new = "orange"
+                        if ctrl_val.color != color_new:
+                            ctrl_val.color = color_new
+                            if ctrl_val.page: ctrl_val.update()
                     except:
                         pass
         except Exception:
             pass
 
-        # 2. Actuadores
+        # 2. Actualizar Actuadores
         try:
             # Puertas
             for pid, cnt in controles_puertas.items():
-                st = nuevos_actuadores.get(pid, {}).get("estado", "cerrada")
+                st = estados_actuadores.get(pid, {}).get("estado", "cerrada")
                 col = COLORS['door_open'] if st == "abierta" else COLORS['door_closed']
                 if cnt.bgcolor != col:
                     cnt.bgcolor = col
-                    cnt.update()
+                    if cnt.page: cnt.update()
 
             # LEDS
-            d_led = nuevos_actuadores.get("leds", {})
+            d_led = estados_actuadores.get("leds", {})
             st_led = d_led.get("estado", "off")
             mode_led = d_led.get("mode", "manual")
 
             if switch_led.value != (st_led == "on"):
                 switch_led.value = (st_led == "on")
-                switch_led.update()
+                if switch_led.page: switch_led.update()
 
             c_mode_led = COLORS['good'] if mode_led == "auto" else COLORS['bad']
             if btn_auto_led.bgcolor != c_mode_led:
                 btn_auto_led.bgcolor = c_mode_led
-                btn_auto_led.update()
+                if btn_auto_led.page: btn_auto_led.update()
 
             dis_led = (not puede_controlar) or (mode_led == "auto")
             if switch_led.disabled != dis_led:
                 switch_led.disabled = dis_led
-                switch_led.update()
+                if switch_led.page: switch_led.update()
 
             # FAN
-            d_fan = nuevos_actuadores.get("fan", {})
+            d_fan = estados_actuadores.get("fan", {})
             st_fan = d_fan.get("estado", "off")
             mode_fan = d_fan.get("mode", "manual")
 
             if switch_fan.value != (st_fan == "on"):
                 switch_fan.value = (st_fan == "on")
-                switch_fan.update()
+                if switch_fan.page: switch_fan.update()
 
             c_mode_fan = COLORS['good'] if mode_fan == "auto" else COLORS['bad']
             if btn_auto_fan.bgcolor != c_mode_fan:
                 btn_auto_fan.bgcolor = c_mode_fan
-                btn_auto_fan.update()
+                if btn_auto_fan.page: btn_auto_fan.update()
 
             dis_fan = (not puede_controlar) or (mode_fan == "auto")
             if switch_fan.disabled != dis_fan:
                 switch_fan.disabled = dis_fan
-                switch_fan.update()
+                if switch_fan.page: switch_fan.update()
 
             # Iconos
             c_fan = COLORS['accent'] if st_fan == "on" else COLORS['muted']
             if icon_fan_map.color != c_fan:
                 icon_fan_map.color = c_fan
-                icon_fan_map.update()
+                if icon_fan_map.page: icon_fan_map.update()
 
             c_led = "yellow" if st_led == "on" else COLORS['muted']
             if icon_led_map.color != c_led:
                 icon_led_map.color = c_led
-                icon_led_map.update()
+                if icon_led_map.page: icon_led_map.update()
 
         except Exception:
             pass
@@ -300,6 +315,6 @@ def crear_dashboard_view(
     # Creamos la Vista y le adjuntamos el callback para el controlador
     view = ft.View("/dashboard", controls=[ft.Row([left_column, right_column], spacing=18, expand=True)],
                    bgcolor=COLORS['bg'], padding=18)
-    view.data = {"update_callback": actualizar_datos_externos}
+    view.data = {"update_callback": actualizar_datos_ui}
 
     return view

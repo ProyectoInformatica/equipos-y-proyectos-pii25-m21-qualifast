@@ -24,7 +24,7 @@
         "mode": "auto"
     },
     "fan": {
-        "estado": "off",
+        "estado": "on",
         "mode": "auto"
     }
 }
