@@ -30,7 +30,7 @@ def crear_dashboard_view(
     es_admin = (rol_usuario in ['comisario', 'inspector'])
 
     # --- HEADER ---
-    logo_img = ft.Image(src="logo.png", height=40, fit=ft.ImageFit.CONTAIN)
+    logo_img = ft.Image(src="logo.png", height=50, fit=ft.ImageFit.CONTAIN)
     brand_text = ft.Column([
         ft.Text("QUALIFAST BUILDINGS", size=16, weight=ft.FontWeight.W_900, color=COLORS['text'],
                 font_family="Verdana"),
