@@ -1,24 +1,30 @@
 {
     "door-1": {
-        "estado": "abierta",
-        "label": "P1"
+        "estado": "cerrada",
+        "label": "P1",
+        "mode": "manual"
     },
     "door-2": {
-        "estado": "abierta",
-        "label": "P2"
+        "estado": "cerrada",
+        "label": "P2",
+        "mode": "manual"
     },
     "door-3": {
-        "estado": "abierta",
-        "label": "P3"
+        "estado": "cerrada",
+        "label": "P3",
+        "mode": "manual"
     },
     "door-4": {
-        "estado": "abierta",
-        "label": "P4"
+        "estado": "cerrada",
+        "label": "P4",
+        "mode": "manual"
     },
     "leds": {
-        "estado": "off"
+        "estado": "on",
+        "mode": "auto"
     },
     "fan": {
-        "estado": "off"
+        "estado": "on",
+        "mode": "auto"
     }
 }

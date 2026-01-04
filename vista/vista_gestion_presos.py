@@ -5,26 +5,51 @@ from vista.temas import COLORS
 def crear_dialogo_preso(titulo, on_guardar, preso_actual=None):
     val_nombre = preso_actual.get("nombre", "") if preso_actual else ""
     val_delito = preso_actual.get("delito", "") if preso_actual else ""
-    val_celda = preso_actual.get("celda", "") if preso_actual else ""
+    val_celda = preso_actual.get("celda", "Celda 1") if preso_actual else "Celda 1"
 
-    txt_nombre = ft.TextField(label="Nombre Completo", value=val_nombre, bgcolor=COLORS['glass'],
-                              border_color=COLORS['muted'])
-    txt_delito = ft.TextField(label="Motivo / Delito", value=val_delito, bgcolor=COLORS['glass'],
-                              border_color=COLORS['muted'], multiline=True)
-    txt_celda = ft.TextField(label="Celda Asignada", value=val_celda, bgcolor=COLORS['glass'],
-                             border_color=COLORS['muted'])
+    txt_nombre = ft.TextField(
+        label="Nombre Completo",
+        value=val_nombre,
+        bgcolor=COLORS['glass'],
+        border_color=COLORS['muted']
+    )
+    txt_delito = ft.TextField(
+        label="Motivo / Delito",
+        value=val_delito,
+        bgcolor=COLORS['glass'],
+        border_color=COLORS['muted'],
+        multiline=True
+    )
+
+    # --- CAMBIO 2: Desplegable para elegir celda ---
+    dd_celda = ft.Dropdown(
+        label="Celda Asignada",
+        value=val_celda,
+        bgcolor=COLORS['glass'],
+        border_color=COLORS['muted'],
+        options=[
+            ft.dropdown.Option("Celda 1"),
+            ft.dropdown.Option("Celda 2"),
+            ft.dropdown.Option("Celda 3"),
+            ft.dropdown.Option("Celda 4"),
+        ]
+    )
 
     dialogo = None
 
     def guardar_click(e):
-        datos = {"nombre": txt_nombre.value, "delito": txt_delito.value, "celda": txt_celda.value,
-                 "id": preso_actual.get("id") if preso_actual else None}
+        datos = {
+            "nombre": txt_nombre.value,
+            "delito": txt_delito.value,
+            "celda": dd_celda.value,  # Usamos el valor del dropdown
+            "id": preso_actual.get("id") if preso_actual else None
+        }
         on_guardar(e, datos, dialogo)
 
     dialogo = ft.AlertDialog(
         modal=True,
         title=ft.Text(titulo, color=COLORS['text']),
-        content=ft.Column([txt_nombre, txt_delito, txt_celda], tight=True, width=400),
+        content=ft.Column([txt_nombre, txt_delito, dd_celda], tight=True, width=400),
         actions=[
             ft.TextButton("Cancelar", on_click=lambda e: e.page.close(dialogo)),
             ft.ElevatedButton("Guardar", on_click=guardar_click, bgcolor=COLORS['accent'], color=COLORS['bg']),
@@ -68,7 +93,7 @@ def crear_vista_presos(lista_presos, on_abrir_crear_handler, on_abrir_editar_han
                         ft.Column([ft.Text(preso.get("nombre", ""), color=COLORS['text'], weight=ft.FontWeight.BOLD),
                                    ft.Text(f"Motivo: {preso.get('delito', '')}", color=COLORS['muted'], size=11)],
                                   spacing=2, expand=True),
-                        ft.Column([ft.Text(f"Celda: {preso.get('celda', '')}", color=COLORS['accent'], size=11),
+                        ft.Column([ft.Text(f"{preso.get('celda', 'Sin asignar')}", color=COLORS['accent'], size=11),
                                    ft.Text(f"{preso.get('fecha_ingreso', '')}", color=COLORS['muted'], size=10)],
                                   spacing=2, alignment=ft.MainAxisAlignment.END),
                         ft.Row([
@@ -85,7 +110,6 @@ def crear_vista_presos(lista_presos, on_abrir_crear_handler, on_abrir_editar_han
     campo_busqueda.on_change = lambda e: renderizar_lista(e.control.value)
     renderizar_lista()
 
-    # Importante: expand=True aquí funcionará porque el padre (dashboard) tiene altura fija
     return ft.Container(
         bgcolor=COLORS['card'], border=ft.border.all(2, COLORS['glass']), border_radius=10, padding=15, expand=True,
         content=ft.Column([top_row, ft.Divider(height=10, color="transparent"), list_view])
