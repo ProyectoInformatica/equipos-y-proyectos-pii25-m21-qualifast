@@ -1,0 +1,30 @@
+{
+    "door-1": {
+        "estado": "cerrada",
+        "label": "P1",
+        "mode": "manual"
+    },
+    "door-2": {
+        "estado": "cerrada",
+        "label": "P2",
+        "mode": "manual"
+    },
+    "door-3": {
+        "estado": "cerrada",
+        "label": "P3",
+        "mode": "manual"
+    },
+    "door-4": {
+        "estado": "cerrada",
+        "label": "P4",
+        "mode": "manual"
+    },
+    "leds": {
+        "estado": "off",
+        "mode": "auto"
+    },
+    "fan": {
+        "estado": "off",
+        "mode": "auto"
+    }
+}

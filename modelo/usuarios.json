@@ -1,0 +1,17 @@
+[
+    {
+        "user": "comisario",
+        "password": "1234",
+        "rol": "comisario"
+    },
+    {
+        "user": "inspector",
+        "password": "1234",
+        "rol": "inspector"
+    },
+    {
+        "user": "policia",
+        "password": "1234",
+        "rol": "policia"
+    }
+]
