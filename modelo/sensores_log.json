@@ -16323,5 +16323,2155 @@
         "timestamp": "2026-01-08 22:52:53",
         "sensor": "MQ-135 - Aire",
         "valor": "422 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 22:56:29",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "31.2 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 22:56:29",
+        "sensor": "DHT11 - Humedad",
+        "valor": "43 %"
+    },
+    {
+        "timestamp": "2026-01-08 22:56:29",
+        "sensor": "LDR - Luz",
+        "valor": "844 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 22:56:29",
+        "sensor": "MQ-2 - Humo",
+        "valor": "21 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 22:56:29",
+        "sensor": "MQ-135 - Aire",
+        "valor": "473 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 22:56:34",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "32.6 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 22:56:34",
+        "sensor": "DHT11 - Humedad",
+        "valor": "45 %"
+    },
+    {
+        "timestamp": "2026-01-08 22:56:34",
+        "sensor": "LDR - Luz",
+        "valor": "892 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 22:56:34",
+        "sensor": "MQ-2 - Humo",
+        "valor": "10 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 22:56:34",
+        "sensor": "MQ-135 - Aire",
+        "valor": "469 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 22:56:39",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "27.1 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 22:56:39",
+        "sensor": "DHT11 - Humedad",
+        "valor": "53 %"
+    },
+    {
+        "timestamp": "2026-01-08 22:56:39",
+        "sensor": "LDR - Luz",
+        "valor": "293 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 22:56:39",
+        "sensor": "MQ-2 - Humo",
+        "valor": "18 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 22:56:39",
+        "sensor": "MQ-135 - Aire",
+        "valor": "475 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 22:56:44",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "20.2 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 22:56:44",
+        "sensor": "DHT11 - Humedad",
+        "valor": "55 %"
+    },
+    {
+        "timestamp": "2026-01-08 22:56:44",
+        "sensor": "LDR - Luz",
+        "valor": "643 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 22:56:44",
+        "sensor": "MQ-2 - Humo",
+        "valor": "19 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 22:56:44",
+        "sensor": "MQ-135 - Aire",
+        "valor": "443 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 22:56:49",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "29.3 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 22:56:49",
+        "sensor": "DHT11 - Humedad",
+        "valor": "46 %"
+    },
+    {
+        "timestamp": "2026-01-08 22:56:49",
+        "sensor": "LDR - Luz",
+        "valor": "339 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 22:56:49",
+        "sensor": "MQ-2 - Humo",
+        "valor": "30 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 22:56:49",
+        "sensor": "MQ-135 - Aire",
+        "valor": "432 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 22:56:54",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "25.6 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 22:56:54",
+        "sensor": "DHT11 - Humedad",
+        "valor": "56 %"
+    },
+    {
+        "timestamp": "2026-01-08 22:56:54",
+        "sensor": "LDR - Luz",
+        "valor": "886 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 22:56:54",
+        "sensor": "MQ-2 - Humo",
+        "valor": "21 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 22:56:54",
+        "sensor": "MQ-135 - Aire",
+        "valor": "457 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 22:59:43",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "21.8 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 22:59:43",
+        "sensor": "DHT11 - Humedad",
+        "valor": "47 %"
+    },
+    {
+        "timestamp": "2026-01-08 22:59:43",
+        "sensor": "LDR - Luz",
+        "valor": "708 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 22:59:43",
+        "sensor": "MQ-2 - Humo",
+        "valor": "13 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 22:59:43",
+        "sensor": "MQ-135 - Aire",
+        "valor": "465 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 22:59:48",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "34.5 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 22:59:48",
+        "sensor": "DHT11 - Humedad",
+        "valor": "50 %"
+    },
+    {
+        "timestamp": "2026-01-08 22:59:48",
+        "sensor": "LDR - Luz",
+        "valor": "352 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 22:59:48",
+        "sensor": "MQ-2 - Humo",
+        "valor": "26 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 22:59:48",
+        "sensor": "MQ-135 - Aire",
+        "valor": "424 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 22:59:53",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "26.3 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 22:59:53",
+        "sensor": "DHT11 - Humedad",
+        "valor": "56 %"
+    },
+    {
+        "timestamp": "2026-01-08 22:59:53",
+        "sensor": "LDR - Luz",
+        "valor": "583 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 22:59:53",
+        "sensor": "MQ-2 - Humo",
+        "valor": "20 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 22:59:53",
+        "sensor": "MQ-135 - Aire",
+        "valor": "421 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 22:59:58",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "29.7 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 22:59:58",
+        "sensor": "DHT11 - Humedad",
+        "valor": "46 %"
+    },
+    {
+        "timestamp": "2026-01-08 22:59:58",
+        "sensor": "LDR - Luz",
+        "valor": "380 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 22:59:58",
+        "sensor": "MQ-2 - Humo",
+        "valor": "10 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 22:59:58",
+        "sensor": "MQ-135 - Aire",
+        "valor": "478 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:03",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "23.1 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:03",
+        "sensor": "DHT11 - Humedad",
+        "valor": "60 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:03",
+        "sensor": "LDR - Luz",
+        "valor": "411 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:03",
+        "sensor": "MQ-2 - Humo",
+        "valor": "26 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:03",
+        "sensor": "MQ-135 - Aire",
+        "valor": "400 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:08",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "26.3 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:08",
+        "sensor": "DHT11 - Humedad",
+        "valor": "60 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:08",
+        "sensor": "LDR - Luz",
+        "valor": "713 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:08",
+        "sensor": "MQ-2 - Humo",
+        "valor": "26 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:08",
+        "sensor": "MQ-135 - Aire",
+        "valor": "444 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:13",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "33.6 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:13",
+        "sensor": "DHT11 - Humedad",
+        "valor": "49 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:13",
+        "sensor": "LDR - Luz",
+        "valor": "363 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:13",
+        "sensor": "MQ-2 - Humo",
+        "valor": "20 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:13",
+        "sensor": "MQ-135 - Aire",
+        "valor": "411 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:18",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "26.4 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:18",
+        "sensor": "DHT11 - Humedad",
+        "valor": "45 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:18",
+        "sensor": "LDR - Luz",
+        "valor": "476 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:18",
+        "sensor": "MQ-2 - Humo",
+        "valor": "16 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:18",
+        "sensor": "MQ-135 - Aire",
+        "valor": "465 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:23",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "25.1 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:23",
+        "sensor": "DHT11 - Humedad",
+        "valor": "42 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:23",
+        "sensor": "LDR - Luz",
+        "valor": "626 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:23",
+        "sensor": "MQ-2 - Humo",
+        "valor": "19 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:23",
+        "sensor": "MQ-135 - Aire",
+        "valor": "475 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:28",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "25.5 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:28",
+        "sensor": "DHT11 - Humedad",
+        "valor": "45 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:28",
+        "sensor": "LDR - Luz",
+        "valor": "672 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:28",
+        "sensor": "MQ-2 - Humo",
+        "valor": "28 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:28",
+        "sensor": "MQ-135 - Aire",
+        "valor": "444 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:33",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "34.1 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:33",
+        "sensor": "DHT11 - Humedad",
+        "valor": "50 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:33",
+        "sensor": "LDR - Luz",
+        "valor": "872 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:33",
+        "sensor": "MQ-2 - Humo",
+        "valor": "18 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:33",
+        "sensor": "MQ-135 - Aire",
+        "valor": "478 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:38",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "32.4 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:38",
+        "sensor": "DHT11 - Humedad",
+        "valor": "59 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:38",
+        "sensor": "LDR - Luz",
+        "valor": "190 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:38",
+        "sensor": "MQ-2 - Humo",
+        "valor": "25 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:38",
+        "sensor": "MQ-135 - Aire",
+        "valor": "473 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:43",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "28.5 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:43",
+        "sensor": "DHT11 - Humedad",
+        "valor": "51 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:43",
+        "sensor": "LDR - Luz",
+        "valor": "320 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:43",
+        "sensor": "MQ-2 - Humo",
+        "valor": "22 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:43",
+        "sensor": "MQ-135 - Aire",
+        "valor": "443 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:48",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "33.5 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:48",
+        "sensor": "DHT11 - Humedad",
+        "valor": "42 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:48",
+        "sensor": "LDR - Luz",
+        "valor": "340 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:48",
+        "sensor": "MQ-2 - Humo",
+        "valor": "22 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:48",
+        "sensor": "MQ-135 - Aire",
+        "valor": "468 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:53",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "25.3 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:53",
+        "sensor": "DHT11 - Humedad",
+        "valor": "56 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:53",
+        "sensor": "LDR - Luz",
+        "valor": "809 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:53",
+        "sensor": "MQ-2 - Humo",
+        "valor": "11 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:53",
+        "sensor": "MQ-135 - Aire",
+        "valor": "432 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:58",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "26.4 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:58",
+        "sensor": "DHT11 - Humedad",
+        "valor": "40 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:58",
+        "sensor": "LDR - Luz",
+        "valor": "544 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:58",
+        "sensor": "MQ-2 - Humo",
+        "valor": "20 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:00:58",
+        "sensor": "MQ-135 - Aire",
+        "valor": "418 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:03",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "25.2 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:03",
+        "sensor": "DHT11 - Humedad",
+        "valor": "58 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:03",
+        "sensor": "LDR - Luz",
+        "valor": "230 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:03",
+        "sensor": "MQ-2 - Humo",
+        "valor": "30 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:03",
+        "sensor": "MQ-135 - Aire",
+        "valor": "418 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:08",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "34.8 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:08",
+        "sensor": "DHT11 - Humedad",
+        "valor": "58 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:08",
+        "sensor": "LDR - Luz",
+        "valor": "548 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:08",
+        "sensor": "MQ-2 - Humo",
+        "valor": "15 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:08",
+        "sensor": "MQ-135 - Aire",
+        "valor": "448 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:13",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "21.0 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:13",
+        "sensor": "DHT11 - Humedad",
+        "valor": "54 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:13",
+        "sensor": "LDR - Luz",
+        "valor": "844 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:13",
+        "sensor": "MQ-2 - Humo",
+        "valor": "25 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:13",
+        "sensor": "MQ-135 - Aire",
+        "valor": "411 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:18",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "22.0 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:18",
+        "sensor": "DHT11 - Humedad",
+        "valor": "53 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:18",
+        "sensor": "LDR - Luz",
+        "valor": "807 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:18",
+        "sensor": "MQ-2 - Humo",
+        "valor": "24 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:18",
+        "sensor": "MQ-135 - Aire",
+        "valor": "441 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:23",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "31.4 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:23",
+        "sensor": "DHT11 - Humedad",
+        "valor": "52 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:23",
+        "sensor": "LDR - Luz",
+        "valor": "875 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:23",
+        "sensor": "MQ-2 - Humo",
+        "valor": "14 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:23",
+        "sensor": "MQ-135 - Aire",
+        "valor": "400 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:28",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "20.6 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:28",
+        "sensor": "DHT11 - Humedad",
+        "valor": "48 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:28",
+        "sensor": "LDR - Luz",
+        "valor": "229 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:28",
+        "sensor": "MQ-2 - Humo",
+        "valor": "24 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:28",
+        "sensor": "MQ-135 - Aire",
+        "valor": "419 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:33",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "24.5 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:33",
+        "sensor": "DHT11 - Humedad",
+        "valor": "49 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:33",
+        "sensor": "LDR - Luz",
+        "valor": "487 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:33",
+        "sensor": "MQ-2 - Humo",
+        "valor": "25 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:33",
+        "sensor": "MQ-135 - Aire",
+        "valor": "475 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:39",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "27.3 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:39",
+        "sensor": "DHT11 - Humedad",
+        "valor": "60 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:39",
+        "sensor": "LDR - Luz",
+        "valor": "603 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:39",
+        "sensor": "MQ-2 - Humo",
+        "valor": "28 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:39",
+        "sensor": "MQ-135 - Aire",
+        "valor": "421 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:44",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "28.1 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:44",
+        "sensor": "DHT11 - Humedad",
+        "valor": "49 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:44",
+        "sensor": "LDR - Luz",
+        "valor": "482 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:44",
+        "sensor": "MQ-2 - Humo",
+        "valor": "18 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:44",
+        "sensor": "MQ-135 - Aire",
+        "valor": "467 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:49",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "25.3 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:49",
+        "sensor": "DHT11 - Humedad",
+        "valor": "52 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:49",
+        "sensor": "LDR - Luz",
+        "valor": "641 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:49",
+        "sensor": "MQ-2 - Humo",
+        "valor": "23 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:49",
+        "sensor": "MQ-135 - Aire",
+        "valor": "477 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:54",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "25.0 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:54",
+        "sensor": "DHT11 - Humedad",
+        "valor": "46 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:54",
+        "sensor": "LDR - Luz",
+        "valor": "289 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:54",
+        "sensor": "MQ-2 - Humo",
+        "valor": "14 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:54",
+        "sensor": "MQ-135 - Aire",
+        "valor": "408 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:59",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "29.2 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:59",
+        "sensor": "DHT11 - Humedad",
+        "valor": "51 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:59",
+        "sensor": "LDR - Luz",
+        "valor": "710 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:59",
+        "sensor": "MQ-2 - Humo",
+        "valor": "27 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:01:59",
+        "sensor": "MQ-135 - Aire",
+        "valor": "457 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:02:04",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "22.5 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:02:04",
+        "sensor": "DHT11 - Humedad",
+        "valor": "43 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:02:04",
+        "sensor": "LDR - Luz",
+        "valor": "727 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:02:04",
+        "sensor": "MQ-2 - Humo",
+        "valor": "19 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:02:04",
+        "sensor": "MQ-135 - Aire",
+        "valor": "404 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:02:09",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "25.2 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:02:09",
+        "sensor": "DHT11 - Humedad",
+        "valor": "41 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:02:09",
+        "sensor": "LDR - Luz",
+        "valor": "456 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:02:09",
+        "sensor": "MQ-2 - Humo",
+        "valor": "22 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:02:09",
+        "sensor": "MQ-135 - Aire",
+        "valor": "436 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:02:14",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "27.9 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:02:14",
+        "sensor": "DHT11 - Humedad",
+        "valor": "57 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:02:14",
+        "sensor": "LDR - Luz",
+        "valor": "813 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:02:14",
+        "sensor": "MQ-2 - Humo",
+        "valor": "20 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:02:14",
+        "sensor": "MQ-135 - Aire",
+        "valor": "404 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:02:19",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "28.4 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:02:19",
+        "sensor": "DHT11 - Humedad",
+        "valor": "59 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:02:19",
+        "sensor": "LDR - Luz",
+        "valor": "779 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:02:19",
+        "sensor": "MQ-2 - Humo",
+        "valor": "22 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:02:19",
+        "sensor": "MQ-135 - Aire",
+        "valor": "480 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:02:24",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "24.3 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:02:24",
+        "sensor": "DHT11 - Humedad",
+        "valor": "47 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:02:24",
+        "sensor": "LDR - Luz",
+        "valor": "116 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:02:24",
+        "sensor": "MQ-2 - Humo",
+        "valor": "19 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:02:24",
+        "sensor": "MQ-135 - Aire",
+        "valor": "411 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:24",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "30.3 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:24",
+        "sensor": "DHT11 - Humedad",
+        "valor": "41 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:24",
+        "sensor": "LDR - Luz",
+        "valor": "470 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:24",
+        "sensor": "MQ-2 - Humo",
+        "valor": "17 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:24",
+        "sensor": "MQ-135 - Aire",
+        "valor": "441 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:29",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "31.8 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:29",
+        "sensor": "DHT11 - Humedad",
+        "valor": "48 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:29",
+        "sensor": "LDR - Luz",
+        "valor": "153 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:29",
+        "sensor": "MQ-2 - Humo",
+        "valor": "21 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:29",
+        "sensor": "MQ-135 - Aire",
+        "valor": "449 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:34",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "20.6 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:34",
+        "sensor": "DHT11 - Humedad",
+        "valor": "51 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:34",
+        "sensor": "LDR - Luz",
+        "valor": "182 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:34",
+        "sensor": "MQ-2 - Humo",
+        "valor": "16 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:34",
+        "sensor": "MQ-135 - Aire",
+        "valor": "460 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:39",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "24.0 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:39",
+        "sensor": "DHT11 - Humedad",
+        "valor": "47 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:39",
+        "sensor": "LDR - Luz",
+        "valor": "347 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:39",
+        "sensor": "MQ-2 - Humo",
+        "valor": "11 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:39",
+        "sensor": "MQ-135 - Aire",
+        "valor": "419 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:44",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "28.7 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:44",
+        "sensor": "DHT11 - Humedad",
+        "valor": "43 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:44",
+        "sensor": "LDR - Luz",
+        "valor": "319 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:44",
+        "sensor": "MQ-2 - Humo",
+        "valor": "29 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:44",
+        "sensor": "MQ-135 - Aire",
+        "valor": "461 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:49",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "33.9 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:49",
+        "sensor": "DHT11 - Humedad",
+        "valor": "53 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:49",
+        "sensor": "LDR - Luz",
+        "valor": "752 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:49",
+        "sensor": "MQ-2 - Humo",
+        "valor": "15 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:49",
+        "sensor": "MQ-135 - Aire",
+        "valor": "463 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:54",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "29.9 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:54",
+        "sensor": "DHT11 - Humedad",
+        "valor": "50 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:54",
+        "sensor": "LDR - Luz",
+        "valor": "234 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:54",
+        "sensor": "MQ-2 - Humo",
+        "valor": "13 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:54",
+        "sensor": "MQ-135 - Aire",
+        "valor": "416 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:59",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "23.9 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:59",
+        "sensor": "DHT11 - Humedad",
+        "valor": "51 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:59",
+        "sensor": "LDR - Luz",
+        "valor": "893 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:59",
+        "sensor": "MQ-2 - Humo",
+        "valor": "18 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:08:59",
+        "sensor": "MQ-135 - Aire",
+        "valor": "426 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:09:04",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "34.3 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:09:04",
+        "sensor": "DHT11 - Humedad",
+        "valor": "52 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:09:04",
+        "sensor": "LDR - Luz",
+        "valor": "174 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:09:04",
+        "sensor": "MQ-2 - Humo",
+        "valor": "27 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:09:04",
+        "sensor": "MQ-135 - Aire",
+        "valor": "411 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:09:09",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "31.2 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:09:09",
+        "sensor": "DHT11 - Humedad",
+        "valor": "59 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:09:09",
+        "sensor": "LDR - Luz",
+        "valor": "865 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:09:09",
+        "sensor": "MQ-2 - Humo",
+        "valor": "26 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:09:09",
+        "sensor": "MQ-135 - Aire",
+        "valor": "470 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:09:14",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "22.7 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:09:14",
+        "sensor": "DHT11 - Humedad",
+        "valor": "50 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:09:14",
+        "sensor": "LDR - Luz",
+        "valor": "857 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:09:14",
+        "sensor": "MQ-2 - Humo",
+        "valor": "21 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:09:14",
+        "sensor": "MQ-135 - Aire",
+        "valor": "427 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:05",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "34.6 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:05",
+        "sensor": "DHT11 - Humedad",
+        "valor": "44 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:05",
+        "sensor": "LDR - Luz",
+        "valor": "849 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:05",
+        "sensor": "MQ-2 - Humo",
+        "valor": "20 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:05",
+        "sensor": "MQ-135 - Aire",
+        "valor": "479 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:10",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "31.4 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:10",
+        "sensor": "DHT11 - Humedad",
+        "valor": "50 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:10",
+        "sensor": "LDR - Luz",
+        "valor": "491 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:10",
+        "sensor": "MQ-2 - Humo",
+        "valor": "21 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:10",
+        "sensor": "MQ-135 - Aire",
+        "valor": "423 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:15",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "34.1 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:15",
+        "sensor": "DHT11 - Humedad",
+        "valor": "42 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:15",
+        "sensor": "LDR - Luz",
+        "valor": "316 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:15",
+        "sensor": "MQ-2 - Humo",
+        "valor": "21 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:15",
+        "sensor": "MQ-135 - Aire",
+        "valor": "437 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:20",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "33.0 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:20",
+        "sensor": "DHT11 - Humedad",
+        "valor": "48 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:20",
+        "sensor": "LDR - Luz",
+        "valor": "318 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:20",
+        "sensor": "MQ-2 - Humo",
+        "valor": "25 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:20",
+        "sensor": "MQ-135 - Aire",
+        "valor": "436 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:25",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "32.1 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:25",
+        "sensor": "DHT11 - Humedad",
+        "valor": "51 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:25",
+        "sensor": "LDR - Luz",
+        "valor": "292 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:25",
+        "sensor": "MQ-2 - Humo",
+        "valor": "21 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:25",
+        "sensor": "MQ-135 - Aire",
+        "valor": "454 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:30",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "20.4 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:30",
+        "sensor": "DHT11 - Humedad",
+        "valor": "44 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:30",
+        "sensor": "LDR - Luz",
+        "valor": "389 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:30",
+        "sensor": "MQ-2 - Humo",
+        "valor": "29 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:30",
+        "sensor": "MQ-135 - Aire",
+        "valor": "412 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:35",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "22.8 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:35",
+        "sensor": "DHT11 - Humedad",
+        "valor": "44 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:35",
+        "sensor": "LDR - Luz",
+        "valor": "560 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:35",
+        "sensor": "MQ-2 - Humo",
+        "valor": "10 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:35",
+        "sensor": "MQ-135 - Aire",
+        "valor": "410 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:40",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "29.1 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:40",
+        "sensor": "DHT11 - Humedad",
+        "valor": "44 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:40",
+        "sensor": "LDR - Luz",
+        "valor": "342 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:40",
+        "sensor": "MQ-2 - Humo",
+        "valor": "16 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:40",
+        "sensor": "MQ-135 - Aire",
+        "valor": "449 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:46",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "20.7 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:46",
+        "sensor": "DHT11 - Humedad",
+        "valor": "46 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:46",
+        "sensor": "LDR - Luz",
+        "valor": "299 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:46",
+        "sensor": "MQ-2 - Humo",
+        "valor": "27 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:46",
+        "sensor": "MQ-135 - Aire",
+        "valor": "436 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:51",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "34.7 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:51",
+        "sensor": "DHT11 - Humedad",
+        "valor": "60 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:51",
+        "sensor": "LDR - Luz",
+        "valor": "760 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:51",
+        "sensor": "MQ-2 - Humo",
+        "valor": "13 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:51",
+        "sensor": "MQ-135 - Aire",
+        "valor": "480 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:56",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "27.0 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:56",
+        "sensor": "DHT11 - Humedad",
+        "valor": "49 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:56",
+        "sensor": "LDR - Luz",
+        "valor": "373 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:56",
+        "sensor": "MQ-2 - Humo",
+        "valor": "11 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:15:56",
+        "sensor": "MQ-135 - Aire",
+        "valor": "409 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:01",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "25.2 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:01",
+        "sensor": "DHT11 - Humedad",
+        "valor": "56 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:01",
+        "sensor": "LDR - Luz",
+        "valor": "451 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:01",
+        "sensor": "MQ-2 - Humo",
+        "valor": "11 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:01",
+        "sensor": "MQ-135 - Aire",
+        "valor": "426 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:06",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "30.6 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:06",
+        "sensor": "DHT11 - Humedad",
+        "valor": "42 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:06",
+        "sensor": "LDR - Luz",
+        "valor": "713 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:06",
+        "sensor": "MQ-2 - Humo",
+        "valor": "16 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:06",
+        "sensor": "MQ-135 - Aire",
+        "valor": "437 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:11",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "24.4 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:11",
+        "sensor": "DHT11 - Humedad",
+        "valor": "46 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:11",
+        "sensor": "LDR - Luz",
+        "valor": "519 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:11",
+        "sensor": "MQ-2 - Humo",
+        "valor": "12 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:11",
+        "sensor": "MQ-135 - Aire",
+        "valor": "441 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:16",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "31.6 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:16",
+        "sensor": "DHT11 - Humedad",
+        "valor": "53 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:16",
+        "sensor": "LDR - Luz",
+        "valor": "716 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:16",
+        "sensor": "MQ-2 - Humo",
+        "valor": "10 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:16",
+        "sensor": "MQ-135 - Aire",
+        "valor": "466 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:21",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "31.8 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:21",
+        "sensor": "DHT11 - Humedad",
+        "valor": "40 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:21",
+        "sensor": "LDR - Luz",
+        "valor": "644 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:21",
+        "sensor": "MQ-2 - Humo",
+        "valor": "28 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:21",
+        "sensor": "MQ-135 - Aire",
+        "valor": "433 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:26",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "29.4 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:26",
+        "sensor": "DHT11 - Humedad",
+        "valor": "48 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:26",
+        "sensor": "LDR - Luz",
+        "valor": "110 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:26",
+        "sensor": "MQ-2 - Humo",
+        "valor": "11 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:26",
+        "sensor": "MQ-135 - Aire",
+        "valor": "455 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:31",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "26.3 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:31",
+        "sensor": "DHT11 - Humedad",
+        "valor": "60 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:31",
+        "sensor": "LDR - Luz",
+        "valor": "391 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:31",
+        "sensor": "MQ-2 - Humo",
+        "valor": "21 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:31",
+        "sensor": "MQ-135 - Aire",
+        "valor": "478 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:36",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "28.3 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:36",
+        "sensor": "DHT11 - Humedad",
+        "valor": "43 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:36",
+        "sensor": "LDR - Luz",
+        "valor": "565 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:36",
+        "sensor": "MQ-2 - Humo",
+        "valor": "27 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:36",
+        "sensor": "MQ-135 - Aire",
+        "valor": "447 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:41",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "24.1 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:41",
+        "sensor": "DHT11 - Humedad",
+        "valor": "43 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:41",
+        "sensor": "LDR - Luz",
+        "valor": "873 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:41",
+        "sensor": "MQ-2 - Humo",
+        "valor": "21 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:16:41",
+        "sensor": "MQ-135 - Aire",
+        "valor": "470 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:08",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "23.4 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:08",
+        "sensor": "DHT11 - Humedad",
+        "valor": "40 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:08",
+        "sensor": "LDR - Luz",
+        "valor": "556 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:08",
+        "sensor": "MQ-2 - Humo",
+        "valor": "21 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:08",
+        "sensor": "MQ-135 - Aire",
+        "valor": "468 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:13",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "31.1 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:13",
+        "sensor": "DHT11 - Humedad",
+        "valor": "50 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:13",
+        "sensor": "LDR - Luz",
+        "valor": "552 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:13",
+        "sensor": "MQ-2 - Humo",
+        "valor": "26 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:13",
+        "sensor": "MQ-135 - Aire",
+        "valor": "448 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:18",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "27.3 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:18",
+        "sensor": "DHT11 - Humedad",
+        "valor": "45 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:18",
+        "sensor": "LDR - Luz",
+        "valor": "156 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:18",
+        "sensor": "MQ-2 - Humo",
+        "valor": "10 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:18",
+        "sensor": "MQ-135 - Aire",
+        "valor": "430 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:23",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "29.6 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:23",
+        "sensor": "DHT11 - Humedad",
+        "valor": "42 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:23",
+        "sensor": "LDR - Luz",
+        "valor": "753 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:23",
+        "sensor": "MQ-2 - Humo",
+        "valor": "14 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:23",
+        "sensor": "MQ-135 - Aire",
+        "valor": "478 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:28",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "25.1 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:28",
+        "sensor": "DHT11 - Humedad",
+        "valor": "48 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:28",
+        "sensor": "LDR - Luz",
+        "valor": "816 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:28",
+        "sensor": "MQ-2 - Humo",
+        "valor": "26 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:28",
+        "sensor": "MQ-135 - Aire",
+        "valor": "433 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:33",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "28.1 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:33",
+        "sensor": "DHT11 - Humedad",
+        "valor": "59 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:33",
+        "sensor": "LDR - Luz",
+        "valor": "669 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:33",
+        "sensor": "MQ-2 - Humo",
+        "valor": "10 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:33",
+        "sensor": "MQ-135 - Aire",
+        "valor": "467 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:38",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "28.0 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:38",
+        "sensor": "DHT11 - Humedad",
+        "valor": "54 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:38",
+        "sensor": "LDR - Luz",
+        "valor": "391 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:38",
+        "sensor": "MQ-2 - Humo",
+        "valor": "26 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:38",
+        "sensor": "MQ-135 - Aire",
+        "valor": "466 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:43",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "33.5 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:43",
+        "sensor": "DHT11 - Humedad",
+        "valor": "53 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:43",
+        "sensor": "LDR - Luz",
+        "valor": "235 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:43",
+        "sensor": "MQ-2 - Humo",
+        "valor": "20 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:43",
+        "sensor": "MQ-135 - Aire",
+        "valor": "472 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:48",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "32.5 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:48",
+        "sensor": "DHT11 - Humedad",
+        "valor": "55 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:48",
+        "sensor": "LDR - Luz",
+        "valor": "759 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:48",
+        "sensor": "MQ-2 - Humo",
+        "valor": "20 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:48",
+        "sensor": "MQ-135 - Aire",
+        "valor": "473 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:53",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "22.6 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:53",
+        "sensor": "DHT11 - Humedad",
+        "valor": "46 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:53",
+        "sensor": "LDR - Luz",
+        "valor": "512 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:53",
+        "sensor": "MQ-2 - Humo",
+        "valor": "26 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:53",
+        "sensor": "MQ-135 - Aire",
+        "valor": "474 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:58",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "32.1 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:58",
+        "sensor": "DHT11 - Humedad",
+        "valor": "57 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:58",
+        "sensor": "LDR - Luz",
+        "valor": "468 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:58",
+        "sensor": "MQ-2 - Humo",
+        "valor": "30 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:18:58",
+        "sensor": "MQ-135 - Aire",
+        "valor": "413 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:19:03",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "34.8 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:19:03",
+        "sensor": "DHT11 - Humedad",
+        "valor": "45 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:19:03",
+        "sensor": "LDR - Luz",
+        "valor": "475 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:19:03",
+        "sensor": "MQ-2 - Humo",
+        "valor": "15 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:19:03",
+        "sensor": "MQ-135 - Aire",
+        "valor": "471 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:19:08",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "27.9 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:19:08",
+        "sensor": "DHT11 - Humedad",
+        "valor": "56 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:19:08",
+        "sensor": "LDR - Luz",
+        "valor": "760 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:19:08",
+        "sensor": "MQ-2 - Humo",
+        "valor": "14 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:19:08",
+        "sensor": "MQ-135 - Aire",
+        "valor": "402 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:19:13",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "22.1 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:19:13",
+        "sensor": "DHT11 - Humedad",
+        "valor": "53 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:19:13",
+        "sensor": "LDR - Luz",
+        "valor": "531 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:19:13",
+        "sensor": "MQ-2 - Humo",
+        "valor": "30 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:19:13",
+        "sensor": "MQ-135 - Aire",
+        "valor": "475 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:19:18",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "33.2 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:19:18",
+        "sensor": "DHT11 - Humedad",
+        "valor": "41 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:19:18",
+        "sensor": "LDR - Luz",
+        "valor": "319 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:19:18",
+        "sensor": "MQ-2 - Humo",
+        "valor": "22 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:19:18",
+        "sensor": "MQ-135 - Aire",
+        "valor": "438 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:19:23",
+        "sensor": "DHT11 - Temperatura",
+        "valor": "22.6 \u00b0C"
+    },
+    {
+        "timestamp": "2026-01-08 23:19:23",
+        "sensor": "DHT11 - Humedad",
+        "valor": "52 %"
+    },
+    {
+        "timestamp": "2026-01-08 23:19:23",
+        "sensor": "LDR - Luz",
+        "valor": "319 Lux"
+    },
+    {
+        "timestamp": "2026-01-08 23:19:23",
+        "sensor": "MQ-2 - Humo",
+        "valor": "26 ppm"
+    },
+    {
+        "timestamp": "2026-01-08 23:19:23",
+        "sensor": "MQ-135 - Aire",
+        "valor": "477 ppm"
     }
 ]
