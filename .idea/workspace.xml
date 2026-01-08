@@ -6,7 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="f6f11da1-8d5f-4223-91f5-f1b21610e87e" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modelo/actuadores_estado.json" beforeDir="false" afterPath="$PROJECT_DIR$/modelo/actuadores_estado.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/modelo/puertas_log.json" beforeDir="false" afterPath="$PROJECT_DIR$/modelo/puertas_log.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/modelo/sensores_log.json" beforeDir="false" afterPath="$PROJECT_DIR$/modelo/sensores_log.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/vista/vista_dashboard_sensores.py" beforeDir="false" afterPath="$PROJECT_DIR$/vista/vista_dashboard_sensores.py" afterDir="false" />
@@ -17,7 +17,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="209" />
+    <option name="cachedIndexableFilesCount" value="1231" />
     <option name="fileBasedEmbeddingIndicesEnabled" value="true" />
   </component>
   <component name="FileTemplateManagerImpl">
@@ -67,7 +67,7 @@
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "git-widget-placeholder": "development",
+    "git-widget-placeholder": "feature__consumoElectrico__DanielVicente",
     "junie.onboarding.icon.badge.shown": "true",
     "last_opened_file_path": "/Users/daniel/Documents/Uni/2 año/equipos-y-proyectos-pii25-m21-qualifast/assets",
     "node.js.detected.package.eslint": "true",
@@ -95,11 +95,13 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
+      <option name="SDK_NAME" value="Python 3.13 (equipos-y-proyectos-pii25-m21-qualifast)" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
       <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="RUN_TOOL" value="" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/main.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
@@ -143,6 +145,7 @@
       <workItem from="1765554021498" duration="3522000" />
       <workItem from="1765820875296" duration="2027000" />
       <workItem from="1767529745828" duration="4223000" />
+      <workItem from="1767906793939" duration="3954000" />
     </task>
     <servers />
   </component>
@@ -161,9 +164,9 @@
     </option>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/equipos_y_proyectos_pii25_m21_qualifast$main.coverage" NAME="main Coverage Results" MODIFIED="1763937595537" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/Nuevos_archivos_proyecto$main.coverage" NAME="main Coverage Results" MODIFIED="1767566772740" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/_git$main.coverage" NAME="main Coverage Results" MODIFIED="1763921759934" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/equipos_y_proyectos_pii25_m21_qualifast$main.coverage" NAME="main Coverage Results" MODIFIED="1767910687539" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/Nuevos_archivos_proyecto$reducir.coverage" NAME="reducir Coverage Results" MODIFIED="1767457633508" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/_git$main.coverage" NAME="main Coverage Results" MODIFIED="1763921759934" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>
