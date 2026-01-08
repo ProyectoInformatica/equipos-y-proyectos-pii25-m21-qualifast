@@ -24,7 +24,8 @@ def crear_dashboard_view(
         on_abrir_editar_preso,
         on_ver_historico_click,
         on_configuracion_click,
-        on_cambiar_modo_click
+        on_cambiar_modo_click,
+        on_ver_consumo_click=None  # Nuevo parametro
 ):
     puede_controlar = (rol_usuario != 'policia')
     es_admin = (rol_usuario in ['comisario', 'inspector'])
@@ -143,6 +144,14 @@ def crear_dashboard_view(
     right_content.controls.append(
         ft.ElevatedButton("Ver Logs / Histórico", icon=ft.Icons.HISTORY, bgcolor=COLORS['accent'], color=COLORS['bg'],
                           width=280, on_click=on_ver_historico_click))
+
+    # --- NUEVO BOTÓN DE CONSUMO ---
+    if on_ver_consumo_click:
+        right_content.controls.append(
+            ft.ElevatedButton("Consumo Eléctrico", icon=ft.Icons.BOLT, bgcolor="orange", color="black",
+                              width=280, on_click=on_ver_consumo_click))
+    # -------------------------------
+
     right_content.controls.append(ft.Divider(color=COLORS['muted']))
 
     switch_led = ft.Switch(value=False, disabled=(not puede_controlar),
