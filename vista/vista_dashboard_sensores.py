@@ -24,7 +24,8 @@ def crear_dashboard_view(
         on_abrir_editar_preso,
         on_ver_historico_click,
         on_configuracion_click,
-        on_cambiar_modo_click
+        on_cambiar_modo_click,
+        on_ver_consumo_click=None  # Nuevo parametro
 ):
     puede_controlar = (rol_usuario != 'policia')
     es_admin = (rol_usuario in ['comisario', 'inspector'])
@@ -110,8 +111,17 @@ def crear_dashboard_view(
         ft.Container(left=580, top=30, content=ft.Icon(ft.Icons.VIDEOCAM, color="#fb7185", size=20), bgcolor="white",
                      border_radius=15, on_click=on_ver_camaras_click),
         ft.Container(left=477, top=206, content=ft.Text(DEVICE_ICONS['ldr'], size=20), tooltip="LDR"),
+
+        # Fuego (Referencia Vertical: 600)
         ft.Container(left=600, top=179, content=ft.Text(DEVICE_ICONS['mq-2'], size=20), tooltip="MQ-2"),
+
+        # Aire (Referencia Horizontal: 245)
         ft.Container(left=345, top=245, content=ft.Text(DEVICE_ICONS['mq-135'], size=20), tooltip="MQ-135"),
+
+        # --- NUEVO ICONO HUMEDAD (Intersección: Left 600, Top 245) ---
+        ft.Container(left=600, top=245, content=ft.Text("💧", size=20), tooltip="Humedad"),
+        # -------------------------------------------------------------
+
         ft.Container(left=345, top=180, content=ft.Text(DEVICE_ICONS['dht22'], size=16), tooltip="DHT22"),
         ft.Container(left=400, top=165, content=icon_fan_map, tooltip="Ventilación"),
         ft.Container(left=480, top=210, content=icon_led_map, tooltip="Iluminación Central"),
@@ -143,6 +153,14 @@ def crear_dashboard_view(
     right_content.controls.append(
         ft.ElevatedButton("Ver Logs / Histórico", icon=ft.Icons.HISTORY, bgcolor=COLORS['accent'], color=COLORS['bg'],
                           width=280, on_click=on_ver_historico_click))
+
+    # --- NUEVO BOTÓN DE CONSUMO ---
+    if on_ver_consumo_click:
+        right_content.controls.append(
+            ft.ElevatedButton("Consumo Eléctrico", icon=ft.Icons.BOLT, bgcolor="orange", color="black",
+                              width=280, on_click=on_ver_consumo_click))
+    # -------------------------------
+
     right_content.controls.append(ft.Divider(color=COLORS['muted']))
 
     switch_led = ft.Switch(value=False, disabled=(not puede_controlar),

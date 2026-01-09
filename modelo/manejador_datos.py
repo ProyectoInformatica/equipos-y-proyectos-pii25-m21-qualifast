@@ -3,6 +3,7 @@ import os
 import re
 import time
 import csv
+import random
 from datetime import datetime, timedelta
 from collections import defaultdict
 
@@ -17,6 +18,8 @@ CONFIG_FILE = 'modelo/configuracion.json'
 # --- CACHÉ EN MEMORIA ---
 _CACHE_ACTUADORES = {}
 _CACHE_SENSORES = []
+# Cache para consumo (para respetar la actualización cada 5s)
+_CACHE_CONSUMO = {"timestamp": 0, "data": {}}
 
 
 # --- Funciones de Inicialización ---
@@ -107,12 +110,10 @@ def verificar_automatizacion(ultimos_datos):
             continue
 
     # --- LÓGICA VENTILADOR ---
-    # PRIMERO: Verificar si está en AUTO. Si está en manual, NO HACER NADA.
-    modo_fan = actuadores.get('fan', {}).get('mode', 'manual')  # Por seguridad default manual
+    modo_fan = actuadores.get('fan', {}).get('mode', 'manual')
 
     if modo_fan == "auto" and temp_val is not None:
         estado_fan = actuadores.get('fan', {}).get('estado', 'off')
-        # Lógica de histéresis simple
         if temp_val > umbral_temp and estado_fan == "off":
             set_estado_actuador("fan", "on", "AUTO-SISTEMA")
         elif temp_val <= umbral_temp and estado_fan == "on":
@@ -207,12 +208,8 @@ def set_estado_actuador(uid, estado, user="sistema"):
 def set_modo_actuador(uid, modo):
     """Actualiza el modo (auto/manual) en RAM y Disco."""
     global _CACHE_ACTUADORES
-
-    # 1. Actualizar RAM (Crucial para respuesta inmediata)
     if uid in _CACHE_ACTUADORES:
         _CACHE_ACTUADORES[uid]['mode'] = modo
-
-    # 2. Actualizar Disco
     actuadores_disco = _leer_json(ACTUADORES_FILE)
     if uid in actuadores_disco:
         actuadores_disco[uid]['mode'] = modo
@@ -226,7 +223,6 @@ def _actualizar_actuador(uid, estado, user):
 
     # 1. RAM
     if uid in _CACHE_ACTUADORES:
-        # Aseguramos modo por defecto
         if 'mode' not in _CACHE_ACTUADORES[uid]: _CACHE_ACTUADORES[uid]['mode'] = 'manual'
         if _CACHE_ACTUADORES[uid]['estado'] == estado: return True
         _CACHE_ACTUADORES[uid]['estado'] = estado
@@ -251,6 +247,97 @@ def _actualizar_actuador(uid, estado, user):
         _escribir_json(HISTORICO_ACTUADORES_FILE, hist)
         return True
     return False
+
+
+# --- CONSUMO ELÉCTRICO (NUEVO) ---
+def get_consumo_electrico():
+    """
+    Calcula el consumo eléctrico simulado.
+    Actualiza los valores aleatorios solo si han pasado 5 segundos.
+    """
+    global _CACHE_CONSUMO, _CACHE_ACTUADORES
+
+    tiempo_actual = time.time()
+
+    # Si han pasado menos de 5 segundos, devolvemos lo que hay en caché
+    if tiempo_actual - _CACHE_CONSUMO["timestamp"] < 5.0 and _CACHE_CONSUMO["data"]:
+        return _CACHE_CONSUMO["data"]
+
+    # Si pasaron 5 segundos, recalculamos
+    dispositivos = []
+    total_watts = 0.0
+
+    # 1. Sensores (Consumo bajo constante + ruido)
+    # Suponemos 5 sensores DHT/MQ/LDR
+    for nombre in ["DHT11 (Temp/Hum)", "LDR (Luz)", "MQ-2 (Gas)", "MQ-135 (Aire)", "Camara IP"]:
+        # Rango base pequeño: 0.2W a 0.8W. Camara consume más (2W - 4W)
+        if "Camara" in nombre:
+            consumo = round(random.uniform(2.0, 4.5), 2)
+        else:
+            consumo = round(random.uniform(0.1, 0.6), 2)
+
+        dispositivos.append({"nombre": nombre, "watts": consumo, "estado": "Activo"})
+        total_watts += consumo
+
+    # 2. Actuadores (Dependen del estado)
+    actuadores = _CACHE_ACTUADORES
+
+    # ESP32 (Controlador) - Siempre activo
+    esp_w = round(random.uniform(0.8, 1.5), 2)
+    dispositivos.append({"nombre": "Controlador ESP32", "watts": esp_w, "estado": "Online"})
+    total_watts += esp_w
+
+    # LEDs
+    estado_led = actuadores.get("leds", {}).get("estado", "off")
+    if estado_led == "on":
+        led_w = round(random.uniform(8.0, 12.0), 2)  # Alto consumo
+        st_txt = "ON"
+    else:
+        led_w = round(random.uniform(0.1, 0.3), 2)  # Standby
+        st_txt = "Standby"
+    dispositivos.append({"nombre": "Iluminación LED", "watts": led_w, "estado": st_txt})
+    total_watts += led_w
+
+    # Ventilador
+    estado_fan = actuadores.get("fan", {}).get("estado", "off")
+    if estado_fan == "on":
+        fan_w = round(random.uniform(3.5, 6.0), 2)
+        st_txt = "ON"
+    else:
+        fan_w = 0.0
+        st_txt = "OFF"
+    dispositivos.append({"nombre": "Ventilador DC", "watts": fan_w, "estado": st_txt})
+    total_watts += fan_w
+
+    # Motores Puertas (Simulamos picos aleatorios como si estuvieran operando ocasionalmente)
+    # Probabilidad baja de consumo activo para simular
+    motor_w = 0.0
+    if random.random() > 0.8:  # 20% de probabilidad de mostrar consumo de motor
+        motor_w = round(random.uniform(4.0, 7.0), 2)
+        st_mot = "Moviendo"
+    else:
+        motor_w = 0.1
+        st_mot = "Reposo"
+    dispositivos.append({"nombre": "Servos Puertas", "watts": motor_w, "estado": st_mot})
+    total_watts += motor_w
+
+    # Medias simuladas (Ya que no tenemos histórico real de consumo)
+    # Asumimos que la media diaria varía alrededor del consumo actual +/- 20%
+    media_dia = total_watts * random.uniform(0.9, 1.1)
+    # Media mes un poco más baja promediada
+    media_mes = total_watts * random.uniform(0.8, 1.0)
+
+    datos_finales = {
+        "total_actual": round(total_watts, 2),
+        "media_dia": round(media_dia, 2),
+        "media_mes": round(media_mes, 2),
+        "detalles": dispositivos
+    }
+
+    _CACHE_CONSUMO["timestamp"] = tiempo_actual
+    _CACHE_CONSUMO["data"] = datos_finales
+
+    return datos_finales
 
 
 # --- USUARIOS/PRESOS ---
@@ -300,20 +387,10 @@ def delete_preso(pid):
 
 
 def exportar_a_csv(nombre_archivo_json, ruta_destino):
-    """
-    Lee un archivo JSON de la carpeta modelo y lo guarda como CSV
-    en la ruta destino especificada.
-    """
     try:
-        # Usamos tu función interna para leer
         datos = _leer_json(nombre_archivo_json)
-
-        if not datos:
-            return False, "No hay datos para exportar."
-
-        # Convertir a lista si es un diccionario (para actuadores o config)
+        if not datos: return False, "No hay datos para exportar."
         if isinstance(datos, dict):
-            # Transformamos dict a lista de filas para el CSV
             datos_preparados = []
             for k, v in datos.items():
                 if isinstance(v, dict):
@@ -323,7 +400,6 @@ def exportar_a_csv(nombre_archivo_json, ruta_destino):
                 else:
                     datos_preparados.append({"parametro": k, "valor": v})
             datos = datos_preparados
-
         if isinstance(datos, list) and len(datos) > 0:
             columnas = datos[0].keys()
             with open(ruta_destino, 'w', newline='', encoding='utf-8') as f:
@@ -331,7 +407,6 @@ def exportar_a_csv(nombre_archivo_json, ruta_destino):
                 writer.writeheader()
                 writer.writerows(datos)
             return True, f"Exportado correctamente a: {os.path.basename(ruta_destino)}"
-
         return False, "Formato de datos no compatible."
     except Exception as e:
         return False, f"Error: {str(e)}"

@@ -6,7 +6,7 @@ import random
 from datetime import datetime
 import modelo.manejador_datos as modelo
 from vista import vista_login, vista_dashboard_sensores, vista_camaras, vista_gestion_presos, vista_historico, \
-    vista_configuracion
+    vista_configuracion, vista_consumo  # <--- Importar vista_consumo
 
 
 # --- SIMULADOR IOT (Hilo de Background) ---
@@ -51,8 +51,8 @@ def loop_controlador_ui(page):
     """
     while True:
         try:
-            # Solo trabajamos si hay vistas y estamos en dashboard
-            if not page.views or page.route != "/dashboard":
+            # Solo trabajamos si hay vistas y estamos en dashboard o consumo
+            if not page.views or (page.route != "/dashboard" and page.route != "/consumo"):
                 time.sleep(1)
                 continue
 
@@ -64,12 +64,17 @@ def loop_controlador_ui(page):
                 callback = vista_actual.data.get("update_callback")
 
                 if callback:
-                    # 1. PEDIR DATOS AL MODELO (RAM Cache = Rápido)
-                    datos_sensores = modelo.get_ultimos_sensores_raw()
-                    datos_actuadores = modelo.get_estado_actuadores()
+                    if page.route == "/dashboard":
+                        # 1. PEDIR DATOS AL MODELO (RAM Cache = Rápido)
+                        datos_sensores = modelo.get_ultimos_sensores_raw()
+                        datos_actuadores = modelo.get_estado_actuadores()
+                        # 2. INYECTAR DATOS A LA VISTA
+                        callback(datos_sensores, datos_actuadores)
 
-                    # 2. INYECTAR DATOS A LA VISTA
-                    callback(datos_sensores, datos_actuadores)
+                    elif page.route == "/consumo":
+                        # Obtener datos de consumo
+                        datos_consumo = modelo.get_consumo_electrico()
+                        callback(datos_consumo)
 
             time.sleep(0.5)  # Refresco controlado por el Controlador
 
@@ -148,6 +153,9 @@ def on_ver_historico_click(e): e.page.go("/historico")
 def on_configuracion_click(e): e.page.go("/config")
 
 
+def on_ver_consumo_click(e): e.page.go("/consumo")  # Handler navegacion consumo
+
+
 def on_guardar_config_click(e, nuevos_datos):
     modelo.save_configuracion(nuevos_datos)
     e.page.snack_bar = ft.SnackBar(ft.Text("Configuración guardada correctamente"), bgcolor="green")
@@ -221,13 +229,19 @@ def main(page: ft.Page):
                 on_abrir_crear_preso, on_abrir_editar_preso,
                 on_ver_historico_click,
                 on_configuracion_click,
-                on_cambiar_modo_click
+                on_cambiar_modo_click,
+                on_ver_consumo_click  # Pasamos el handler nuevo
             ))
 
         elif route == "/config":
             page.views.append(vista_configuracion.crear_vista_configuracion(
                 modelo.get_configuracion(),
                 on_guardar_config_click,
+                on_volver_dashboard_click
+            ))
+
+        elif route == "/consumo":
+            page.views.append(vista_consumo.crear_vista_consumo(
                 on_volver_dashboard_click
             ))
 
