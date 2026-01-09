@@ -1,29 +1,29 @@
 [
     {
         "id": 7,
-        "nombre": "koldo",
-        "delito": "gordo",
+        "nombre": "Preso 1",
+        "delito": "Robo",
         "celda": "Celda 3",
         "fecha_ingreso": "28/11/2025 18:22"
     },
     {
         "id": 8,
-        "nombre": "Abalos",
-        "delito": "corrupcion",
+        "nombre": "Preso 2",
+        "delito": "Corrupci\u00f3n",
         "celda": "Celda 2",
         "fecha_ingreso": "28/11/2025 19:14"
     },
     {
         "id": 9,
-        "nombre": "s\u00e1nchez",
-        "delito": "corrupcion",
+        "nombre": "Preso 3",
+        "delito": "Asesinato",
         "celda": "Celda 1",
         "fecha_ingreso": "28/11/2025 19:15"
     },
     {
         "id": 10,
-        "nombre": "Maduro",
-        "delito": "Narcoterrorismo",
+        "nombre": "Preso 4",
+        "delito": "Terrorismo",
         "celda": "Celda 4",
         "fecha_ingreso": "03/01/2026 17:02"
     }

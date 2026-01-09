@@ -13,5 +13,35 @@
         "user": "policia",
         "password": "1234",
         "rol": "policia"
+    },
+    {
+        "user": "\u00c1lvaro",
+        "password": "1234",
+        "rol": "inspector"
+    },
+    {
+        "user": "Dani",
+        "password": "1234",
+        "rol": "inspector"
+    },
+    {
+        "user": "Chimba",
+        "password": "1234",
+        "rol": "policia"
+    },
+    {
+        "user": "guardia",
+        "password": "1234",
+        "rol": "policia"
+    },
+    {
+        "user": "seguridad",
+        "password": "1234",
+        "rol": "policia"
+    },
+    {
+        "user": "inspector2",
+        "password": "1234",
+        "rol": "policia"
     }
 ]
