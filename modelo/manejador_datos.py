@@ -1,10 +1,11 @@
 import mysql.connector
+from mysql.connector import pooling
+import bcrypt
 import re
 import time
 import os
 import random
-import csv
-from datetime import datetime, timedelta
+from datetime import datetime
 from collections import defaultdict
 
 # --- CONFIGURACIÓN DE BASE DE DATOS ---
@@ -15,14 +16,29 @@ DB_CONFIG = {
     'password': '1234'
 }
 
+try:
+    db_pool = mysql.connector.pooling.MySQLConnectionPool(
+        pool_name="comisaria_pool",
+        pool_size=10,
+        pool_reset_session=True,
+        **DB_CONFIG
+    )
+except Exception as e:
+    print(f"Error crítico al crear el pool de conexiones: {e}")
+    db_pool = None
+
 _CACHE_CONSUMO = {"timestamp": 0, "data": {}}
+
 
 def conectar():
     try:
+        if db_pool:
+            return db_pool.get_connection()
         return mysql.connector.connect(**DB_CONFIG)
     except Exception as e:
         print(f"Error al conectar a MySQL: {e}")
         return None
+
 
 # --- CONFIGURACIÓN ---
 def get_configuracion():
@@ -39,26 +55,28 @@ def get_configuracion():
         conexion.close()
     return config
 
+
 def save_configuracion(data):
     conexion = conectar()
     if conexion:
         cursor = conexion.cursor()
         for k, v in data.items():
             cursor.execute("""
-                INSERT INTO configuracion (clave, valor) VALUES (%s, %s)
-                ON DUPLICATE KEY UPDATE valor = %s
-            """, (k, str(v), str(v)))
+                           INSERT INTO configuracion (clave, valor)
+                           VALUES (%s, %s) ON DUPLICATE KEY
+                           UPDATE valor = %s
+                           """, (k, str(v), str(v)))
         conexion.commit()
         conexion.close()
         return True
     return False
+
 
 # --- AUTOMATIZACIÓN ---
 def verificar_automatizacion(ultimos_datos):
     config = get_configuracion()
     umbral_temp = float(config.get("temp_max", 28.0))
     umbral_luz = float(config.get("luz_min", 400.0))
-
     actuadores = get_estado_actuadores()
 
     temp_val, luz_val = None, None
@@ -68,9 +86,12 @@ def verificar_automatizacion(ultimos_datos):
             match = re.search(r"([0-9\.]+)", val_str)
             if match:
                 num = float(match.group(1))
-                if "Temperatura" in d['sensor']: temp_val = num
-                elif "Luz" in d['sensor']: luz_val = num
-        except: continue
+                if "Temperatura" in d['sensor']:
+                    temp_val = num
+                elif "Luz" in d['sensor']:
+                    luz_val = num
+        except:
+            continue
 
     modo_fan = actuadores.get('fan', {}).get('mode', 'manual')
     if modo_fan == "auto" and temp_val is not None:
@@ -88,75 +109,87 @@ def verificar_automatizacion(ultimos_datos):
         elif luz_val >= umbral_luz and estado_led == "on":
             set_estado_actuador("leds", "off", "AUTO-SISTEMA")
 
+
 # --- SENSORES ---
 def registrar_dato_sensor(datos):
     conexion = conectar()
     if conexion:
         cursor = conexion.cursor()
-        query = "INSERT INTO sensores_log (timestamp, sensor, valor) VALUES (%s, %s, %s)"
-        valores = [(d['timestamp'], d['sensor'], str(d['valor'])) for d in datos]
+        query = "INSERT INTO sensores_log (timestamp, sensor, valor, unidad) VALUES (%s, %s, %s, %s)"
+        valores = []
+        for d in datos:
+            val_str = str(d['valor'])
+            match = re.search(r"([0-9\.]+)\s*(.*)", val_str)
+            if match:
+                val_num = float(match.group(1))
+                val_unit = match.group(2).strip()
+            else:
+                val_num = 0.0
+                val_unit = ""
+            valores.append((d['timestamp'], d['sensor'], val_num, val_unit))
+
         cursor.executemany(query, valores)
         conexion.commit()
         conexion.close()
     verificar_automatizacion(datos)
 
+
 def _formatear_fecha(fecha_db):
-    """Convierte el objeto datetime de MySQL a texto para la app Flet."""
     if isinstance(fecha_db, datetime):
         return fecha_db.strftime('%Y-%m-%d %H:%M:%S')
     return str(fecha_db)
+
 
 def get_ultimos_sensores_raw():
     conexion = conectar()
     res = []
     if conexion:
         cursor = conexion.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM sensores_log ORDER BY id DESC LIMIT 20")
-        res = [{"timestamp": _formatear_fecha(r["timestamp"]), "sensor": r["sensor"], "valor": r["valor"]} for r in cursor.fetchall()]
+        cursor.execute("SELECT timestamp, sensor, valor, unidad FROM sensores_log ORDER BY id DESC LIMIT 20")
+        for r in cursor.fetchall():
+            v_format = f"{r['valor']} {r['unidad']}" if r['unidad'] else str(r['valor'])
+            res.append({"timestamp": _formatear_fecha(r["timestamp"]), "sensor": r["sensor"], "valor": v_format})
         conexion.close()
     return res[::-1]
+
 
 def get_log_sensores_filtrado(horas=24):
     conexion = conectar()
     res = []
     if conexion:
         cursor = conexion.cursor(dictionary=True)
-        # Quitamos DATE_FORMAT de la consulta SQL para evitar problemas con los %s
-        query = "SELECT timestamp, sensor, valor FROM sensores_log WHERE timestamp >= NOW() - INTERVAL %s HOUR ORDER BY timestamp DESC LIMIT 2000"
+        query = "SELECT timestamp, sensor, valor, unidad FROM sensores_log WHERE timestamp >= NOW() - INTERVAL %s HOUR ORDER BY timestamp DESC LIMIT 2000"
         cursor.execute(query, (horas,))
         for r in cursor.fetchall():
             r['timestamp'] = _formatear_fecha(r['timestamp'])
+            r['valor'] = f"{r['valor']} {r['unidad']}" if r['unidad'] else str(r['valor'])
             res.append(r)
         conexion.close()
     return res
 
+
 def get_promedio_sensores_por_hora():
     conexion = conectar()
-    logs = []
+    res_dict = defaultdict(list)
     if conexion:
         cursor = conexion.cursor(dictionary=True)
-        cursor.execute("SELECT timestamp, sensor, valor FROM sensores_log ORDER BY id DESC LIMIT 3000")
+        query = """
+                SELECT sensor, \
+                       DATE_FORMAT(timestamp, '%Y-%m-%d %H:00') as hora, \
+                       AVG(valor)                               as promedio, \
+                       MAX(unidad)                              as unidad
+                FROM sensores_log
+                GROUP BY sensor, DATE_FORMAT(timestamp, '%Y-%m-%d %H:00')
+                ORDER BY hora ASC LIMIT 500 \
+                """
+        cursor.execute(query)
         for r in cursor.fetchall():
-            r['timestamp'] = _formatear_fecha(r['timestamp'])
-            logs.append(r)
+            prom = float(r['promedio']) if r['promedio'] is not None else 0.0
+            fmt = f"{int(prom) if prom.is_integer() else f'{prom:.1f}'} {r['unidad']}"
+            res_dict[r['sensor']].append({"hora": r['hora'], "valor": fmt})
         conexion.close()
+    return dict(res_dict)
 
-    logs.reverse()
-    data = defaultdict(list)
-    for l in logs:
-        try:
-            dt = datetime.strptime(l['timestamp'], "%Y-%m-%d %H:%M:%S")
-            key = (l['sensor'], dt.strftime("%Y-%m-%d %H:00"))
-            match = re.search(r"([0-9\.]+)\s*(.*)", str(l['valor']))
-            if match: data[(*key, match.group(2))].append(float(match.group(1)))
-        except:
-            continue
-    res = defaultdict(list)
-    for (sen, hora, unid), vals in sorted(data.items(), key=lambda x: x[0][1]):
-        prom = sum(vals) / len(vals)
-        fmt = f"{int(prom) if prom.is_integer() else f'{prom:.1f}'} {unid}"
-        res[sen].append({"hora": hora, "valor": fmt})
-    return dict(res)
 
 # --- ACTUADORES ---
 def get_estado_actuadores():
@@ -170,18 +203,37 @@ def get_estado_actuadores():
         conexion.close()
     return estados
 
+
 def get_log_historico_completo(dias=7):
+    # Ya no se usa para cargar la UI pesada, solo como compatibilidad
     conexion = conectar()
     res = []
     if conexion:
         cursor = conexion.cursor(dictionary=True)
-        # Formateo manejado en Python
-        cursor.execute("SELECT timestamp, uid as id, label, accion, usuario FROM historico_actuadores WHERE timestamp >= NOW() - INTERVAL %s DAY ORDER BY id DESC LIMIT 5000", (dias,))
+        cursor.execute(
+            "SELECT timestamp, uid as id, label, accion, usuario FROM historico_actuadores WHERE timestamp >= NOW() - INTERVAL %s DAY ORDER BY id DESC LIMIT 5000",
+            (dias,))
         for r in cursor.fetchall():
             r['timestamp'] = _formatear_fecha(r['timestamp'])
             res.append(r)
         conexion.close()
     return res
+
+
+# OPTIMIZACIÓN 2: Paginación Real en SQL (Para la nueva vista_historico)
+def get_log_actuadores_paginado(uid_parcial, limit=50, offset=0):
+    conexion = conectar()
+    res = []
+    if conexion:
+        cursor = conexion.cursor(dictionary=True)
+        query = "SELECT timestamp, uid as id, label, accion, usuario FROM historico_actuadores WHERE uid LIKE %s ORDER BY id DESC LIMIT %s OFFSET %s"
+        cursor.execute(query, (f"%{uid_parcial}%", limit, offset))
+        for r in cursor.fetchall():
+            r['timestamp'] = _formatear_fecha(r['timestamp'])
+            res.append(r)
+        conexion.close()
+    return res
+
 
 def toggle_actuador(uid, user="sistema"):
     estados = get_estado_actuadores()
@@ -189,8 +241,10 @@ def toggle_actuador(uid, user="sistema"):
     nuevo = "abierta" if curr == "cerrada" else "cerrada"
     return _actualizar_actuador(uid, nuevo, user)
 
+
 def set_estado_actuador(uid, estado, user="sistema"):
     return _actualizar_actuador(uid, estado, user)
+
 
 def set_modo_actuador(uid, modo):
     conexion = conectar()
@@ -202,6 +256,7 @@ def set_modo_actuador(uid, modo):
         return True
     return False
 
+
 def _actualizar_actuador(uid, estado, user):
     conexion = conectar()
     if conexion:
@@ -211,20 +266,18 @@ def _actualizar_actuador(uid, estado, user):
 
         if actuador and actuador['estado'] != estado:
             cursor.execute("UPDATE actuadores_estado SET estado = %s WHERE uid = %s", (estado, uid))
-
             lbl = actuador['label']
             if uid == "leds": lbl = "Iluminación"
             if uid == "fan": lbl = "Ventilación"
-
             cursor.execute("""
-                INSERT INTO historico_actuadores (timestamp, uid, label, accion, usuario)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), uid, lbl, estado, user))
-
+                           INSERT INTO historico_actuadores (timestamp, uid, label, accion, usuario)
+                           VALUES (%s, %s, %s, %s, %s)
+                           """, (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), uid, lbl, estado, user))
             conexion.commit()
         conexion.close()
         return True
     return False
+
 
 # --- CONSUMO ELÉCTRICO ---
 def get_consumo_electrico():
@@ -242,75 +295,79 @@ def get_consumo_electrico():
         total_watts += consumo
 
     actuadores = get_estado_actuadores()
-
     esp_w = round(random.uniform(0.8, 1.5), 2)
     dispositivos.append({"nombre": "Controlador ESP32", "watts": esp_w, "estado": "Online"})
     total_watts += esp_w
 
     estado_led = actuadores.get("leds", {}).get("estado", "off")
-    if estado_led == "on":
-        led_w, st_txt = round(random.uniform(8.0, 12.0), 2), "ON"
-    else:
-        led_w, st_txt = round(random.uniform(0.1, 0.3), 2), "Standby"
+    led_w, st_txt = (round(random.uniform(8.0, 12.0), 2), "ON") if estado_led == "on" else (
+        round(random.uniform(0.1, 0.3), 2), "Standby")
     dispositivos.append({"nombre": "Iluminación LED", "watts": led_w, "estado": st_txt})
     total_watts += led_w
 
     estado_fan = actuadores.get("fan", {}).get("estado", "off")
-    if estado_fan == "on":
-        fan_w, st_txt = round(random.uniform(3.5, 6.0), 2), "ON"
-    else:
-        fan_w, st_txt = 0.0, "OFF"
+    fan_w, st_txt = (round(random.uniform(3.5, 6.0), 2), "ON") if estado_fan == "on" else (0.0, "OFF")
     dispositivos.append({"nombre": "Ventilador DC", "watts": fan_w, "estado": st_txt})
     total_watts += fan_w
 
-    if random.random() > 0.8:
-        motor_w, st_mot = round(random.uniform(4.0, 7.0), 2), "Moviendo"
-    else:
-        motor_w, st_mot = 0.1, "Reposo"
+    motor_w, st_mot = (round(random.uniform(4.0, 7.0), 2), "Moviendo") if random.random() > 0.8 else (0.1, "Reposo")
     dispositivos.append({"nombre": "Servos Puertas", "watts": motor_w, "estado": st_mot})
     total_watts += motor_w
 
-    media_dia = total_watts * random.uniform(0.9, 1.1)
-    media_mes = total_watts * random.uniform(0.8, 1.0)
-
     datos_finales = {
         "total_actual": round(total_watts, 2),
-        "media_dia": round(media_dia, 2),
-        "media_mes": round(media_mes, 2),
+        "media_dia": round(total_watts * random.uniform(0.9, 1.1), 2),
+        "media_mes": round(total_watts * random.uniform(0.8, 1.0), 2),
         "detalles": dispositivos
     }
     _CACHE_CONSUMO["timestamp"] = tiempo_actual
     _CACHE_CONSUMO["data"] = datos_finales
     return datos_finales
 
+
 # --- USUARIOS/PRESOS ---
+# OPTIMIZACIÓN 1: Seguridad BCRYPT
 def validar_usuario(u, p):
     conexion = conectar()
     rol = None
     if conexion:
         cursor = conexion.cursor(dictionary=True)
-        cursor.execute("SELECT rol FROM usuarios WHERE user = %s AND password = %s", (u, p))
+        cursor.execute("SELECT password, rol FROM usuarios WHERE user = %s", (u,))
         usuario = cursor.fetchone()
-        if usuario: rol = usuario['rol']
+
+        if usuario:
+            hash_db = usuario['password']
+            # Comprobamos si la contraseña ya está hasheada
+            if hash_db.startswith('$2b$') or hash_db.startswith('$2a$'):
+                if bcrypt.checkpw(p.encode('utf-8'), hash_db.encode('utf-8')):
+                    rol = usuario['rol']
+            else:
+                # MODO COMPATIBILIDAD: Permite entrar si es texto plano (ej. el admin antiguo)
+                if p == hash_db:
+                    rol = usuario['rol']
         conexion.close()
     return rol
+
 
 def get_usuarios():
     conexion = conectar()
     res = []
     if conexion:
         cursor = conexion.cursor(dictionary=True)
-        cursor.execute("SELECT user, password, rol FROM usuarios")
+        cursor.execute("SELECT id, user, password, rol FROM usuarios")
         res = cursor.fetchall()
         conexion.close()
     return res
+
 
 def add_usuario(u, p, r):
     conexion = conectar()
     if conexion:
         cursor = conexion.cursor()
+        # Hasheamos la contraseña antes de guardarla
+        hashed_password = bcrypt.hashpw(p.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         try:
-            cursor.execute("INSERT INTO usuarios (user, password, rol) VALUES (%s, %s, %s)", (u, p, r))
+            cursor.execute("INSERT INTO usuarios (user, password, rol) VALUES (%s, %s, %s)", (u, hashed_password, r))
             conexion.commit()
             res = True
         except mysql.connector.IntegrityError:
@@ -318,6 +375,36 @@ def add_usuario(u, p, r):
         conexion.close()
         return res
     return False
+
+
+def update_usuario(uid, user, password, rol):
+    conexion = conectar()
+    if conexion:
+        cursor = conexion.cursor()
+        # Si la edita, la volvemos a hashear
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        try:
+            cursor.execute("UPDATE usuarios SET user=%s, password=%s, rol=%s WHERE id=%s",
+                           (user, hashed_password, rol, uid))
+            conexion.commit()
+            res = True
+        except mysql.connector.IntegrityError:
+            res = False
+        conexion.close()
+        return res
+    return False
+
+
+def delete_usuario(uid):
+    conexion = conectar()
+    if conexion:
+        cursor = conexion.cursor()
+        cursor.execute("DELETE FROM usuarios WHERE id=%s", (uid,))
+        conexion.commit()
+        conexion.close()
+        return True
+    return False
+
 
 def get_presos():
     conexion = conectar()
@@ -329,16 +416,19 @@ def get_presos():
         conexion.close()
     return res
 
+
 def add_preso(n, d, c):
     conexion = conectar()
     if conexion:
         cursor = conexion.cursor()
         fecha = datetime.now().strftime("%d/%m/%Y %H:%M")
-        cursor.execute("INSERT INTO presos (nombre, delito, celda, fecha_ingreso) VALUES (%s, %s, %s, %s)", (n, d, c, fecha))
+        cursor.execute("INSERT INTO presos (nombre, delito, celda, fecha_ingreso) VALUES (%s, %s, %s, %s)",
+                       (n, d, c, fecha))
         conexion.commit()
         conexion.close()
         return True
     return False
+
 
 def update_preso(pid, dat):
     conexion = conectar()
@@ -351,6 +441,7 @@ def update_preso(pid, dat):
         return True
     return False
 
+
 def delete_preso(pid):
     conexion = conectar()
     if conexion:
@@ -361,6 +452,6 @@ def delete_preso(pid):
         return True
     return False
 
-# Exportar opcionalmente para evitar cuelgues si está asignado a un botón
+
 def exportar_a_csv(nombre_archivo_json, ruta_destino):
     pass

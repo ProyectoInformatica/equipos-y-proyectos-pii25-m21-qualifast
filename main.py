@@ -201,6 +201,7 @@ def main(page: ft.Page):
     threading.Thread(target=loop_controlador_ui, args=(page,), daemon=True).start()
 
     def route_change(evt):
+        page.views.clear()
         route = evt.route
         if route == "/temp": return
         page.views.clear()
