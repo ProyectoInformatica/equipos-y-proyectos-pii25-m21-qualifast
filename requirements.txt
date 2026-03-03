@@ -2,3 +2,5 @@ flet
 opencv-python
 flet-video
 flet-webview
+mysql-connector-python
+bcrypt
