@@ -1,72 +1,54 @@
 import flet as ft
 from vista.temas import COLORS, DEVICE_ICONS
-import vista.vista_gestion_presos
-import vista.vista_gestion_usuarios
 
-
-# NOTA: Ya no importamos 'modelo' ni 'threading'. Cumplimos MVC.
 
 def crear_dashboard_view(
         page: ft.Page,
         rol_usuario: str,
         nombre_usuario: str,
         datos_actuadores_iniciales: dict,
-        datos_presos: list,
-        datos_usuarios: list,
         datos_sensores_iniciales: list,
-        on_logout_click,
         on_refrescar_click,
         on_control_actuador_click,
-        on_crear_usuario_click,
-        on_borrar_preso_click,
         on_ver_camaras_click,
-        on_abrir_crear_preso,
-        on_abrir_editar_preso,
-        on_ver_historico_click,
-        on_configuracion_click,
-        on_cambiar_modo_click,
-        on_ver_consumo_click=None  # Nuevo parametro
+        on_cambiar_modo_click
 ):
     puede_controlar = (rol_usuario != 'policia')
-    es_admin = (rol_usuario in ['comisario', 'inspector'])
 
-    # --- HEADER ---
-    logo_img = ft.Image(src="logo.png", height=40, fit=ft.ImageFit.CONTAIN)
+    # --- HEADER SIMPLIFICADO ---
     brand_text = ft.Column([
-        ft.Text("QUALIFAST BUILDINGS", size=16, weight=ft.FontWeight.W_900, color=COLORS['text'],
-                font_family="Verdana"),
-        ft.Text("PLANTA COMISARÍA", size=10, weight=ft.FontWeight.BOLD, color=COLORS['accent'])
+        ft.Text("CENTRO DE CONTROL", size=22, weight=ft.FontWeight.W_900, color=COLORS['text'], font_family="Verdana"),
+        ft.Text("MONITORIZACIÓN EN TIEMPO REAL", size=12, weight=ft.FontWeight.BOLD, color=COLORS['accent'])
     ], spacing=0)
 
     legend_content = ft.Row([
-        ft.Text("🟢 Abierta 🔴 Cerrada", size=10, color=COLORS['muted']),
+        ft.Text("🟢 Abierta 🔴 Cerrada", size=12, color=COLORS['muted']),
         ft.Container(width=10, height=15, border=ft.border.only(left=ft.border.BorderSide(1, COLORS['muted']))),
-        ft.Icon(ft.Icons.PERSON, size=12, color=COLORS['accent']),
-        ft.Text(f"{nombre_usuario} ({rol_usuario.upper()})", size=11, weight="bold", color=COLORS['text'])
+        ft.Icon(ft.Icons.PERSON, size=14, color=COLORS['accent']),
+        ft.Text(f"{nombre_usuario} ({rol_usuario.upper()})", size=13, weight="bold", color=COLORS['text'])
     ], alignment="center")
 
     boton_camaras = ft.ElevatedButton("Ver Cámaras", icon=ft.Icons.CAMERA_ALT, bgcolor=COLORS['glass'],
                                       color=COLORS['text'], on_click=on_ver_camaras_click)
-    logout_btn = ft.ElevatedButton("Salir", bgcolor=COLORS['bg'], color=COLORS['bad'], on_click=on_logout_click)
 
     topbar = ft.Container(
         content=ft.Row([
-            logo_img, ft.Container(width=10), brand_text, ft.Container(width=20),
+            brand_text, ft.Container(width=20),
             legend_content, ft.Container(expand=True),
-            boton_camaras, ft.Container(width=10), logout_btn
+            boton_camaras
         ], alignment="center", vertical_alignment="center"),
-        padding=ft.padding.symmetric(horizontal=5, vertical=5)
+        padding=ft.padding.symmetric(horizontal=5, vertical=10)
     )
 
     # --- MAPA INTERACTIVO ---
     rooms_config = [
-        {"name": "Recepción", "l": 20, "t": 20, "w": 300, "h": 120},
-        {"name": "Vigilancia", "l": 340, "t": 20, "w": 300, "h": 120},
-        {"name": "Despacho", "l": 20, "t": 160, "w": 300, "h": 120},
-        {"name": "C1", "l": 340, "t": 160, "w": 150, "h": 60},
-        {"name": "C2", "l": 490, "t": 160, "w": 150, "h": 60},
-        {"name": "C3", "l": 340, "t": 220, "w": 150, "h": 60},
-        {"name": "C4", "l": 490, "t": 220, "w": 150, "h": 60},
+        {"name": "Recepción", "l": 30, "t": 30, "w": 450, "h": 180},
+        {"name": "Vigilancia", "l": 510, "t": 30, "w": 450, "h": 180},
+        {"name": "Despacho", "l": 30, "t": 240, "w": 450, "h": 180},
+        {"name": "C1", "l": 510, "t": 240, "w": 225, "h": 90},
+        {"name": "C2", "l": 735, "t": 240, "w": 225, "h": 90},
+        {"name": "C3", "l": 510, "t": 330, "w": 225, "h": 90},
+        {"name": "C4", "l": 735, "t": 330, "w": 225, "h": 90},
     ]
 
     map_stack_controls = []
@@ -74,16 +56,16 @@ def crear_dashboard_view(
         map_stack_controls.append(ft.Container(
             left=r["l"], top=r["t"], width=r["w"], height=r["h"],
             bgcolor=COLORS['room_bg'], border=ft.border.all(2, '#5a7a9e'),
-            content=ft.Text(r["name"], color='#cfe7ff', size=14, weight="bold"),
+            content=ft.Text(r["name"], color='#cfe7ff', size=16, weight="bold"),
             alignment=ft.alignment.center
         ))
 
     # Puertas
     doors_config = [
-        {"id": "door-1", "l": 320, "t": 60, "w": 20, "h": 40, "label": "P1"},
-        {"id": "door-2", "l": 320, "t": 200, "w": 20, "h": 40, "label": "P2"},
-        {"id": "door-3", "l": 150, "t": 140, "w": 40, "h": 20, "label": "P3"},
-        {"id": "door-4", "l": 470, "t": 140, "w": 40, "h": 20, "label": "P4"},
+        {"id": "door-1", "l": 480, "t": 90, "w": 30, "h": 60, "label": "P1"},
+        {"id": "door-2", "l": 480, "t": 300, "w": 30, "h": 60, "label": "P2"},
+        {"id": "door-3", "l": 225, "t": 210, "w": 60, "h": 30, "label": "P3"},
+        {"id": "door-4", "l": 705, "t": 210, "w": 60, "h": 30, "label": "P4"},
     ]
 
     controles_puertas = {}
@@ -96,72 +78,39 @@ def crear_dashboard_view(
             left=d["l"], top=d["t"], width=d["w"], height=d["h"],
             bgcolor=color, border=ft.border.all(1, "white"),
             on_click=lambda e, p=pid: on_control_actuador_click(e, p, None),
-            content=ft.Text(d["label"], size=8, color="white", weight="bold"),
+            content=ft.Text(d["label"], size=10, color="white", weight="bold"),
             alignment=ft.alignment.center,
             animate=ft.Animation(300, "easeOut")
         )
         controles_puertas[pid] = cnt
         map_stack_controls.append(cnt)
 
-    # Iconos
-    icon_fan_map = ft.Icon(DEVICE_ICONS['fan'], size=20, color=COLORS['muted'])
-    icon_led_map = ft.Icon(DEVICE_ICONS['leds'], size=20, color=COLORS['muted'])
+    # Iconos de sensores en el mapa
+    icon_fan_map = ft.Icon(DEVICE_ICONS['fan'], size=26, color=COLORS['muted'])
+    icon_led_map = ft.Icon(DEVICE_ICONS['leds'], size=26, color=COLORS['muted'])
 
     map_stack_controls.extend([
-        ft.Container(left=580, top=30, content=ft.Icon(ft.Icons.VIDEOCAM, color="#fb7185", size=20), bgcolor="white",
+        ft.Container(left=870, top=45, content=ft.Icon(ft.Icons.VIDEOCAM, color="#fb7185", size=24), bgcolor="white",
                      border_radius=15, on_click=on_ver_camaras_click),
-        ft.Container(left=477, top=206, content=ft.Text(DEVICE_ICONS['ldr'], size=20), tooltip="LDR"),
-
-        # Fuego (Referencia Vertical: 600)
-        ft.Container(left=600, top=179, content=ft.Text(DEVICE_ICONS['mq-2'], size=20), tooltip="MQ-2"),
-
-        # Aire (Referencia Horizontal: 245)
-        ft.Container(left=345, top=245, content=ft.Text(DEVICE_ICONS['mq-135'], size=20), tooltip="MQ-135"),
-
-        # --- NUEVO ICONO HUMEDAD (Intersección: Left 600, Top 245) ---
-        ft.Container(left=600, top=245, content=ft.Text("💧", size=20), tooltip="Humedad"),
-        # -------------------------------------------------------------
-
-        ft.Container(left=345, top=180, content=ft.Text(DEVICE_ICONS['dht22'], size=16), tooltip="DHT22"),
-        ft.Container(left=400, top=165, content=icon_fan_map, tooltip="Ventilación"),
-        ft.Container(left=480, top=210, content=icon_led_map, tooltip="Iluminación Central"),
+        ft.Container(left=715, top=309, content=ft.Text(DEVICE_ICONS['ldr'], size=24), tooltip="LDR"),
+        ft.Container(left=900, top=268, content=ft.Text(DEVICE_ICONS['mq-2'], size=24), tooltip="MQ-2"),
+        ft.Container(left=517, top=367, content=ft.Text(DEVICE_ICONS['mq-135'], size=24), tooltip="MQ-135"),
+        ft.Container(left=900, top=367, content=ft.Text("💧", size=24), tooltip="Humedad"),
+        ft.Container(left=517, top=270, content=ft.Text(DEVICE_ICONS['dht22'], size=20), tooltip="DHT22"),
+        ft.Container(left=600, top=247, content=icon_fan_map, tooltip="Ventilación"),
+        ft.Container(left=720, top=315, content=icon_led_map, tooltip="Iluminación Central"),
     ])
 
     map_card = ft.Container(content=ft.Column([
-        ft.Text("Plano Interactivo", color=COLORS['text'], size=16),
-        ft.Row([ft.Stack(controls=map_stack_controls, width=680, height=320)], alignment="center")
-    ], alignment="center"), bgcolor=COLORS['card'], border=ft.border.all(2, COLORS['glass']), padding=10,
-        alignment=ft.alignment.center)
+        ft.Text("Plano Interactivo de la Comisaría", color=COLORS['text'], size=18, weight="bold"),
+        ft.Row([ft.Stack(controls=map_stack_controls, width=1000, height=450)], alignment="center", expand=True)
+    ], alignment="center"), bgcolor=COLORS['card'], border=ft.border.all(2, COLORS['glass']), padding=15,
+        alignment=ft.alignment.center, expand=True)
 
-    # --- BOTTOM ROW ---
-    vista_presos = vista.vista_gestion_presos.crear_vista_presos(datos_presos, on_abrir_crear_preso,
-                                                                 on_abrir_editar_preso, on_refrescar_click,
-                                                                 on_borrar_preso_click)
-    vista_usuarios = vista.vista_gestion_usuarios.crear_vista_usuarios(rol_usuario, datos_usuarios,
-                                                                       on_crear_usuario_click)
-    bottom_row = ft.Container(height=450, content=ft.Row(
-        [ft.Container(content=vista_presos, expand=1), ft.Container(content=vista_usuarios, expand=1)], spacing=12,
-        expand=True))
-    left_column = ft.Column(spacing=12, expand=True, scroll=ft.ScrollMode.AUTO, controls=[topbar, map_card, bottom_row])
+    left_column = ft.Column(spacing=15, expand=True, controls=[topbar, map_card])
 
-    # --- PANEL DERECHO ---
-    right_content = ft.Column(spacing=12, expand=True)
-    if es_admin:
-        right_content.controls.append(
-            ft.ElevatedButton("Config. Sensores/Actuadores", icon=ft.Icons.SETTINGS, bgcolor=COLORS['glass'],
-                              color=COLORS['accent'], width=280, on_click=on_configuracion_click))
-    right_content.controls.append(
-        ft.ElevatedButton("Ver Logs / Histórico", icon=ft.Icons.HISTORY, bgcolor=COLORS['accent'], color=COLORS['bg'],
-                          width=280, on_click=on_ver_historico_click))
-
-    # --- NUEVO BOTÓN DE CONSUMO ---
-    if on_ver_consumo_click:
-        right_content.controls.append(
-            ft.ElevatedButton("Consumo Eléctrico", icon=ft.Icons.BOLT, bgcolor="orange", color="black",
-                              width=280, on_click=on_ver_consumo_click))
-    # -------------------------------
-
-    right_content.controls.append(ft.Divider(color=COLORS['muted']))
+    # --- PANEL DERECHO (LIMPIO, SIN BOTONES DUPLICADOS) ---
+    right_content = ft.Column(spacing=15, expand=True)
 
     switch_led = ft.Switch(value=False, disabled=(not puede_controlar),
                            on_change=lambda e: on_control_actuador_click(e, "leds", "on" if e.control.value else "off"))
@@ -171,33 +120,34 @@ def crear_dashboard_view(
     btn_auto_led = ft.Container(content=ft.Text("AUTO", size=10, weight="bold", color="white"), bgcolor=COLORS['muted'],
                                 padding=5, border_radius=4,
                                 on_click=lambda e: on_cambiar_modo_click(e, "leds") if puede_controlar else None,
-                                tooltip="Click para alternar Auto/Manual")
+                                tooltip="Alternar modo Auto/Manual")
     btn_auto_fan = ft.Container(content=ft.Text("AUTO", size=10, weight="bold", color="white"), bgcolor=COLORS['muted'],
                                 padding=5, border_radius=4,
                                 on_click=lambda e: on_cambiar_modo_click(e, "fan") if puede_controlar else None,
-                                tooltip="Click para alternar Auto/Manual")
+                                tooltip="Alternar modo Auto/Manual")
 
     right_content.controls.extend([
-        ft.Text("Actuadores y Sistema", size=12, weight="bold", color=COLORS['text']),
-        ft.Container(bgcolor=COLORS['glass'], padding=5, border_radius=5, content=ft.Row(
-            [ft.Text(f"{DEVICE_ICONS['esp32']} ESP32 Controller", color=COLORS['text'], size=12),
-             ft.Container(expand=True), ft.Text("ONLINE", color=COLORS['good'], size=10, weight="bold")])),
-        ft.Container(bgcolor=COLORS['glass'], padding=5, border_radius=5, content=ft.Row(
-            [ft.Text(f"{DEVICE_ICONS['motor']} Motor DC (Puertas)", color=COLORS['text'], size=12),
-             ft.Container(expand=True), ft.Text("MANUAL", color=COLORS['accent'], size=10, weight="bold")])),
-        ft.Container(bgcolor=COLORS['glass'], padding=5, border_radius=5, content=ft.Row(
-            [ft.Text(f"{DEVICE_ICONS['leds']} Iluminación LED", color=COLORS['text'], size=12),
+        ft.Text("Estado de Actuadores", size=16, weight="bold", color=COLORS['text']),
+        ft.Container(bgcolor=COLORS['glass'], padding=8, border_radius=5, content=ft.Row(
+            [ft.Text(f"{DEVICE_ICONS['esp32']} Controlador", color=COLORS['text'], size=13),
+             ft.Container(expand=True), ft.Text("ONLINE", color=COLORS['good'], size=11, weight="bold")])),
+        ft.Container(bgcolor=COLORS['glass'], padding=8, border_radius=5, content=ft.Row(
+            [ft.Text(f"{DEVICE_ICONS['motor']} Motores Puerta", color=COLORS['text'], size=13),
+             ft.Container(expand=True), ft.Text("MANUAL", color=COLORS['accent'], size=11, weight="bold")])),
+        ft.Container(bgcolor=COLORS['glass'], padding=8, border_radius=5, content=ft.Row(
+            [ft.Text(f"{DEVICE_ICONS['leds']} Iluminación", color=COLORS['text'], size=13),
              ft.Container(expand=True), btn_auto_led, ft.Container(width=5), switch_led])),
-        ft.Container(bgcolor=COLORS['glass'], padding=5, border_radius=5, content=ft.Row(
-            [ft.Text(f"{DEVICE_ICONS['fan']} Ventilador 5V", color=COLORS['text'], size=12), ft.Container(expand=True),
+        ft.Container(bgcolor=COLORS['glass'], padding=8, border_radius=5, content=ft.Row(
+            [ft.Text(f"{DEVICE_ICONS['fan']} Ventilación", color=COLORS['text'], size=13), ft.Container(expand=True),
              btn_auto_fan, ft.Container(width=5), switch_fan])),
+
         ft.Divider(height=10, color=COLORS['muted']),
-        ft.Text("Monitor de Sensores (Tiempo Real)", size=12, weight="bold", color=COLORS['text'])
+        ft.Text("Monitoreo en Tiempo Real", size=16, weight="bold", color=COLORS['text'])
     ])
 
     lista_sensores_fijos = ["DHT11 - Temperatura", "DHT11 - Humedad", "LDR - Luz", "MQ-2 - Humo", "MQ-135 - Aire"]
     mapa_controles_sensores = {}
-    columna_sensores_fijos = ft.Column(spacing=8)
+    columna_sensores_fijos = ft.Column(spacing=12)
 
     for nombre_sensor in lista_sensores_fijos:
         icono = "📝"
@@ -212,29 +162,27 @@ def crear_dashboard_view(
         elif 'Aire' in nombre_sensor:
             icono = DEVICE_ICONS['mq-135']
 
-        txt_valor = ft.Text("Esperando...", size=13, weight="bold", color=COLORS['accent'])
-        txt_hora = ft.Text("--:--:--", size=10, color=COLORS['muted'])
+        txt_valor = ft.Text("Esperando...", size=15, weight="bold", color=COLORS['accent'])
+        txt_hora = ft.Text("--:--:--", size=11, color=COLORS['muted'])
         mapa_controles_sensores[nombre_sensor] = (txt_valor, txt_hora)
 
         columna_sensores_fijos.controls.append(ft.Container(
-            content=ft.Row([ft.Text(icono, size=18),
-                            ft.Column([ft.Text(nombre_sensor, size=11, weight="bold", color=COLORS['text']), txt_hora],
+            content=ft.Row([ft.Text(icono, size=22),
+                            ft.Column([ft.Text(nombre_sensor, size=13, weight="bold", color=COLORS['text']), txt_hora],
                                       spacing=0, expand=True), txt_valor],
                            alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
-            bgcolor=COLORS['glass'], padding=10, border_radius=8,
+            bgcolor=COLORS['glass'], padding=12, border_radius=8,
             border=ft.border.only(left=ft.border.BorderSide(4, COLORS['accent']))
         ))
 
     right_content.controls.append(ft.Container(content=columna_sensores_fijos, expand=True))
-    right_column = ft.Container(width=320, bgcolor=COLORS['card'], padding=14, expand=False, content=right_content,
+    right_column = ft.Container(width=340, bgcolor=COLORS['card'], padding=18, expand=False, content=right_content,
                                 border=ft.border.all(1, COLORS['glass']))
 
     # --- FUNCIÓN PÚBLICA DE ACTUALIZACIÓN (MVC STRICT) ---
-    # Esta función NO llama al modelo. Recibe los datos ya procesados.
     def actualizar_datos_ui(datos_sensores_raw, estados_actuadores):
         if not left_column.page: return
 
-        # 1. Actualizar Sensores
         try:
             ultimos = {l['sensor']: l for l in datos_sensores_raw} if datos_sensores_raw else {}
             for nombre, (ctrl_val, ctrl_hora) in mapa_controles_sensores.items():
@@ -252,7 +200,6 @@ def crear_dashboard_view(
                     except:
                         pass
 
-                    # Alertas
                     try:
                         val_num = float(str(d['valor']).split(' ')[0])
                         color_new = COLORS['text']
@@ -268,9 +215,7 @@ def crear_dashboard_view(
         except Exception:
             pass
 
-        # 2. Actualizar Actuadores
         try:
-            # Puertas
             for pid, cnt in controles_puertas.items():
                 st = estados_actuadores.get(pid, {}).get("estado", "cerrada")
                 col = COLORS['door_open'] if st == "abierta" else COLORS['door_closed']
@@ -278,7 +223,6 @@ def crear_dashboard_view(
                     cnt.bgcolor = col
                     if cnt.page: cnt.update()
 
-            # LEDS
             d_led = estados_actuadores.get("leds", {})
             st_led = d_led.get("estado", "off")
             mode_led = d_led.get("mode", "manual")
@@ -297,7 +241,6 @@ def crear_dashboard_view(
                 switch_led.disabled = dis_led
                 if switch_led.page: switch_led.update()
 
-            # FAN
             d_fan = estados_actuadores.get("fan", {})
             st_fan = d_fan.get("estado", "off")
             mode_fan = d_fan.get("mode", "manual")
@@ -316,7 +259,6 @@ def crear_dashboard_view(
                 switch_fan.disabled = dis_fan
                 if switch_fan.page: switch_fan.update()
 
-            # Iconos
             c_fan = COLORS['accent'] if st_fan == "on" else COLORS['muted']
             if icon_fan_map.color != c_fan:
                 icon_fan_map.color = c_fan
@@ -330,9 +272,10 @@ def crear_dashboard_view(
         except Exception:
             pass
 
-    # Creamos la Vista y le adjuntamos el callback para el controlador
-    view = ft.View("/dashboard", controls=[ft.Row([left_column, right_column], spacing=18, expand=True)],
-                   bgcolor=COLORS['bg'], padding=18)
-    view.data = {"update_callback": actualizar_datos_ui}
+    main_container = ft.Container(
+        content=ft.Row([left_column, right_column], spacing=18, expand=True),
+        expand=True
+    )
+    main_container.data = {"update_callback": actualizar_datos_ui}
 
-    return view
+    return main_container
