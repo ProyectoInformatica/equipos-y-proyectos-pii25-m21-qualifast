@@ -75,10 +75,13 @@ def loop_controlador_ui(page):
 # --- HANDLERS (CONTROLADOR) ---
 def on_login_click(e, campo_usuario, campo_password, texto_error):
     page = e.page
-    rol = modelo.validar_usuario(campo_usuario.value, campo_password.value)
+    # Ahora validar_usuario devuelve el ROL y el ID NUMÉRICO (PK)
+    rol, user_id = modelo.validar_usuario(campo_usuario.value, campo_password.value)
+
     if rol:
         page.session.set("user_rol", rol)
         page.session.set("user_name", campo_usuario.value)
+        page.session.set("user_id", user_id)  # <--- GUARDAMOS EL ID PARA SQL
         texto_error.value = ""
         page.go("/dashboard")
     else:
@@ -100,17 +103,20 @@ def on_refrescar_click(e):
 
 def on_control_actuador_click(e, actuador_id, valor_objetivo=None):
     page = e.page
-    usuario = page.session.get("user_name") or "desconocido"
+    # Recuperamos el ID numérico en vez del nombre
+    user_id = page.session.get("user_id")
+
     if page.session.get("user_rol") == "policia":
         page.snack_bar = ft.SnackBar(ft.Text("Permiso denegado."), bgcolor="red")
         page.snack_bar.open = True
         page.update()
         return
 
+    # Enviamos el user_id para que encaje con la Foreign Key
     if "door" in actuador_id:
-        modelo.toggle_actuador(actuador_id, usuario)
+        modelo.toggle_actuador(actuador_id, user_id)
     else:
-        modelo.set_estado_actuador(actuador_id, valor_objetivo, usuario)
+        modelo.set_estado_actuador(actuador_id, valor_objetivo, user_id)
 
 
 def on_cambiar_modo_click(e, actuador_id):
@@ -253,7 +259,6 @@ def main(page: ft.Page):
 
         elif route == "/dashboard":
             logs_recientes = modelo.get_log_sensores_filtrado(horas=24)
-            # --> LLAMADA CORREGIDA: Exactamente 9 parámetros <--
             dashboard_content = vista_dashboard_sensores.crear_dashboard_view(
                 page,
                 rol,
