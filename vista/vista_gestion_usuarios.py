@@ -3,7 +3,7 @@ from vista.temas import COLORS
 import modelo.manejador_datos as modelo
 
 
-def crear_vista_usuarios(rol_actual, lista_usuarios, on_crear_usuario_handler):
+def crear_vista_usuarios(rol_actual, lista_usuarios, on_crear_usuario_handler, on_editar_usuario_handler, file_picker):
     user_header = ft.Text("Gestión de Personal Autorizado", size=24, weight=ft.FontWeight.BOLD, color=COLORS['accent'])
 
     new_user_name = ft.TextField(label="Nuevo usuario", bgcolor=COLORS['glass'], color=COLORS['text'],
@@ -12,20 +12,39 @@ def crear_vista_usuarios(rol_actual, lista_usuarios, on_crear_usuario_handler):
                                  color=COLORS['text'], border_color=COLORS['glass'])
     new_user_role = ft.Dropdown(value="policia",
                                 options=[ft.dropdown.Option("comisario"), ft.dropdown.Option("inspector"),
-                                         ft.dropdown.Option("policia")],
-                                bgcolor=COLORS['glass'], color=COLORS['text'])
+                                         ft.dropdown.Option("policia")], bgcolor=COLORS['glass'], color=COLORS['text'])
+
+    ruta_foto_nueva = [None]
+    btn_foto_nueva = ft.ElevatedButton("📷 Añadir Foto", bgcolor=COLORS['glass'], color=COLORS['text'], height=50)
+
+    def on_foto_nueva_picked(e: ft.FilePickerResultEvent):
+        if e.files and len(e.files) > 0:
+            ruta_foto_nueva[0] = e.files[0].path
+            btn_foto_nueva.text = "✅ Foto lista"
+            btn_foto_nueva.bgcolor = COLORS['good']
+        else:
+            ruta_foto_nueva[0] = None
+            btn_foto_nueva.text = "📷 Añadir Foto"
+            btn_foto_nueva.bgcolor = COLORS['glass']
+        btn_foto_nueva.update()
+
+    def abrir_picker_nuevo(e):
+        file_picker.on_result = on_foto_nueva_picked
+        file_picker.pick_files(allow_multiple=False, allowed_extensions=["png", "jpg", "jpeg"])
+
+    btn_foto_nueva.on_click = abrir_picker_nuevo
 
     create_btn = ft.ElevatedButton("Crear Usuario", bgcolor=COLORS['good'], color='white', height=50,
                                    on_click=lambda e: on_crear_usuario_handler(e, new_user_name, new_user_pass,
-                                                                               new_user_role))
+                                                                               new_user_role, ruta_foto_nueva[0]))
 
-    # Formulario ahora es una fila horizontal (mucho más profesional en pantallas anchas)
     user_form = ft.Row([
         ft.Container(content=new_user_name, expand=2),
         ft.Container(content=new_user_pass, expand=2),
         ft.Container(content=new_user_role, expand=1),
+        ft.Container(content=btn_foto_nueva, expand=1),
         create_btn
-    ], spacing=15, alignment=ft.MainAxisAlignment.START)
+    ], spacing=10, alignment=ft.MainAxisAlignment.START)
 
     if rol_actual != 'comisario':
         user_form.visible = False
@@ -36,7 +55,18 @@ def crear_vista_usuarios(rol_actual, lista_usuarios, on_crear_usuario_handler):
         user_list.controls.append(ft.Text("No hay usuarios registrados.", color=COLORS['muted']))
     else:
         for user in lista_usuarios:
+            foto_b64 = user.get('foto')
+
+            # --- SOLUCIÓN AVATAR (Contenedor Redondo con Image src_base64) ---
+            avatar = ft.Container(
+                width=40, height=40, border_radius=20, bgcolor=COLORS['glass'], alignment=ft.alignment.center,
+                content=ft.Image(src_base64=foto_b64, fit=ft.ImageFit.COVER, border_radius=20, width=40,
+                                 height=40) if foto_b64 else ft.Icon(ft.Icons.PERSON, color=COLORS['muted'])
+            )
+
             row_controls = [
+                avatar,
+                ft.Container(width=10),
                 ft.Icon(ft.Icons.ADMIN_PANEL_SETTINGS if user['rol'] == 'comisario' else ft.Icons.SECURITY,
                         color=COLORS['muted']),
                 ft.Text(f"{user['user']}", size=16, weight="bold", color=COLORS['text'], expand=1),
@@ -45,7 +75,7 @@ def crear_vista_usuarios(rol_actual, lista_usuarios, on_crear_usuario_handler):
 
             if rol_actual == 'comisario':
                 def on_editar(e, u=user):
-                    e.page.open(crear_dialogo_usuario("Editar", u))
+                    e.page.open(crear_dialogo_usuario("Editar", u, file_picker, on_editar_usuario_handler))
 
                 def on_borrar(e, uid=user['id'], uname=user['user']):
                     if e.page.session.get("user_name") == uname:
@@ -82,7 +112,7 @@ def crear_vista_usuarios(rol_actual, lista_usuarios, on_crear_usuario_handler):
     return user_card
 
 
-def crear_dialogo_usuario(titulo, usuario_actual):
+def crear_dialogo_usuario(titulo, usuario_actual, file_picker, on_editar_usuario_handler):
     val_user = usuario_actual.get("user", "")
     val_pass = usuario_actual.get("password", "")
     val_rol = usuario_actual.get("rol", "policia")
@@ -96,20 +126,33 @@ def crear_dialogo_usuario(titulo, usuario_actual):
         options=[ft.dropdown.Option("comisario"), ft.dropdown.Option("inspector"), ft.dropdown.Option("policia")]
     )
 
+    ruta_foto_edit = [None]
+    btn_foto_edit = ft.ElevatedButton("📷 Cambiar Foto", bgcolor=COLORS['glass'], color=COLORS['text'])
+
+    def on_foto_edit_picked(e: ft.FilePickerResultEvent):
+        if e.files and len(e.files) > 0:
+            ruta_foto_edit[0] = e.files[0].path
+            btn_foto_edit.text = "✅ Nueva Foto"
+            btn_foto_edit.bgcolor = COLORS['good']
+        else:
+            ruta_foto_edit[0] = None
+            btn_foto_edit.text = "📷 Cambiar Foto"
+            btn_foto_edit.bgcolor = COLORS['glass']
+        btn_foto_edit.update()
+
+    def abrir_picker_edit(e):
+        file_picker.on_result = on_foto_edit_picked
+        file_picker.pick_files(allow_multiple=False, allowed_extensions=["png", "jpg", "jpeg"])
+
+    btn_foto_edit.on_click = abrir_picker_edit
+
     dialogo = ft.AlertDialog(
         title=ft.Text(f"{titulo} Usuario", color=COLORS['accent']), bgcolor=COLORS['card'],
-        content=ft.Column([txt_user, txt_pass, dd_rol], tight=True, spacing=10)
+        content=ft.Column([txt_user, txt_pass, dd_rol, btn_foto_edit], tight=True, spacing=10)
     )
 
     def on_guardar(e):
-        if modelo.update_usuario(usuario_actual['id'], txt_user.value, txt_pass.value, dd_rol.value):
-            e.page.close(dialogo)
-            e.page.go("/temp")
-            e.page.go("/usuarios")
-        else:
-            e.page.snack_bar = ft.SnackBar(ft.Text("Error: El nombre de usuario ya está en uso."), bgcolor="red")
-            e.page.snack_bar.open = True
-            e.page.update()
+        on_editar_usuario_handler(e, usuario_actual['id'], txt_user, txt_pass, dd_rol, dialogo, ruta_foto_edit[0])
 
     dialogo.actions = [
         ft.TextButton("Cancelar", on_click=lambda e: e.page.close(dialogo)),

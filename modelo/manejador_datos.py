@@ -4,11 +4,13 @@ import bcrypt
 import re
 import time
 import random
+import base64
+import requests  # <-- Para conectar con el ESP32
 from datetime import datetime
 from collections import defaultdict
-import requests # <--- NUEVO
 
-ESP32_IP = "192.168.1.100" # <--- CAMBIA ESTO POR LA IP DE TU ESP32
+# --- CONFIGURACIÓN HARDWARE ESP32 ---
+ESP32_IP = "192.168.1.100"  # <-- PON AQUÍ LA IP DE TU ESP32
 
 DB_CONFIG = {
     'host': 'localhost',
@@ -24,22 +26,26 @@ except Exception as e:
     print(f"Error pool: {e}")
     db_pool = None
 
-_CACHE_CONSUMO = {"timestamp": 0, "data": {}}
-
 
 def conectar():
     return db_pool.get_connection() if db_pool else mysql.connector.connect(**DB_CONFIG)
 
 
-# --- LOGIN ÓPTIMO (1 SOLA CONSULTA) ---
+def _convertir_a_base64(blob):
+    """Auxiliar para convertir BLOB de BD a string Base64 para Flet"""
+    if blob:
+        return base64.b64encode(blob).decode('utf-8')
+    return None
+
+
+# --- LOGIN ÓPTIMO ---
 def validar_usuario(u, p):
     conexion = conectar()
-    rol, user_id = None, None
+    rol, user_id, foto_b64 = None, None, None
     if conexion:
         cursor = conexion.cursor(dictionary=True)
-        # SELECT único con JOIN validando que la persona no esté dada de baja (activo=1)
         query = """
-                SELECT u.password, r.nombre as rol, p.id
+                SELECT u.password, r.nombre as rol, p.id, p.foto
                 FROM usuarios u
                          JOIN personas p ON u.persona_id = p.id
                          JOIN roles r ON u.rol_id = r.id
@@ -51,23 +57,28 @@ def validar_usuario(u, p):
 
         if usuario:
             hash_db = usuario['password']
+            match = False
             if hash_db.startswith('$2b$') or hash_db.startswith('$2a$'):
                 if bcrypt.checkpw(p.encode('utf-8'), hash_db.encode('utf-8')):
-                    rol, user_id = usuario['rol'], usuario['id']
-            elif p == hash_db:  # Modo compatibilidad
+                    match = True
+            elif p == hash_db:
+                match = True
+
+            if match:
                 rol, user_id = usuario['rol'], usuario['id']
+                foto_b64 = _convertir_a_base64(usuario['foto'])
         conexion.close()
-    return rol, user_id
+    return rol, user_id, foto_b64
 
 
-# --- USUARIOS (Transacciones y Soft Delete) ---
+# --- USUARIOS ---
 def get_usuarios():
     conexion = conectar()
     res = []
     if conexion:
         cursor = conexion.cursor(dictionary=True)
         query = """
-                SELECT p.id, u.username as user, u.password, r.nombre as rol
+                SELECT p.id, u.username as user, u.password, r.nombre as rol, p.foto
                 FROM usuarios u
                     JOIN personas p \
                 ON u.persona_id = p.id
@@ -76,32 +87,30 @@ def get_usuarios():
                 ORDER BY p.fecha_alta DESC \
                 """
         cursor.execute(query)
-        res = cursor.fetchall()
+        datos = cursor.fetchall()
+        for d in datos:
+            d['foto'] = _convertir_a_base64(d['foto'])
+            res.append(d)
         conexion.close()
     return res
 
 
-def add_usuario(u, p, r):
+def add_usuario(u, p, r, foto_bytes=None):
     conexion = conectar()
     if conexion:
         try:
             conexion.start_transaction()
             cursor = conexion.cursor()
-
-            # Generar DNI falso para cumplir restricción y separar nombres (1NF)
             dni = f"U{random.randint(1000, 9999)}X"
-
-            cursor.execute("INSERT INTO personas (dni, nombre, apellidos, tipo_persona) VALUES (%s, %s, %s, 'USUARIO')",
-                           (dni, u, 'Personal'))
+            cursor.execute(
+                "INSERT INTO personas (dni, nombre, apellidos, tipo_persona, foto) VALUES (%s, %s, %s, 'USUARIO', %s)",
+                (dni, u, 'Personal', foto_bytes))
             persona_id = cursor.lastrowid
-
             cursor.execute("SELECT id FROM roles WHERE nombre = %s", (r,))
             rol_id = cursor.fetchone()[0]
-
             hashed = bcrypt.hashpw(p.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
             cursor.execute("INSERT INTO usuarios (persona_id, username, password, rol_id) VALUES (%s, %s, %s, %s)",
                            (persona_id, u, hashed, rol_id))
-
             conexion.commit()
             return True
         except Exception as e:
@@ -112,22 +121,22 @@ def add_usuario(u, p, r):
     return False
 
 
-def update_usuario(uid, user, password, rol):
+def update_usuario(uid, user, password, rol, foto_bytes=None):
     conexion = conectar()
     if conexion:
         try:
             conexion.start_transaction()
             cursor = conexion.cursor()
-
-            cursor.execute("UPDATE personas SET nombre=%s WHERE id=%s", (user, uid))
+            if foto_bytes:
+                cursor.execute("UPDATE personas SET nombre=%s, foto=%s WHERE id=%s", (user, foto_bytes, uid))
+            else:
+                cursor.execute("UPDATE personas SET nombre=%s WHERE id=%s", (user, uid))
 
             cursor.execute("SELECT id FROM roles WHERE nombre = %s", (rol,))
             rol_id = cursor.fetchone()[0]
-
             hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
             cursor.execute("UPDATE usuarios SET username=%s, password=%s, rol_id=%s WHERE persona_id=%s",
                            (user, hashed, rol_id, uid))
-
             conexion.commit()
             return True
         except:
@@ -137,19 +146,7 @@ def update_usuario(uid, user, password, rol):
     return False
 
 
-def delete_usuario(uid):
-    # BAJA LÓGICA (Soft Delete) en vez de DELETE físico
-    conexion = conectar()
-    if conexion:
-        cursor = conexion.cursor()
-        cursor.execute("UPDATE personas SET activo = 0, fecha_baja = NOW() WHERE id=%s", (uid,))
-        conexion.commit()
-        conexion.close()
-        return True
-    return False
-
-
-# --- PRESOS (Transacciones, Entidades Débiles y Soft Delete) ---
+# --- PRESOS ---
 def get_presos():
     conexion = conectar()
     res = []
@@ -160,7 +157,8 @@ def get_presos():
                        CONCAT(p.nombre, ' ', p.apellidos)              as nombre, \
                        pr.delito, \
                        c.codigo                                        as celda,
-                       DATE_FORMAT(ac.fecha_ingreso, '%d/%m/%Y %H:%M') as fecha_ingreso
+                       DATE_FORMAT(ac.fecha_ingreso, '%d/%m/%Y %H:%M') as fecha_ingreso, \
+                       p.foto
                 FROM personas p
                          JOIN presos pr ON p.id = pr.persona_id
                          LEFT JOIN asignacion_celdas ac ON pr.persona_id = ac.preso_id AND ac.activo = 1
@@ -169,70 +167,65 @@ def get_presos():
                 ORDER BY p.fecha_alta DESC \
                 """
         cursor.execute(query)
-        res = cursor.fetchall()
+        datos = cursor.fetchall()
+        for d in datos:
+            d['foto'] = _convertir_a_base64(d['foto'])
+            res.append(d)
         conexion.close()
     return res
 
 
-def add_preso(nombre_completo, delito, celda_codigo):
+def add_preso(nombre_completo, delito, celda_codigo, foto_bytes=None):
     conexion = conectar()
     if conexion:
         try:
             conexion.start_transaction()
             cursor = conexion.cursor()
-
-            # Separar nombre para 1NF
             partes = nombre_completo.split(" ", 1)
             nombre = partes[0]
             apellidos = partes[1] if len(partes) > 1 else "Desconocido"
             dni = f"P{random.randint(10000, 99999)}Z"
-
-            cursor.execute("INSERT INTO personas (dni, nombre, apellidos, tipo_persona) VALUES (%s, %s, %s, 'PRESO')",
-                           (dni, nombre, apellidos))
+            cursor.execute(
+                "INSERT INTO personas (dni, nombre, apellidos, tipo_persona, foto) VALUES (%s, %s, %s, 'PRESO', %s)",
+                (dni, nombre, apellidos, foto_bytes))
             persona_id = cursor.lastrowid
-
             cursor.execute("INSERT INTO presos (persona_id, delito) VALUES (%s, %s)", (persona_id, delito))
-
             cursor.execute("SELECT id FROM celdas WHERE codigo = %s", (celda_codigo,))
             row = cursor.fetchone()
             celda_id = row[0] if row else 1
-
             cursor.execute("INSERT INTO asignacion_celdas (preso_id, celda_id) VALUES (%s, %s)", (persona_id, celda_id))
-
             conexion.commit()
             return True
         except Exception as e:
             conexion.rollback()
-            print("Error add_preso:", e)
         finally:
             conexion.close()
     return False
 
 
-def update_preso(pid, dat):
+def update_preso(pid, dat, foto_bytes=None):
     conexion = conectar()
     if conexion:
         try:
             conexion.start_transaction()
             cursor = conexion.cursor()
-
             partes = dat.get('nombre', '').split(" ", 1)
             nombre = partes[0]
             apellidos = partes[1] if len(partes) > 1 else "Desconocido"
 
-            cursor.execute("UPDATE personas SET nombre=%s, apellidos=%s WHERE id=%s", (nombre, apellidos, pid))
+            if foto_bytes:
+                cursor.execute("UPDATE personas SET nombre=%s, apellidos=%s, foto=%s WHERE id=%s",
+                               (nombre, apellidos, foto_bytes, pid))
+            else:
+                cursor.execute("UPDATE personas SET nombre=%s, apellidos=%s WHERE id=%s", (nombre, apellidos, pid))
+
             cursor.execute("UPDATE presos SET delito=%s WHERE persona_id=%s", (dat.get('delito'), pid))
-
-            # Gestionar Entidad Débil (Historial Celdas)
             cursor.execute("SELECT id FROM celdas WHERE codigo = %s", (dat.get('celda'),))
-            row = cursor.fetchone()
-            nueva_celda_id = row[0] if row else 1
-
+            nueva_celda_id = cursor.fetchone()[0]
             cursor.execute(
                 "UPDATE asignacion_celdas SET activo = 0, fecha_salida = NOW() WHERE preso_id = %s AND activo = 1",
                 (pid,))
             cursor.execute("INSERT INTO asignacion_celdas (preso_id, celda_id) VALUES (%s, %s)", (pid, nueva_celda_id))
-
             conexion.commit()
             return True
         except:
@@ -242,8 +235,18 @@ def update_preso(pid, dat):
     return False
 
 
+def delete_usuario(uid):
+    conexion = conectar()
+    if conexion:
+        cursor = conexion.cursor()
+        cursor.execute("UPDATE personas SET activo = 0, fecha_baja = NOW() WHERE id=%s", (uid,))
+        conexion.commit()
+        conexion.close()
+        return True
+    return False
+
+
 def delete_preso(pid):
-    # BAJA LÓGICA
     conexion = conectar()
     if conexion:
         cursor = conexion.cursor()
@@ -256,147 +259,74 @@ def delete_preso(pid):
     return False
 
 
-# --- AUTOMATIZACIÓN ---
-def verificar_automatizacion(ultimos_datos):
-    """Evalúa los umbrales configurados y activa/desactiva actuadores si están en AUTO"""
-    config = get_configuracion()
-    umbral_temp = float(config.get("temp_max", 28.0))
-    umbral_luz = float(config.get("luz_min", 400.0))
-
-    actuadores = get_estado_actuadores()
-
-    temp_val, luz_val = None, None
-    for d in ultimos_datos:
-        try:
-            val_str = str(d['valor'])
-            match = re.search(r"([0-9\.]+)", val_str)
-            if match:
-                num = float(match.group(1))
-                if "Temperatura" in d['sensor']:
-                    temp_val = num
-                elif "Luz" in d['sensor']:
-                    luz_val = num
-        except:
-            continue
-
-    # Ventilador (Automático)
-    modo_fan = actuadores.get('fan', {}).get('mode', 'manual')
-    if modo_fan == "auto" and temp_val is not None:
-        estado_fan = actuadores.get('fan', {}).get('estado', 'off')
-        if temp_val > umbral_temp and estado_fan == "off":
-            set_estado_actuador("fan", "on", None)  # None = Lo hizo el 'sistema' automáticamente
-        elif temp_val <= umbral_temp and estado_fan == "on":
-            set_estado_actuador("fan", "off", None)
-
-    # Luces (Automáticas)
-    modo_led = actuadores.get('leds', {}).get('mode', 'manual')
-    if modo_led == "auto" and luz_val is not None:
-        estado_led = actuadores.get('leds', {}).get('estado', 'off')
-        if luz_val < umbral_luz and estado_led == "off":
-            set_estado_actuador("leds", "on", None)
-        elif luz_val >= umbral_luz and estado_led == "on":
-            set_estado_actuador("leds", "off", None)
-
-
-# --- IOT: SENSORES Y ACTUADORES ---
-_CACHE_SENSORES = {}
-
-
 def registrar_dato_sensor(datos):
-    global _CACHE_SENSORES
     conexion = conectar()
     if conexion:
         cursor = conexion.cursor(dictionary=True)
-        if not _CACHE_SENSORES:
-            cursor.execute("SELECT id, nombre FROM sensores")
-            _CACHE_SENSORES = {r['nombre']: r['id'] for r in cursor.fetchall()}
-
+        cursor.execute("SELECT id, nombre FROM sensores")
+        sensores_db = {r['nombre']: r['id'] for r in cursor.fetchall()}
         query = "INSERT INTO sensores_log (timestamp, sensor_id, valor) VALUES (%s, %s, %s)"
         valores = []
         for d in datos:
-            sensor_id = _CACHE_SENSORES.get(d['sensor'])
-            if not sensor_id: continue
-
-            match = re.search(r"([0-9\.]+)", str(d['valor']))
-            val_num = float(match.group(1)) if match else 0.0
-            valores.append((d['timestamp'], sensor_id, val_num))
-
-        if valores:
-            cursor.executemany(query, valores)
-            conexion.commit()
+            sid = sensores_db.get(d['sensor'])
+            if sid:
+                num = float(re.search(r"([0-9\.]+)", str(d['valor'])).group(1))
+                valores.append((d['timestamp'], sid, num))
+        cursor.executemany(query, valores)
+        conexion.commit()
         conexion.close()
-
-    # Llamamos a la automatización tras registrar los datos
     verificar_automatizacion(datos)
 
 
-def _formatear_fecha(fecha_db):
-    if isinstance(fecha_db, datetime): return fecha_db.strftime('%Y-%m-%d %H:%M:%S')
-    return str(fecha_db)
+def verificar_automatizacion(ultimos_datos):
+    config = get_configuracion()
+    actuadores = get_estado_actuadores()
+    temp_val, luz_val = None, None
+    for d in ultimos_datos:
+        match = re.search(r"([0-9\.]+)", str(d['valor']))
+        if match:
+            if "Temperatura" in d['sensor']:
+                temp_val = float(match.group(1))
+            elif "Luz" in d['sensor']:
+                luz_val = float(match.group(1))
+
+    if temp_val is not None and actuadores.get('fan', {}).get('mode') == 'auto':
+        if temp_val > config['temp_max']:
+            set_estado_actuador('fan', 'on')
+        elif temp_val <= config['temp_max']:
+            set_estado_actuador('fan', 'off')
+
+    if luz_val is not None and actuadores.get('leds', {}).get('mode') == 'auto':
+        if luz_val < config['luz_min']:
+            set_estado_actuador('leds', 'on')
+        elif luz_val >= config['luz_min']:
+            set_estado_actuador('leds', 'off')
 
 
-def get_ultimos_sensores_raw():
+def get_configuracion():
     conexion = conectar()
-    res = []
+    config = {"temp_max": 28.0, "luz_min": 400.0}
     if conexion:
         cursor = conexion.cursor(dictionary=True)
-        query = """
-                SELECT sl.timestamp, s.nombre as sensor, sl.valor, s.unidad
-                FROM sensores_log sl
-                         JOIN sensores s ON sl.sensor_id = s.id
-                ORDER BY sl.id DESC LIMIT 20 \
-                """
-        cursor.execute(query)
-        for r in cursor.fetchall():
-            res.append({"timestamp": _formatear_fecha(r["timestamp"]), "sensor": r["sensor"],
-                        "valor": f"{r['valor']} {r['unidad']}"})
+        cursor.execute("SELECT clave, valor FROM configuracion")
+        for fila in cursor.fetchall():
+            config[fila['clave']] = float(fila['valor'])
         conexion.close()
-    return res[::-1]
+    return config
 
 
-def get_log_sensores_filtrado(horas=24):
+def save_configuracion(data):
     conexion = conectar()
-    res = []
     if conexion:
-        cursor = conexion.cursor(dictionary=True)
-        query = """
-                SELECT sl.timestamp, s.nombre as sensor, sl.valor, s.unidad
-                FROM sensores_log sl
-                         JOIN sensores s ON sl.sensor_id = s.id
-                WHERE sl.timestamp >= NOW() - INTERVAL %s HOUR
-                ORDER BY sl.timestamp DESC LIMIT 2000 \
-                """
-        cursor.execute(query, (horas,))
-        for r in cursor.fetchall():
-            r['timestamp'] = _formatear_fecha(r['timestamp'])
-            r['valor'] = f"{r['valor']} {r['unidad']}"
-            res.append(r)
+        cursor = conexion.cursor()
+        for k, v in data.items():
+            cursor.execute(
+                "INSERT INTO configuracion (clave, valor) VALUES (%s, %s) ON DUPLICATE KEY UPDATE valor = %s",
+                (k, str(v), str(v)))
+        conexion.commit()
         conexion.close()
-    return res
-
-
-def get_promedio_sensores_por_hora():
-    conexion = conectar()
-    res_dict = defaultdict(list)
-    if conexion:
-        cursor = conexion.cursor(dictionary=True)
-        # Operaciones matemáticas delegadas al motor SQL (Rúbrica 10/10)
-        query = """
-                SELECT s.nombre                                    as sensor, \
-                       DATE_FORMAT(sl.timestamp, '%Y-%m-%d %H:00') as hora,
-                       AVG(sl.valor)                               as promedio, \
-                       MAX(s.unidad)                               as unidad
-                FROM sensores_log sl
-                         JOIN sensores s ON sl.sensor_id = s.id
-                GROUP BY s.nombre, DATE_FORMAT(sl.timestamp, '%Y-%m-%d %H:00')
-                ORDER BY hora ASC LIMIT 500 \
-                """
-        cursor.execute(query)
-        for r in cursor.fetchall():
-            prom = float(r['promedio']) if r['promedio'] is not None else 0.0
-            res_dict[r['sensor']].append({"hora": r['hora'], "valor": f"{prom:.1f} {r['unidad']}"})
-        conexion.close()
-    return dict(res_dict)
+        return True
+    return False
 
 
 def get_estado_actuadores():
@@ -406,32 +336,13 @@ def get_estado_actuadores():
         cursor = conexion.cursor(dictionary=True)
         cursor.execute("SELECT uid, label, estado, mode FROM actuadores WHERE activo = 1")
         for fila in cursor.fetchall():
-            estados[fila['uid']] = {"estado": fila['estado'], "label": fila['label'], "mode": fila['mode']}
+            estados[fila['uid']] = fila
         conexion.close()
     return estados
 
 
-def get_log_actuadores_paginado(uid_parcial, limit=50, offset=0):
-    conexion = conectar()
-    res = []
-    if conexion:
-        cursor = conexion.cursor(dictionary=True)
-        query = """
-                SELECT ha.timestamp, a.uid as id, a.label, ha.accion, IFNULL(p.nombre, 'sistema') as usuario
-                FROM historico_actuadores ha
-                         JOIN actuadores a ON ha.actuador_id = a.id
-                         LEFT JOIN personas p ON ha.usuario_id = p.id
-                WHERE a.uid LIKE %s
-                ORDER BY ha.timestamp DESC
-                    LIMIT %s \
-                OFFSET %s \
-                """
-        cursor.execute(query, (f"%{uid_parcial}%", limit, offset))
-        for r in cursor.fetchall():
-            r['timestamp'] = _formatear_fecha(r['timestamp'])
-            res.append(r)
-        conexion.close()
-    return res
+def set_estado_actuador(uid, estado, user_id=None):
+    return _actualizar_actuador(uid, estado, user_id)
 
 
 def toggle_actuador(uid, user_id=None):
@@ -439,21 +350,6 @@ def toggle_actuador(uid, user_id=None):
     curr = estados.get(uid, {}).get("estado", "cerrada")
     nuevo = "abierta" if curr == "cerrada" else "cerrada"
     return _actualizar_actuador(uid, nuevo, user_id)
-
-
-def set_estado_actuador(uid, estado, user_id=None):
-    return _actualizar_actuador(uid, estado, user_id)
-
-
-def set_modo_actuador(uid, modo):
-    conexion = conectar()
-    if conexion:
-        cursor = conexion.cursor()
-        cursor.execute("UPDATE actuadores SET mode = %s WHERE uid = %s", (modo, uid))
-        conexion.commit()
-        conexion.close()
-        return True
-    return False
 
 
 def _actualizar_actuador(uid, estado, user_id):
@@ -473,69 +369,86 @@ def _actualizar_actuador(uid, estado, user_id):
                            """, (actuador_id, user_id, estado))
             conexion.commit()
 
-            # --- NUEVO: ENVIAR ORDEN AL HARDWARE REAL ---
+            # --- CONEXIÓN AL HARDWARE REAL ESP32 ---
             try:
                 requests.get(f"http://{ESP32_IP}/actuadores", params={"dispositivo": uid, "estado": estado}, timeout=2)
             except Exception as e:
-                print(f"⚠️ Aviso: No se pudo conectar con el ESP32 para cambiar {uid}: {e}")
-            # --------------------------------------------
+                print(f"Aviso: Hardware ESP32 no detectado en {ESP32_IP} - {e}")
+            # ----------------------------------------
 
         conexion.close()
         return True
     return False
 
 
-# --- CONFIGURACIÓN Y CONSUMO ---
-def get_configuracion():
-    conexion = conectar()
-    config = {"temp_max": 28.0, "luz_min": 400.0}
-    if conexion:
-        cursor = conexion.cursor(dictionary=True)
-        cursor.execute("SELECT clave, valor FROM configuracion")
-        for fila in cursor.fetchall():
-            try:
-                config[fila['clave']] = float(fila['valor'])
-            except ValueError:
-                config[fila['clave']] = fila['valor']
-        conexion.close()
-    return config
-
-
-def save_configuracion(data):
+def set_modo_actuador(uid, modo):
     conexion = conectar()
     if conexion:
         cursor = conexion.cursor()
-        for k, v in data.items():
-            cursor.execute(
-                "INSERT INTO configuracion (clave, valor) VALUES (%s, %s) ON DUPLICATE KEY UPDATE valor = %s",
-                (k, str(v), str(v)))
+        cursor.execute("UPDATE actuadores SET mode = %s WHERE uid = %s", (modo, uid))
         conexion.commit()
         conexion.close()
         return True
     return False
 
 
-def get_consumo_electrico():
-    global _CACHE_CONSUMO
-    t = time.time()
-    if t - _CACHE_CONSUMO["timestamp"] < 5.0 and _CACHE_CONSUMO["data"]: return _CACHE_CONSUMO["data"]
+def get_ultimos_sensores_raw():
+    conexion = conectar()
+    res = []
+    if conexion:
+        cursor = conexion.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT sl.timestamp, s.nombre as sensor, sl.valor, s.unidad FROM sensores_log sl JOIN sensores s ON sl.sensor_id = s.id ORDER BY sl.id DESC LIMIT 20")
+        for r in cursor.fetchall():
+            res.append({"timestamp": r['timestamp'].strftime('%Y-%m-%d %H:%M:%S'), "sensor": r['sensor'],
+                        "valor": f"{r['valor']} {r['unidad']}"})
+        conexion.close()
+    return res[::-1]
 
-    actuadores = get_estado_actuadores()
-    total_w = sum([random.uniform(0.1, 4.5) for _ in range(5)]) + random.uniform(0.8, 1.5)
-    total_w += 10.0 if actuadores.get("leds", {}).get("estado") == "on" else 0.2
-    total_w += 5.0 if actuadores.get("fan", {}).get("estado") == "on" else 0.0
 
-    res = {
-        "total_actual": round(total_w, 2),
-        "media_dia": round(total_w * 0.95, 2),
-        "media_mes": round(total_w * 0.9, 2),
-        "detalles": [
-            {"nombre": "Red de Sensores", "estado": "Activo", "watts": round(total_w * 0.3, 2)},
-            {"nombre": "Actuadores", "estado": "Activo", "watts": round(total_w * 0.7, 2)}
-        ]
-    }
-    _CACHE_CONSUMO["timestamp"], _CACHE_CONSUMO["data"] = t, res
+def get_log_sensores_filtrado(horas=24):
+    conexion = conectar()
+    res = []
+    if conexion:
+        cursor = conexion.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT sl.timestamp, s.nombre as sensor, sl.valor, s.unidad FROM sensores_log sl JOIN sensores s ON sl.sensor_id = s.id WHERE sl.timestamp >= NOW() - INTERVAL %s HOUR ORDER BY sl.timestamp DESC",
+            (horas,))
+        for r in cursor.fetchall():
+            res.append({"timestamp": r['timestamp'].strftime('%Y-%m-%d %H:%M:%S'), "sensor": r['sensor'],
+                        "valor": f"{r['valor']} {r['unidad']}"})
+        conexion.close()
     return res
 
 
-def exportar_a_csv(archivo, ruta): pass
+def get_promedio_sensores_por_hora():
+    conexion = conectar()
+    res_dict = defaultdict(list)
+    if conexion:
+        cursor = conexion.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT s.nombre as sensor, DATE_FORMAT(sl.timestamp, '%Y-%m-%d %H:00') as hora, AVG(sl.valor) as promedio, MAX(s.unidad) as unidad FROM sensores_log sl JOIN sensores s ON sl.sensor_id = s.id GROUP BY s.nombre, hora ORDER BY hora ASC")
+        for r in cursor.fetchall():
+            res_dict[r['sensor']].append({"hora": r['hora'], "valor": f"{r['promedio']:.1f} {r['unidad']}"})
+        conexion.close()
+    return dict(res_dict)
+
+
+def get_log_actuadores_paginado(uid_parcial, limit=50, offset=0):
+    conexion = conectar()
+    res = []
+    if conexion:
+        cursor = conexion.cursor(dictionary=True)
+        query = "SELECT ha.timestamp, a.uid as id, a.label, ha.accion, IFNULL(p.nombre, 'sistema') as usuario FROM historico_actuadores ha JOIN actuadores a ON ha.actuador_id = a.id LEFT JOIN personas p ON ha.usuario_id = p.id WHERE a.uid LIKE %s ORDER BY ha.timestamp DESC LIMIT %s OFFSET %s"
+        cursor.execute(query, (f"%{uid_parcial}%", limit, offset))
+        for r in cursor.fetchall():
+            r['timestamp'] = r['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
+            res.append(r)
+        conexion.close()
+    return res
+
+
+def get_consumo_electrico():
+    total_w = random.uniform(5, 15)
+    return {"total_actual": round(total_w, 2), "media_dia": round(total_w * 0.9, 2),
+            "media_mes": round(total_w * 0.8, 2), "detalles": []}

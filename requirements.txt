@@ -5,3 +5,4 @@ flet-webview
 mysql-connector-python
 bcrypt
 requests
+numpy
