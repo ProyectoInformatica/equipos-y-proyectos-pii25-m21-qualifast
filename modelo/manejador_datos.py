@@ -6,6 +6,9 @@ import time
 import random
 from datetime import datetime
 from collections import defaultdict
+import requests # <--- NUEVO
+
+ESP32_IP = "192.168.1.100" # <--- CAMBIA ESTO POR LA IP DE TU ESP32
 
 DB_CONFIG = {
     'host': 'localhost',
@@ -468,8 +471,15 @@ def _actualizar_actuador(uid, estado, user_id):
                            INSERT INTO historico_actuadores (actuador_id, usuario_id, accion, timestamp)
                            VALUES (%s, %s, %s, NOW())
                            """, (actuador_id, user_id, estado))
-
             conexion.commit()
+
+            # --- NUEVO: ENVIAR ORDEN AL HARDWARE REAL ---
+            try:
+                requests.get(f"http://{ESP32_IP}/actuadores", params={"dispositivo": uid, "estado": estado}, timeout=2)
+            except Exception as e:
+                print(f"⚠️ Aviso: No se pudo conectar con el ESP32 para cambiar {uid}: {e}")
+            # --------------------------------------------
+
         conexion.close()
         return True
     return False

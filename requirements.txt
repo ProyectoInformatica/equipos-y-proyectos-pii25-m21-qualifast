@@ -4,3 +4,4 @@ flet-video
 flet-webview
 mysql-connector-python
 bcrypt
+requests

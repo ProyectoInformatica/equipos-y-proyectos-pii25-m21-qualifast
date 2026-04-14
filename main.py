@@ -3,44 +3,46 @@ import flet_video as fv
 import threading
 import time
 import random
+import requests
 from datetime import datetime
 import modelo.manejador_datos as modelo
 from vista import vista_login, vista_dashboard_sensores, vista_camaras, vista_gestion_presos, vista_historico, \
     vista_configuracion, vista_consumo, vista_gestion_usuarios
 
 
-# --- SIMULADOR IOT (Hilo de Background) ---
-def ejecutar_simulador():
-    sensores = ["DHT11 - Temperatura", "DHT11 - Humedad", "LDR - Luz", "MQ-2 - Humo", "MQ-135 - Aire"]
-    print(">>> INICIANDO SIMULADOR IOT (2º Plano) <<<")
+def ejecutar_lectura_esp32():
+    print(">>> INICIANDO CONEXIÓN WIFI CON ESP32 <<<")
+    # Usa la IP que configuramos en manejador_datos
+    url_sensores = f"http://{modelo.ESP32_IP}/sensores"
+
     while True:
         try:
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            datos = []
-            for s in sensores:
-                val = ""
-                if "Temperatura" in s:
-                    val = f"{round(random.uniform(20, 35), 1)} °C"
-                elif "Humedad" in s:
-                    val = f"{random.randint(40, 60)} %"
-                elif "Luz" in s:
-                    val = f"{random.randint(100, 900)} Lux"
-                elif "Humo" in s:
-                    val = f"{random.randint(10, 30)} ppm"
-                elif "Aire" in s:
-                    val = f"{random.randint(400, 480)} ppm"
-                datos.append({"timestamp": timestamp, "sensor": s, "valor": val})
+            # Preguntamos al ESP32 por los datos
+            respuesta = requests.get(url_sensores, timeout=3)
 
-            modelo.registrar_dato_sensor(datos)
-            time.sleep(5)
+            if respuesta.status_code == 200:
+                data = respuesta.json()
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+                # Traducimos el JSON del ESP32 al formato de nuestra Base de Datos
+                datos = [
+                    {"timestamp": timestamp, "sensor": "DHT11 - Temperatura", "valor": f"{data['temperatura']} °C"},
+                    {"timestamp": timestamp, "sensor": "DHT11 - Humedad", "valor": f"{data['humedad']} %"},
+                    {"timestamp": timestamp, "sensor": "LDR - Luz", "valor": f"{data['luz']} Lux"},
+                    {"timestamp": timestamp, "sensor": "MQ-2 - Humo", "valor": f"{data['mq2']} ppm"}
+                ]
+                # Los guardamos en SQL (esto activa el modo automático si aplica)
+                modelo.registrar_dato_sensor(datos)
+
         except Exception as e:
-            print(f"Error simulador: {e}")
-            time.sleep(5)
+            print(f"Error leyendo hardware ESP32: {e}")
+
+        time.sleep(5)  # Lee los sensores cada 5 segundos
 
 
-hilo_simulador = threading.Thread(target=ejecutar_simulador, daemon=True)
-hilo_simulador.start()
-
+# Cambia el hilo para que arranque la nueva función
+hilo_hardware = threading.Thread(target=ejecutar_lectura_esp32, daemon=True)
+hilo_hardware.start()
 
 # --- HILO CONTROLADOR DE UI (MVC STRICT) ---
 def loop_controlador_ui(page):
