@@ -1,3 +1,21 @@
+# Entornos virtuales
+venv/
+.venv/
+.venv1/
+env/
+
+# Archivos compilados de Python
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+
+# Archivos ocultos de Mac y Windows
 .DS_Store
+Thumbs.db
+
+# Carpetas del IDE (si usas VSCode, PyCharm, etc)
+.vscode/
+.idea/
+
+# Imágenes de prueba (opcional, si no quieres guardar el historial de fotos falsas)
+capturas_simuladas/*.jpg
