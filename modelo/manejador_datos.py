@@ -13,10 +13,10 @@ from collections import defaultdict
 ESP32_IP = "192.168.1.100"  # <-- PON AQUÍ LA IP DE TU ESP32
 
 DB_CONFIG = {
-    'host': 'localhost',
+    'host': '127.0.0.1',
     'database': 'comisaria_db',
     'user': 'root',
-    'password': '1234'
+    'password': '123456'
 }
 
 try:

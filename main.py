@@ -4,33 +4,44 @@ import threading
 import time
 import os
 import cv2
-import numpy as np  # <-- Nuevo: Evita fallos de lectura en Windows
+import numpy as np
 import requests
 from datetime import datetime
 import modelo.manejador_datos as modelo
 from vista import vista_login, vista_dashboard_sensores, vista_camaras, vista_gestion_presos, vista_historico, \
-    vista_configuracion, vista_consumo, vista_gestion_usuarios
+    vista_configuracion, vista_consumo, vista_gestion_usuarios, vista_chat # <-- IMPORTADO vista_chat
 
 
-# --- LÓGICA DE FOTOS (A PRUEBA DE FALLOS Y COMPRIMIDO) ---
+# --- LÓGICA DE FOTOS (Auto Center-Crop y Compresión) ---
 def leer_archivo_binario(ruta):
     if ruta and os.path.exists(ruta):
         try:
-            # Usar numpy soluciona bugs de OpenCV al leer rutas con espacios/tildes en Windows
+            # Usar numpy para evitar fallos con rutas en Windows
             with open(ruta, "rb") as f:
                 file_bytes = np.frombuffer(f.read(), dtype=np.uint8)
                 img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
 
             if img is not None:
-                # Comprimir a 200x200 para que Flet no crashee con la memoria
-                img_resized = cv2.resize(img, (200, 200))
+                # --- AUTO CENTER-CROP (Recorte central cuadrado perfecto) ---
+                h, w = img.shape[:2]
+                min_dim = min(h, w)
+
+                # Calcular coordenadas para el recorte central
+                start_x = (w // 2) - (min_dim // 2)
+                start_y = (h // 2) - (min_dim // 2)
+
+                # Recortar la imagen
+                cropped_img = img[start_y:start_y + min_dim, start_x:start_x + min_dim]
+
+                # Comprimir a 200x200
+                img_resized = cv2.resize(cropped_img, (200, 200))
                 ret, buffer = cv2.imencode('.jpg', img_resized, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
                 if ret:
                     return buffer.tobytes()
         except Exception as e:
             print(f"Error procesando imagen OpenCV: {e}")
 
-        # Plan B de emergencia: leer archivo crudo pero máximo 1 Megabyte
+        # Plan B de emergencia: leer archivo crudo (max 1MB)
         try:
             with open(ruta, "rb") as f:
                 return f.read(1024 * 1024)
@@ -151,7 +162,6 @@ def on_editar_usuario_click(e, uid, txt_user, txt_pass, dd_rol, dialogo, foto_ru
     foto_bytes = leer_archivo_binario(foto_ruta)
     if modelo.update_usuario(uid, txt_user.value, txt_pass.value, dd_rol.value, foto_bytes):
         e.page.close(dialogo)
-        # Si se edita a sí mismo, actualiza su foto en vivo en la UI
         if e.page.session.get("user_id") == uid and foto_bytes:
             import base64
             e.page.session.set("user_foto", base64.b64encode(foto_bytes).decode('utf-8'))
@@ -168,13 +178,16 @@ def get_nav_rail(page, current_route):
     nombre = page.session.get("user_name")
     foto = page.session.get("user_foto")
 
-    rutas = ["/dashboard", "/presos"]
+    # <-- AÑADIDO /chat A LAS RUTAS DEL MENÚ -->
+    rutas = ["/dashboard", "/presos", "/chat"]
     if rol == "comisario": rutas.append("/usuarios")
     rutas.extend(["/consumo", "/historico", "/config"])
 
     destinations = [
         ft.NavigationRailDestination(icon=ft.Icons.DASHBOARD_OUTLINED, selected_icon=ft.Icons.DASHBOARD, label="Panel"),
         ft.NavigationRailDestination(icon=ft.Icons.LOCK_OUTLINE, selected_icon=ft.Icons.LOCK, label="Presos"),
+        # <-- AÑADIDO BOTÓN DE CHAT -->
+        ft.NavigationRailDestination(icon=ft.Icons.CHAT_OUTLINED, selected_icon=ft.Icons.CHAT, label="Chat"),
     ]
     if rol == "comisario":
         destinations.append(
@@ -185,7 +198,6 @@ def get_nav_rail(page, current_route):
         ft.NavigationRailDestination(icon=ft.Icons.SETTINGS_OUTLINED, selected_icon=ft.Icons.SETTINGS, label="Ajustes"),
     ])
 
-    # --- SOLUCIÓN AVATAR MENÚ LATERAL ---
     avatar = ft.Container(
         width=40, height=40, border_radius=20, bgcolor="#374151", alignment=ft.alignment.center,
         content=ft.Image(src_base64=foto, fit=ft.ImageFit.COVER, border_radius=20, width=40,
@@ -207,6 +219,7 @@ def get_nav_rail(page, current_route):
         ], horizontal_alignment="center", spacing=2),
         trailing=ft.IconButton(ft.Icons.LOGOUT, icon_color="#ef4444", on_click=on_logout_click)
     )
+
 
 # --- MAIN ROUTER ---
 def main(page: ft.Page):
@@ -255,6 +268,13 @@ def main(page: ft.Page):
                     on_refrescar_click, lambda e, pid: modelo.delete_preso(pid) and on_refrescar_click(e)
                 )
                 page.views.append(ft.View("/presos", controls=[ft.Row(
+                    [get_nav_rail(page, route), ft.VerticalDivider(width=1),
+                     ft.Container(content=content, expand=True)], expand=True)]))
+
+            # <-- AÑADIDA RUTA /chat -->
+            elif route == "/chat":
+                content = vista_chat.crear_vista_chat(page)
+                page.views.append(ft.View("/chat", controls=[ft.Row(
                     [get_nav_rail(page, route), ft.VerticalDivider(width=1),
                      ft.Container(content=content, expand=True)], expand=True)]))
 
@@ -311,7 +331,6 @@ def main(page: ft.Page):
             page.update()
 
         except Exception as ex:
-            # Evita el pantallazo negro mostrándote el error en pantalla
             print(f"Error de renderizado: {ex}")
             page.views.append(ft.View("/error", controls=[ft.Text(f"Error Crítico: {ex}", color="red", size=20)]))
             page.update()
