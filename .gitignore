@@ -13,9 +13,8 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
-# Carpetas del IDE (si usas VSCode, PyCharm, etc)
+# Carpetas del IDE (PyCharm, VSCode)
 .vscode/
 .idea/
-
-# Imágenes de prueba (opcional, si no quieres guardar el historial de fotos falsas)
-capturas_simuladas/*.jpg
+*.iws
+workspace.xml
