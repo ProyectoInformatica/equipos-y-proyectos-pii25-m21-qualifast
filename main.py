@@ -9,7 +9,7 @@ import requests
 from datetime import datetime
 import modelo.manejador_datos as modelo
 from vista import vista_login, vista_dashboard_sensores, vista_camaras, vista_gestion_presos, vista_historico, \
-    vista_configuracion, vista_consumo, vista_gestion_usuarios
+    vista_configuracion, vista_consumo, vista_gestion_usuarios, vista_chat # <-- IMPORTADO vista_chat
 
 
 # --- LÓGICA DE FOTOS (Auto Center-Crop y Compresión) ---
@@ -178,13 +178,16 @@ def get_nav_rail(page, current_route):
     nombre = page.session.get("user_name")
     foto = page.session.get("user_foto")
 
-    rutas = ["/dashboard", "/presos"]
+    # <-- AÑADIDO /chat A LAS RUTAS DEL MENÚ -->
+    rutas = ["/dashboard", "/presos", "/chat"]
     if rol == "comisario": rutas.append("/usuarios")
     rutas.extend(["/consumo", "/historico", "/config"])
 
     destinations = [
         ft.NavigationRailDestination(icon=ft.Icons.DASHBOARD_OUTLINED, selected_icon=ft.Icons.DASHBOARD, label="Panel"),
         ft.NavigationRailDestination(icon=ft.Icons.LOCK_OUTLINE, selected_icon=ft.Icons.LOCK, label="Presos"),
+        # <-- AÑADIDO BOTÓN DE CHAT -->
+        ft.NavigationRailDestination(icon=ft.Icons.CHAT_OUTLINED, selected_icon=ft.Icons.CHAT, label="Chat"),
     ]
     if rol == "comisario":
         destinations.append(
@@ -265,6 +268,13 @@ def main(page: ft.Page):
                     on_refrescar_click, lambda e, pid: modelo.delete_preso(pid) and on_refrescar_click(e)
                 )
                 page.views.append(ft.View("/presos", controls=[ft.Row(
+                    [get_nav_rail(page, route), ft.VerticalDivider(width=1),
+                     ft.Container(content=content, expand=True)], expand=True)]))
+
+            # <-- AÑADIDA RUTA /chat -->
+            elif route == "/chat":
+                content = vista_chat.crear_vista_chat(page)
+                page.views.append(ft.View("/chat", controls=[ft.Row(
                     [get_nav_rail(page, route), ft.VerticalDivider(width=1),
                      ft.Container(content=content, expand=True)], expand=True)]))
 

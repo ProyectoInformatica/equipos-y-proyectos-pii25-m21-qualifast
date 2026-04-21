@@ -16,7 +16,7 @@ DB_CONFIG = {
     'host': 'localhost',
     'database': 'comisaria_db',
     'user': 'root',
-    'password': '1234'
+    'password': '123456'
 }
 
 try:
