@@ -4,36 +4,30 @@ import datetime
 import time
 import glob
 
-# Definimos la configuración básica de conexión y archivos
 ip_servidor = "0.0.0.0"
 port_999 = 999
 port_666 = 666
-lista_mensajes = []
-
 sem_lista_mensajes = threading.Semaphore(1)
 
 def validar_archivo(emisor, receptor):
     archivo = f"{emisor}_{receptor}.txt"
     archivo_invertido = f"{receptor}_{emisor}.txt"
     try:
-        f = open(archivo, "r")
-        f.close()
+        with open(archivo, "r") as f: pass
         return archivo
     except FileNotFoundError:
         try:
-            f = open(archivo_invertido, "r")
-            f.close()
+            with open(archivo_invertido, "r") as f: pass
             return archivo_invertido
         except FileNotFoundError:
             return archivo
 
 def guardar_mensaje_en_archivo(mensaje_formateado):
-    mensaje = mensaje_formateado.decode()
+    mensaje = mensaje_formateado.decode().strip()
     partes = mensaje.split(";")
     if len(partes) >= 6:
         emisor = partes[0].replace("@", "")
         receptor = partes[1].replace("@", "")
-        print(f"[SISTEMA] Mensaje de {emisor} para {receptor}")
         archivo_final = validar_archivo(emisor, receptor)
         guardado = False
 
@@ -75,7 +69,7 @@ def puerto_666():
             conn, addr = servidor.accept()
             conn.settimeout(10)
             try:
-                mensaje = conn.recv(1024).decode()
+                mensaje = conn.recv(1024).decode().strip()
                 if mensaje:
                     partes = mensaje.split(";")
                     if len(partes) >= 6:
@@ -96,9 +90,9 @@ def puerto_666():
 
                                     for m in lines:
                                         m_str = m.strip()
+                                        if not m_str: continue
                                         p = m_str.split(";")
                                         if len(p) >= 6 and p[0].replace("@", "") == emisor:
-                                            # Actualizamos el estado a LEIDO
                                             if p[3] in ["ENTREGADO", "RECIBIDO"]:
                                                 ts_now = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
                                                 nuevo_m = f"{p[0]};{p[1]};{p[2]};LEIDO;{ts_now};{p[5]}"
@@ -119,11 +113,10 @@ def puerto_666():
                                     sem_lista_mensajes.release()
                                     conn.send("KO".encode())
                         else:
-                            # Guardado normal (Estado pasa a RECIBIDO)
                             emisor = partes[0]
                             receptor = partes[1]
                             ts_orig = partes[2]
-                            contenido = partes[5]
+                            contenido = ";".join(partes[5:])
                             ahora = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
                             msg_proc = f"{emisor};{receptor};{ts_orig};RECIBIDO;{ahora};{contenido}"
                             guardar_mensaje_en_archivo(msg_proc.encode())
@@ -167,6 +160,7 @@ def gestionar_cliente_999(conn, addr):
                     try:
                         chats = glob.glob("*_*.txt")
                         for archivo in chats:
+                            if "indice_chats" in archivo: continue
                             if usuario_conectado in archivo:
                                 with open(archivo, "r") as f:
                                     msgs = f.readlines()
@@ -176,6 +170,7 @@ def gestionar_cliente_999(conn, addr):
 
                                 for m in msgs:
                                     m_str = m.strip()
+                                    if not m_str: continue
                                     p = m_str.split(";")
                                     linea_final = m_str
 
@@ -220,6 +215,7 @@ def gestionar_cliente_999(conn, addr):
                         archivos = glob.glob("*_*.txt")
                         procesados = []
                         for nombre in archivos:
+                            if "indice_chats" in nombre: continue
                             if usuario_conectado in nombre:
                                 p_nom = nombre.replace(".txt", "").split("_")
                                 otro = p_nom[1] if p_nom[0] == usuario_conectado else p_nom[0]
@@ -231,7 +227,6 @@ def gestionar_cliente_999(conn, addr):
                                         with open(nombre, "r") as f:
                                             for l in f.readlines():
                                                 cp = l.strip().split(";")
-                                                # Conta como no leídos los RECIBIDO o ENTREGADO
                                                 if len(cp) >= 6 and cp[1].replace("@", "") == usuario_conectado and cp[3] in ["RECIBIDO", "ENTREGADO"]:
                                                     pendientes += 1
                                     except:
