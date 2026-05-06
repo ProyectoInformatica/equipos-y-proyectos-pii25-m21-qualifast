@@ -10,13 +10,13 @@ from datetime import datetime
 from collections import defaultdict
 
 # --- CONFIGURACIÓN HARDWARE ESP32 ---
-ESP32_IP = "192.168.1.100"  # <-- PON AQUÍ LA IP DE TU ESP32
+ESP32_IP = "192.168.137.84"  # <-- PON AQUÍ LA IP DE TU ESP32
 
 DB_CONFIG = {
-    'host': 'localhost',
+    'host': 'localhost', #10.172.216.253
     'database': 'comisaria_db',
     'user': 'root',
-    'password': '1234'
+    'password': '1234' #123456
 }
 
 try:
