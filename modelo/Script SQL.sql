@@ -106,7 +106,20 @@ CREATE TABLE IF NOT EXISTS historico_actuadores (
 );
 
 -- ==========================================
--- 5. CONJUNTO DE DATOS DE PRUEBA (MAX. PUNTUACIÓN)
+-- 5. CHAT INTERNO (NUEVO)
+-- ==========================================
+CREATE TABLE IF NOT EXISTS mensajes_chat (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    emisor VARCHAR(50) NOT NULL,
+    receptor VARCHAR(50) NOT NULL,
+    texto TEXT NOT NULL,
+    estado VARCHAR(20) DEFAULT 'RECIBIDO', -- 'RECIBIDO', 'LEIDO'
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_chat_participantes (emisor, receptor)
+);
+
+-- ==========================================
+-- 6. CONJUNTO DE DATOS DE PRUEBA (MAX. PUNTUACIÓN)
 -- ==========================================
 -- Insertar Roles y Configuración
 INSERT IGNORE INTO roles (id, nombre) VALUES (1, 'comisario'), (2, 'inspector'), (3, 'policia');

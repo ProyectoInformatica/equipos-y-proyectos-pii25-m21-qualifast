@@ -16,7 +16,7 @@ DB_CONFIG = {
     'host': 'localhost',
     'database': 'comisaria_db',
     'user': 'root',
-    'password': '123456'
+    'password': '1234'
 }
 
 try:
@@ -452,3 +452,76 @@ def get_consumo_electrico():
     total_w = random.uniform(5, 15)
     return {"total_actual": round(total_w, 2), "media_dia": round(total_w * 0.9, 2),
             "media_mes": round(total_w * 0.8, 2), "detalles": []}
+
+# ==============================================================
+# --- SISTEMA DE CHAT CON MYSQL ---
+# ==============================================================
+
+def enviar_mensaje(emisor, receptor, texto):
+    conexion = conectar()
+    if conexion:
+        try:
+            cursor = conexion.cursor()
+            query = "INSERT INTO mensajes_chat (emisor, receptor, texto, estado) VALUES (%s, %s, %s, 'RECIBIDO')"
+            cursor.execute(query, (emisor, receptor, texto))
+            conexion.commit()
+            return True
+        except Exception as e:
+            print("Error enviando mensaje DB:", e)
+        finally:
+            conexion.close()
+    return False
+
+def get_contactos_chat(mi_usuario):
+    """Devuelve los usuarios con los que he hablado y cuántos mensajes me faltan por leer de cada uno."""
+    conexion = conectar()
+    contactos = []
+    if conexion:
+        try:
+            cursor = conexion.cursor(dictionary=True)
+            # Esta consulta agrupa las conversaciones y cuenta los no leídos
+            query = """
+            SELECT 
+                CASE WHEN emisor = %s THEN receptor ELSE emisor END as contacto,
+                SUM(CASE WHEN receptor = %s AND estado = 'RECIBIDO' THEN 1 ELSE 0 END) as no_leidos
+            FROM mensajes_chat
+            WHERE emisor = %s OR receptor = %s
+            GROUP BY contacto
+            ORDER BY MAX(timestamp) DESC
+            """
+            cursor.execute(query, (mi_usuario, mi_usuario, mi_usuario, mi_usuario))
+            contactos = cursor.fetchall()
+        finally:
+            conexion.close()
+    return contactos
+
+def get_mensajes_chat(usuario1, usuario2):
+    """Devuelve todo el historial entre dos personas."""
+    conexion = conectar()
+    mensajes = []
+    if conexion:
+        try:
+            cursor = conexion.cursor(dictionary=True)
+            query = """
+            SELECT emisor, receptor, texto, estado, DATE_FORMAT(timestamp, '%Y-%m-%d %H:%i:%s') as fecha
+            FROM mensajes_chat 
+            WHERE (emisor = %s AND receptor = %s) OR (emisor = %s AND receptor = %s)
+            ORDER BY timestamp ASC
+            """
+            cursor.execute(query, (usuario1, usuario2, usuario2, usuario1))
+            mensajes = cursor.fetchall()
+        finally:
+            conexion.close()
+    return mensajes
+
+def marcar_mensajes_leidos(emisor_contacto, mi_usuario):
+    """Marca como LEIDOS los mensajes que me ha enviado la otra persona cuando abro el chat."""
+    conexion = conectar()
+    if conexion:
+        try:
+            cursor = conexion.cursor()
+            query = "UPDATE mensajes_chat SET estado = 'LEIDO' WHERE emisor = %s AND receptor = %s AND estado = 'RECIBIDO'"
+            cursor.execute(query, (emisor_contacto, mi_usuario))
+            conexion.commit()
+        finally:
+            conexion.close()
