@@ -16,7 +16,7 @@ DB_CONFIG = {
     'host': 'localhost', #10.172.216.253
     'database': 'comisaria_db',
     'user': 'root',
-    'password': '1234' #123456
+    'password': '123456' #123456
 }
 
 try:
@@ -479,18 +479,21 @@ def get_contactos_chat(mi_usuario):
     if conexion:
         try:
             cursor = conexion.cursor(dictionary=True)
-            # Esta consulta agrupa las conversaciones y cuenta los no leídos
+            # AÑADIDO: MAX(timestamp) as ultimo_msg para que no falle en MySQL Strict Mode
             query = """
             SELECT 
                 CASE WHEN emisor = %s THEN receptor ELSE emisor END as contacto,
-                SUM(CASE WHEN receptor = %s AND estado = 'RECIBIDO' THEN 1 ELSE 0 END) as no_leidos
+                SUM(CASE WHEN receptor = %s AND estado = 'RECIBIDO' THEN 1 ELSE 0 END) as no_leidos,
+                MAX(timestamp) as ultimo_msg
             FROM mensajes_chat
             WHERE emisor = %s OR receptor = %s
             GROUP BY contacto
-            ORDER BY MAX(timestamp) DESC
+            ORDER BY ultimo_msg DESC
             """
             cursor.execute(query, (mi_usuario, mi_usuario, mi_usuario, mi_usuario))
             contactos = cursor.fetchall()
+        except Exception as e:
+            print("Error cargando contactos:", e)
         finally:
             conexion.close()
     return contactos

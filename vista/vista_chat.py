@@ -2,8 +2,6 @@ import flet as ft
 import time
 import threading
 import modelo.manejador_datos as modelo
-from vista.temas import COLORS
-
 
 def crear_vista_chat(page: ft.Page):
     usuario = page.session.get("user_name")
@@ -11,7 +9,8 @@ def crear_vista_chat(page: ft.Page):
     # Variables de estado
     estado_chat = {
         "conversacion_actual": "",
-        "corriendo": True
+        "corriendo": True,
+        "ultimo_hash": ""  # <-- NUEVO: Para evitar parpadeos y bloqueos de UI
     }
 
     # Controles UI
@@ -22,6 +21,7 @@ def crear_vista_chat(page: ft.Page):
 
     def cambiar_chat(nuevo_destinatario):
         estado_chat["conversacion_actual"] = nuevo_destinatario
+        estado_chat["ultimo_hash"] = "" # Forzamos recarga al cambiar de chat
         modelo.marcar_mensajes_leidos(nuevo_destinatario, usuario)
         refrescar_ui_ahora()
 
@@ -34,23 +34,37 @@ def crear_vista_chat(page: ft.Page):
     btn_nuevo_chat = ft.IconButton(ft.Icons.PERSON_ADD, on_click=iniciar_nuevo_chat_click, icon_color="#38bdf8")
 
     def enviar_click(e):
-        if campo_texto.value and estado_chat["conversacion_actual"]:
-            # Guardamos en la base de datos
-            modelo.enviar_mensaje(usuario, estado_chat["conversacion_actual"], campo_texto.value)
-            campo_texto.value = ""
-            refrescar_ui_ahora()
+        texto = campo_texto.value.strip()
+        if texto and estado_chat["conversacion_actual"]:
+            # 1. Guardar en BD
+            exito = modelo.enviar_mensaje(usuario, estado_chat["conversacion_actual"], texto)
+            if exito:
+                # 2. Limpiar campo de texto
+                campo_texto.value = ""
+                page.update() # Actualizamos el campo de texto rápido
+                # 3. Forzar refresco de la lista
+                refrescar_ui_ahora()
 
     def refrescar_ui_ahora():
+        # Si salimos de la ruta, matamos el hilo y salimos
         if not page or page.route != "/chat":
+            estado_chat["corriendo"] = False
             return
 
-        # 1. ACTUALIZAR CONTACTOS DESDE MYSQL
         contactos_db = modelo.get_contactos_chat(usuario)
-        nuevos_contactos = []
+        mensajes_db = []
+        if estado_chat["conversacion_actual"]:
+            mensajes_db = modelo.get_mensajes_chat(usuario, estado_chat["conversacion_actual"])
 
-        # Si acabamos de iniciar chat con alguien y aún no hay mensajes, lo forzamos en la lista
-        if estado_chat["conversacion_actual"] and not any(
-                c['contacto'] == estado_chat["conversacion_actual"] for c in contactos_db):
+        # --- LÓGICA DE OPTIMIZACIÓN (Evita bloqueos) ---
+        hash_actual = str(contactos_db) + str(mensajes_db)
+        if hash_actual == estado_chat["ultimo_hash"]:
+            return  # Si no hay mensajes nuevos, NO re-renderizamos la UI
+        estado_chat["ultimo_hash"] = hash_actual
+        # -----------------------------------------------
+
+        nuevos_contactos = []
+        if estado_chat["conversacion_actual"] and not any(c['contacto'] == estado_chat["conversacion_actual"] for c in contactos_db):
             contactos_db.insert(0, {'contacto': estado_chat["conversacion_actual"], 'no_leidos': 0})
 
         for c in contactos_db:
@@ -67,7 +81,8 @@ def crear_vista_chat(page: ft.Page):
 
             tile = ft.ListTile(
                 leading=ft.Icon(ft.Icons.PERSON),
-                title=ft.Text(nombre, color="white", expand=True, max_lines=1, overflow=ft.TextOverflow.ELLIPSIS),
+                # FIX: Quitamos expand=True de aquí para evitar las letras verticales
+                title=ft.Text(nombre, color="white", max_lines=1, overflow=ft.TextOverflow.ELLIPSIS),
                 trailing=badge,
                 bgcolor=fondo,
                 on_click=lambda e, nom=nombre: cambiar_chat(nom)
@@ -76,27 +91,22 @@ def crear_vista_chat(page: ft.Page):
 
         lista_contactos_ui.controls = nuevos_contactos
 
-        # 2. ACTUALIZAR MENSAJES DESDE MYSQL
+        # 2. ACTUALIZAR MENSAJES
         nuevos_mensajes = []
         if estado_chat["conversacion_actual"]:
-            mensajes_db = modelo.get_mensajes_chat(usuario, estado_chat["conversacion_actual"])
-
             if not mensajes_db:
-                nuevos_mensajes.append(
-                    ft.Text(f"Chat con {estado_chat['conversacion_actual']}", color="#9ca3af", italic=True,
-                            text_align="center"))
+                nuevos_mensajes.append(ft.Text(f"Chat con {estado_chat['conversacion_actual']}", color="#9ca3af", italic=True, text_align="center"))
 
             for m in mensajes_db:
                 es_mio = (m['emisor'] == usuario)
                 color_bg = "#38bdf8" if es_mio else "#374151"
                 align = ft.MainAxisAlignment.END if es_mio else ft.MainAxisAlignment.START
 
-                # Checkmarks
                 check = ""
                 if es_mio:
-                    check = " ✓" if m['estado'] == 'RECIBIDO' else " ✓✓ (Leído)"
+                    check = " ✓ (Env)" if m['estado'] == 'RECIBIDO' else " ✓✓ (Leído)"
 
-                hora = ft.Text(m['fecha'].split(" ")[1][:5], size=10, color="#d1d5db")  # Solo saca HH:MM
+                hora = ft.Text(m['fecha'].split(" ")[1][:5], size=10, color="#d1d5db")
                 texto_burbuja = ft.Text(m['texto'] + check, color="white")
 
                 burbuja = ft.Container(
@@ -113,20 +123,22 @@ def crear_vista_chat(page: ft.Page):
         except:
             pass
 
-    # --- Hilo en segundo plano para comprobar mensajes nuevos (reemplaza al viejo socket) ---
+    # --- Hilo en segundo plano ---
     def bucle_refresco():
         while estado_chat["corriendo"]:
             if page and page.route == "/chat":
-                # Si estamos en el chat actual, marcamos automáticamente como leído lo nuevo
                 if estado_chat["conversacion_actual"]:
                     modelo.marcar_mensajes_leidos(estado_chat["conversacion_actual"], usuario)
                 refrescar_ui_ahora()
-            time.sleep(2)  # Pregunta a la base de datos cada 2 segundos
+            else:
+                # FIX: Si salimos de la pestaña chat, rompemos el bucle para no consumir RAM
+                estado_chat["corriendo"] = False
+                break
+            time.sleep(2)
 
     hilo = threading.Thread(target=bucle_refresco, daemon=True)
     hilo.start()
 
-    # Cuando la vista se destruye, paramos el hilo
     def on_dispose(e):
         estado_chat["corriendo"] = False
 
@@ -153,8 +165,6 @@ def crear_vista_chat(page: ft.Page):
     )
 
     vista_final = ft.Row([panel_izquierdo, panel_derecho], expand=True)
-
-    # Truco para parar el hilo si el usuario se va a otra pantalla
     page.on_disconnect = on_dispose
 
     return vista_final

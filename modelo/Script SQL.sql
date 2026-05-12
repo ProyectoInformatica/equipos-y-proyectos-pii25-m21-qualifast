@@ -176,3 +176,15 @@ SET GLOBAL event_scheduler = ON;
 CREATE EVENT IF NOT EXISTS limpiar_sensores_antiguos
 ON SCHEDULE EVERY 1 DAY
 DO DELETE FROM sensores_log WHERE timestamp < NOW() - INTERVAL 30 DAY;
+
+USE comisaria_db;
+
+CREATE TABLE IF NOT EXISTS mensajes_chat (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    emisor VARCHAR(50) NOT NULL,
+    receptor VARCHAR(50) NOT NULL,
+    texto TEXT NOT NULL,
+    estado VARCHAR(20) DEFAULT 'RECIBIDO',
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_chat_participantes (emisor, receptor)
+);
