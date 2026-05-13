@@ -10,7 +10,8 @@ from datetime import datetime
 from collections import defaultdict
 
 # --- CONFIGURACIÓN HARDWARE ESP32 ---
-ESP32_IP = "192.168.137.84"  # <-- PON AQUÍ LA IP DE TU ESP32
+ESP32_IP = "10.197.123.128"  # <-- PON AQUÍ LA IP DE TU ESP32
+ESP32_CAM_IP = "10.197.123.146"
 
 DB_CONFIG = {
     'host': 'localhost', #10.172.216.253
