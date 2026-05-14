@@ -526,14 +526,29 @@ def get_mensajes_chat(usuario1, usuario2):
     if conexion:
         try:
             cursor = conexion.cursor(dictionary=True)
+
+            # SOLUCIÓN DEFINITIVA: Quitamos DATE_FORMAT del SQL.
+            # Pedimos el 'timestamp' normal para que Python no se confunda con los %.
             query = """
-                    SELECT emisor, receptor, texto, estado, DATE_FORMAT(timestamp, '%%Y-%%m-%%d %%H:%%i:%%s') as fecha
-                    FROM mensajes_chat 
-                    WHERE (emisor = %s AND receptor = %s) OR (emisor = %s AND receptor = %s)
-                    ORDER BY timestamp ASC
+                    SELECT emisor, receptor, texto, estado, timestamp
+                    FROM mensajes_chat
+                    WHERE (emisor = %s \
+                      AND receptor = %s) \
+                       OR (emisor = %s \
+                      AND receptor = %s)
+                    ORDER BY timestamp ASC \
                     """
             cursor.execute(query, (usuario1, usuario2, usuario2, usuario1))
-            mensajes = cursor.fetchall()
+            resultados = cursor.fetchall()
+
+            # Formateamos la fecha directamente en Python
+            for r in resultados:
+                # Creamos la clave 'fecha' que Flet está esperando leer
+                r['fecha'] = r['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
+                mensajes.append(r)
+
+        except Exception as e:
+            print("Error en get_mensajes_chat:", e)
         finally:
             conexion.close()
     return mensajes
