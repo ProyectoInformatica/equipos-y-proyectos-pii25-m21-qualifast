@@ -63,7 +63,7 @@ def crear_vista_chat(page: ft.Page):
             ) if no_leidos > 0 else ft.Container(width=0, height=0)
 
             es_actual = (nombre == estado_chat["conversacion_actual"])
-            fondo = "#374151" if es_actual else ft.colors.TRANSPARENT
+            fondo = "#374151" if es_actual else ft.Colors.TRANSPARENT
 
             tile = ft.ListTile(
                 leading=ft.Icon(ft.Icons.PERSON),

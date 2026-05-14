@@ -527,11 +527,10 @@ def get_mensajes_chat(usuario1, usuario2):
         try:
             cursor = conexion.cursor(dictionary=True)
             query = """
-                    SELECT emisor, receptor, texto, estado, DATE_FORMAT(timestamp, '%Y-%m-%d %H:%i:%s') as fecha
-                    FROM mensajes_chat
-                    WHERE (emisor = %s AND receptor = %s) \
-                       OR (emisor = %s AND receptor = %s)
-                    ORDER BY timestamp ASC \
+                    SELECT emisor, receptor, texto, estado, DATE_FORMAT(timestamp, '%%Y-%%m-%%d %%H:%%i:%%s') as fecha
+                    FROM mensajes_chat 
+                    WHERE (emisor = %s AND receptor = %s) OR (emisor = %s AND receptor = %s)
+                    ORDER BY timestamp ASC
                     """
             cursor.execute(query, (usuario1, usuario2, usuario2, usuario1))
             mensajes = cursor.fetchall()
