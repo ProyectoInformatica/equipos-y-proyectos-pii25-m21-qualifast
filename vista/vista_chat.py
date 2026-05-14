@@ -91,10 +91,15 @@ def crear_vista_chat(page: ft.Page):
                 color_bg = "#38bdf8" if es_mio else "#374151"
                 align = ft.MainAxisAlignment.END if es_mio else ft.MainAxisAlignment.START
 
-                # Checkmarks
+                # --- LÓGICA DE TICKS TIPO WHATSAPP AÑADIDA ---
                 check = ""
                 if es_mio:
-                    check = " ✓" if m['estado'] == 'RECIBIDO' else " ✓✓ (Leído)"
+                    if m['estado'] == 'RECIBIDO':
+                        check = " ✓"  # Enviado (1 tick)
+                    elif m['estado'] == 'ENTREGADO':
+                        check = " ✓✓"  # Entregado (2 ticks)
+                    elif m['estado'] == 'LEIDO':
+                        check = " ✓✓ (Leído)"  # Visto (2 ticks azules simulados)
 
                 hora = ft.Text(m['fecha'].split(" ")[1][:5], size=10, color="#d1d5db")  # Solo saca HH:MM
                 texto_burbuja = ft.Text(m['texto'] + check, color="white")
@@ -116,12 +121,20 @@ def crear_vista_chat(page: ft.Page):
     # --- Hilo en segundo plano para comprobar mensajes nuevos ---
     def bucle_refresco():
         while estado_chat["corriendo"]:
-            if page and page.route == "/chat":
-                # Si estamos en el chat actual, marcamos automáticamente como leído lo nuevo
+            if page:
+                # 1. MATA-HILOS FANTASMA: Si sales de /chat, apagamos este hilo
+                if page.route != "/chat":
+                    estado_chat["corriendo"] = False
+                    break
+
+                # 2. Marcamos que estamos activos (los mensajes que nos manden pasan de ✓ a ✓✓)
+                modelo.marcar_mensajes_entregados(usuario)
+
+                # 3. Si tienes seleccionado un usuario, marca esos mensajes como LEÍDOS
                 if estado_chat["conversacion_actual"]:
                     modelo.marcar_mensajes_leidos(estado_chat["conversacion_actual"], usuario)
+
                 refrescar_ui_ahora()
-            # MODIFICADO: Pregunta a la base de datos cada 0.5 segundos para que sea instantáneo
             time.sleep(0.5)
 
     hilo = threading.Thread(target=bucle_refresco, daemon=True)
@@ -155,7 +168,7 @@ def crear_vista_chat(page: ft.Page):
 
     vista_final = ft.Row([panel_izquierdo, panel_derecho], expand=True)
 
-    # Truco para parar el hilo si el usuario se va a otra pantalla
+    # Truco para parar el hilo si el usuario se va a otra pantalla (o cierra la app)
     page.on_disconnect = on_dispose
 
     return vista_final

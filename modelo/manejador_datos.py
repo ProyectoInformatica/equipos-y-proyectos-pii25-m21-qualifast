@@ -502,10 +502,10 @@ def get_contactos_chat(mi_usuario):
     if conexion:
         try:
             cursor = conexion.cursor(dictionary=True)
-            # Esta consulta agrupa las conversaciones y cuenta los no leídos
+            # MODIFICADO: Incluye ENTREGADO en el contador de mensajes sin leer
             query = """
                     SELECT CASE WHEN emisor = %s THEN receptor ELSE emisor END                    as contacto, \
-                           SUM(CASE WHEN receptor = %s AND estado = 'RECIBIDO' THEN 1 ELSE 0 END) as no_leidos
+                           SUM(CASE WHEN receptor = %s AND estado IN ('RECIBIDO', 'ENTREGADO') THEN 1 ELSE 0 END) as no_leidos
                     FROM mensajes_chat
                     WHERE emisor = %s \
                        OR receptor = %s
@@ -527,8 +527,6 @@ def get_mensajes_chat(usuario1, usuario2):
         try:
             cursor = conexion.cursor(dictionary=True)
 
-            # SOLUCIÓN DEFINITIVA: Quitamos DATE_FORMAT del SQL.
-            # Pedimos el 'timestamp' normal para que Python no se confunda con los %.
             query = """
                     SELECT emisor, receptor, texto, estado, timestamp
                     FROM mensajes_chat
@@ -541,9 +539,7 @@ def get_mensajes_chat(usuario1, usuario2):
             cursor.execute(query, (usuario1, usuario2, usuario2, usuario1))
             resultados = cursor.fetchall()
 
-            # Formateamos la fecha directamente en Python
             for r in resultados:
-                # Creamos la clave 'fecha' que Flet está esperando leer
                 r['fecha'] = r['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
                 mensajes.append(r)
 
@@ -554,13 +550,26 @@ def get_mensajes_chat(usuario1, usuario2):
     return mensajes
 
 
-def marcar_mensajes_leidos(emisor_contacto, mi_usuario):
-    """Marca como LEIDOS los mensajes que me ha enviado la otra persona cuando abro el chat."""
+def marcar_mensajes_entregados(mi_usuario):
+    """NUEVO: Marca como ENTREGADO (Doble tick gris) los mensajes al entrar a la app."""
     conexion = conectar()
     if conexion:
         try:
             cursor = conexion.cursor()
-            query = "UPDATE mensajes_chat SET estado = 'LEIDO' WHERE emisor = %s AND receptor = %s AND estado = 'RECIBIDO'"
+            query = "UPDATE mensajes_chat SET estado = 'ENTREGADO' WHERE receptor = %s AND estado = 'RECIBIDO'"
+            cursor.execute(query, (mi_usuario,))
+            conexion.commit()
+        finally:
+            conexion.close()
+
+
+def marcar_mensajes_leidos(emisor_contacto, mi_usuario):
+    """MODIFICADO: Marca como LEIDOS los mensajes recibidos o entregados de la otra persona."""
+    conexion = conectar()
+    if conexion:
+        try:
+            cursor = conexion.cursor()
+            query = "UPDATE mensajes_chat SET estado = 'LEIDO' WHERE emisor = %s AND receptor = %s AND estado IN ('RECIBIDO', 'ENTREGADO')"
             cursor.execute(query, (emisor_contacto, mi_usuario))
             conexion.commit()
         finally:
