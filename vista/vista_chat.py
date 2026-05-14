@@ -102,7 +102,7 @@ def crear_vista_chat(page: ft.Page):
                 burbuja = ft.Container(
                     content=ft.Column([texto_burbuja, hora], spacing=2,
                                       horizontal_alignment=ft.CrossAxisAlignment.END if es_mio else ft.CrossAxisAlignment.START),
-                    bgcolor=color_bg, padding=10, border_radius=10, max_width=400
+                    bgcolor=color_bg, padding=10, border_radius=10
                 )
                 nuevos_mensajes.append(ft.Row([burbuja], alignment=align))
 

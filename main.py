@@ -7,11 +7,14 @@ import os
 import cv2
 import numpy as np
 import requests
+import logging
 from datetime import datetime
 import modelo.manejador_datos as modelo
 from vista import vista_login, vista_dashboard_sensores, vista_camaras, vista_gestion_presos, vista_historico, \
     vista_configuracion, vista_consumo, vista_gestion_usuarios, vista_chat # <-- IMPORTADO vista_chat
 
+logging.getLogger('asyncio').setLevel(logging.CRITICAL)
+logging.getLogger('flet_core').setLevel(logging.CRITICAL)
 
 # --- LÓGICA DE FOTOS (Auto Center-Crop y Compresión) ---
 def leer_archivo_binario(ruta):
@@ -49,48 +52,6 @@ def leer_archivo_binario(ruta):
         except:
             pass
     return None
-
-
-# --- COMUNICACIÓN IOT WIFI (ESP32) ---
-def ejecutar_lectura_esp32():
-    print(">>> INICIANDO CONEXIÓN WIFI CON ESP32 <<<")
-    url_sensores = f"http://{modelo.ESP32_IP}/sensores"
-
-    while True:
-        try:
-            respuesta = requests.get(url_sensores, timeout=3)
-
-            if respuesta.status_code == 200:
-                data = respuesta.json()
-                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-                # --- TRUCO DEL MQ-135 ---
-                mq2_val = data.get('mq2', 0)
-                # Simulamos la calidad de aire. Base de 400ppm de CO2 + proporción del humo + ruido natural
-                mq135_sim = int(400 + (mq2_val * 0.4) + random.uniform(-10, 15))
-                if mq135_sim < 400: mq135_sim = 400  # El aire nunca baja de 400ppm
-
-                datos = [
-                    {"timestamp": timestamp, "sensor": "DHT11 - Temperatura",
-                     "valor": f"{data.get('temperatura', 0)} °C"},
-                    {"timestamp": timestamp, "sensor": "DHT11 - Humedad", "valor": f"{data.get('humedad', 0)} %"},
-                    {"timestamp": timestamp, "sensor": "LDR - Luz", "valor": f"{data.get('luz', 0)} Lux"},
-                    {"timestamp": timestamp, "sensor": "MQ-2 - Humo", "valor": f"{mq2_val} ppm"},
-                    # Rellenamos el panel del Aire con nuestro valor derivado:
-                    {"timestamp": timestamp, "sensor": "MQ-135 - Aire", "valor": f"{mq135_sim} ppm"}
-                ]
-
-                # Esto guarda en BD y evalúa las reglas automáticas de Temperatura y Luz
-                modelo.registrar_dato_sensor(datos)
-
-        except Exception as e:
-            pass
-
-        time.sleep(5)
-
-hilo_hardware = threading.Thread(target=ejecutar_lectura_esp32, daemon=True)
-hilo_hardware.start()
-
 
 # --- LOOP CONTROLADOR UI ---
 def loop_controlador_ui(page):
