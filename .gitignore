@@ -1,3 +1,20 @@
+# Entornos virtuales
+venv/
+.venv/
+.venv1/
+env/
+
+# Archivos compilados de Python
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+
+# Archivos ocultos de Mac y Windows
 .DS_Store
+Thumbs.db
+
+# Carpetas del IDE (PyCharm, VSCode)
+.vscode/
+.idea/
+*.iws
+workspace.xml

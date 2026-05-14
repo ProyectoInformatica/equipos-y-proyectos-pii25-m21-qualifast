@@ -1,0 +1,1 @@
+[2026-05-14 12:56:54] DE: prueba | PARA: comisario | MSG: hola

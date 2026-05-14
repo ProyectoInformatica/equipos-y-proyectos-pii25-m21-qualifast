@@ -1,88 +1,116 @@
 import flet as ft
-import os
-import glob
 from vista.temas import COLORS
+import modelo.manejador_datos as modelo
+import base64
+import threading
+import urllib.request
+import time
 
-# AHORA ACEPTA 3 ARGUMENTOS (El último es para ir al video)
+
+class VideoStream(ft.Image):
+    def __init__(self, url):
+        # Componente de imagen nativo de Flet
+        super().__init__(expand=True, fit=ft.ImageFit.CONTAIN, border_radius=10)
+        self.url = url
+        self.running = False
+
+    def did_mount(self):
+        # Al entrar en la pestaña, arrancamos el motor de captura
+        self.running = True
+        threading.Thread(target=self.update_frames, daemon=True).start()
+
+    def will_unmount(self):
+        # Al salir de la pestaña, detenemos la captura para no saturar el Wi-Fi
+        self.running = False
+
+    def update_frames(self):
+        while self.running:
+            try:
+                # Nos conectamos a la cámara "en crudo"
+                req = urllib.request.Request(self.url)
+                stream = urllib.request.urlopen(req, timeout=5)
+                bytes_data = b''
+
+                while self.running:
+                    # Leemos los datos a trozos
+                    chunk = stream.read(8192)
+                    if not chunk:
+                        break  # Si la cámara se apaga, salimos
+
+                    bytes_data += chunk
+
+                    # Buscamos matemáticamente el inicio y fin de una foto JPEG pura
+                    a = bytes_data.find(b'\xff\xd8')  # Inicio
+                    b = bytes_data.find(b'\xff\xd9')  # Fin
+
+                    if a != -1 and b != -1:
+                        # ¡Hemos pescado un fotograma entero!
+                        jpg = bytes_data[a:b + 2]
+                        bytes_data = bytes_data[b + 2:]  # Limpiamos lo ya leído
+
+                        # Inyectamos el fotograma directamente en la interfaz (sin OpenCV)
+                        self.src_base64 = base64.b64encode(jpg).decode('utf-8')
+                        self.update()
+
+                    # Limpieza de seguridad por si el Wi-Fi da un tirón
+                    if len(bytes_data) > 500000:
+                        bytes_data = b''
+
+            except Exception as e:
+                # Si falla o se desconecta, no rompe la app, solo reintenta silenciosamente
+                print(f"Cámara desconectada, buscando señal... ({e})")
+                time.sleep(2)
+
+
 def crear_vista_camaras(on_refrescar_click, on_volver_dashboard, on_ver_video_click):
-    """
-    Muestra la última captura disponible en 'capturas_simuladas' y un botón para ver el video grabado.
-    """
+    URL_CAMARA = f"http://{modelo.ESP32_CAM_IP}:81/stream"
 
-    # 1. Buscar la imagen más reciente en la carpeta simulada
-    carpeta_capturas = "capturas_simuladas"
-    imagen_mostrada = None
-    texto_estado = "Esperando señal..."
-
-    # Lógica para encontrar la última foto (simulando cámara en vivo)
-    try:
-        lista_archivos = glob.glob(os.path.join(carpeta_capturas, "*.jpg"))
-        if lista_archivos:
-            archivo_mas_reciente = max(lista_archivos, key=os.path.getctime)
-            imagen_mostrada = archivo_mas_reciente
-            texto_estado = f"Señal en vivo: {os.path.basename(archivo_mas_reciente)}"
-    except Exception as e:
-        texto_estado = f"Error leyendo señal: {e}"
-
-    # 2. Contenedor de la imagen (El Monitor)
+    # --- PANTALLA PRINCIPAL ---
     monitor_screen = ft.Container(
-        content=ft.Image(
-            # Si hay imagen, la muestra. Si no, pone un placeholder
-            src=imagen_mostrada if imagen_mostrada else "https://via.placeholder.com/640x360?text=SIN+SEÑAL",
-            fit=ft.ImageFit.CONTAIN,
-            gapless_playback=True,
-        ),
-        bgcolor="black",
-        border=ft.border.all(10, "#374151"),
+        content=VideoStream(URL_CAMARA),
+        bgcolor="#000000",
         border_radius=10,
+        height=450,
+        width=800,
+        border=ft.border.all(2, COLORS['glass']),
         alignment=ft.alignment.center,
-        expand=True
+        clip_behavior=ft.ClipBehavior.HARD_EDGE
     )
 
-    # 3. Estructura de la vista
+    # Contenedor estético centrado
+    contenido_centrado = ft.Column([
+        ft.Row([
+            ft.Icon(ft.Icons.CIRCLE, color="red", size=15),
+            ft.Text("SEÑAL EN VIVO (OV2640)", color="red", weight="bold", size=16),
+        ], alignment=ft.MainAxisAlignment.CENTER),
+
+        ft.Container(height=10),
+
+        monitor_screen,
+
+        ft.Container(height=20),
+
+        ft.Row([
+            ft.ElevatedButton("Ver Grabación (Simulada)", icon=ft.Icons.PLAY_CIRCLE_FILLED,
+                              bgcolor=COLORS['accent'], color=COLORS['bg'], on_click=on_ver_video_click),
+        ], alignment=ft.MainAxisAlignment.CENTER)
+
+    ], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER, expand=True)
+
     return ft.View(
         "/camaras",
         bgcolor=COLORS['bg'],
+        appbar=ft.AppBar(
+            title=ft.Text("Vigilancia CCTV"),
+            bgcolor=COLORS['card'],
+            leading=ft.IconButton(ft.Icons.ARROW_BACK, on_click=on_volver_dashboard)
+        ),
         controls=[
-            # Barra superior
-            ft.AppBar(
-                title=ft.Text("Sala de Vigilancia - CCTV"),
-                bgcolor=COLORS['card'],
-                leading=ft.IconButton(ft.Icons.ARROW_BACK, on_click=on_volver_dashboard)
-            ),
-            # Contenido principal
             ft.Container(
-                padding=20,
+                padding=30,
                 expand=True,
-                content=ft.Column([
-                    # Indicadores LED
-                    ft.Row([
-                        ft.Icon(ft.Icons.CIRCLE, color="red", size=15),
-                        ft.Text("REC", color="red", weight="bold"),
-                        ft.Container(width=20),
-                        ft.Text(texto_estado, color=COLORS['text'])
-                    ]),
-
-                    # Pantalla
-                    monitor_screen,
-
-                    # Botonera
-                    ft.Row([
-                        ft.ElevatedButton(
-                            "Actualizar Fotograma",
-                            icon=ft.Icons.REFRESH,
-                            on_click=on_refrescar_click
-                        ),
-                        # ESTE BOTÓN USA EL TERCER ARGUMENTO
-                        ft.ElevatedButton(
-                            "Ver Grabación (Video)",
-                            icon=ft.Icons.PLAY_CIRCLE_FILLED,
-                            bgcolor=COLORS['accent'],
-                            color=COLORS['bg'],
-                            on_click=on_ver_video_click
-                        ),
-                    ], alignment=ft.MainAxisAlignment.CENTER, spacing=20)
-                ])
+                alignment=ft.alignment.center,
+                content=contenido_centrado
             )
         ]
     )

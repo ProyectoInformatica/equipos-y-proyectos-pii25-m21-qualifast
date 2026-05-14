@@ -1,95 +1,87 @@
 import flet as ft
 import flet_video as fv
 import threading
-import time
 import random
+import time
+import os
+import cv2
+import numpy as np
+import requests
+import logging
 from datetime import datetime
 import modelo.manejador_datos as modelo
 from vista import vista_login, vista_dashboard_sensores, vista_camaras, vista_gestion_presos, vista_historico, \
-    vista_configuracion, vista_consumo  # <--- Importar vista_consumo
+    vista_configuracion, vista_consumo, vista_gestion_usuarios, vista_chat # <-- IMPORTADO vista_chat
 
+logging.getLogger('asyncio').setLevel(logging.CRITICAL)
+logging.getLogger('flet_core').setLevel(logging.CRITICAL)
 
-# --- SIMULADOR IOT (Hilo de Background) ---
-def ejecutar_simulador():
-    sensores = ["DHT11 - Temperatura", "DHT11 - Humedad", "LDR - Luz", "MQ-2 - Humo", "MQ-135 - Aire"]
-    print(">>> INICIANDO SIMULADOR IOT (2º Plano) <<<")
-    while True:
+# --- LÓGICA DE FOTOS (Auto Center-Crop y Compresión) ---
+def leer_archivo_binario(ruta):
+    if ruta and os.path.exists(ruta):
         try:
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            datos = []
-            for s in sensores:
-                val = ""
-                if "Temperatura" in s:
-                    val = f"{round(random.uniform(20, 35), 1)} °C"
-                elif "Humedad" in s:
-                    val = f"{random.randint(40, 60)} %"
-                elif "Luz" in s:
-                    val = f"{random.randint(100, 900)} Lux"
-                elif "Humo" in s:
-                    val = f"{random.randint(10, 30)} ppm"
-                elif "Aire" in s:
-                    val = f"{random.randint(400, 480)} ppm"
-                datos.append({"timestamp": timestamp, "sensor": s, "valor": val})
+            # Usar numpy para evitar fallos con rutas en Windows
+            with open(ruta, "rb") as f:
+                file_bytes = np.frombuffer(f.read(), dtype=np.uint8)
+                img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
 
-            modelo.registrar_dato_sensor(datos)
-            time.sleep(5)
+            if img is not None:
+                # --- AUTO CENTER-CROP (Recorte central cuadrado perfecto) ---
+                h, w = img.shape[:2]
+                min_dim = min(h, w)
+
+                # Calcular coordenadas para el recorte central
+                start_x = (w // 2) - (min_dim // 2)
+                start_y = (h // 2) - (min_dim // 2)
+
+                # Recortar la imagen
+                cropped_img = img[start_y:start_y + min_dim, start_x:start_x + min_dim]
+
+                # Comprimir a 200x200
+                img_resized = cv2.resize(cropped_img, (200, 200))
+                ret, buffer = cv2.imencode('.jpg', img_resized, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
+                if ret:
+                    return buffer.tobytes()
         except Exception as e:
-            print(f"Error simulador: {e}")
-            time.sleep(5)
+            print(f"Error procesando imagen OpenCV: {e}")
 
+        # Plan B de emergencia: leer archivo crudo (max 1MB)
+        try:
+            with open(ruta, "rb") as f:
+                return f.read(1024 * 1024)
+        except:
+            pass
+    return None
 
-hilo_simulador = threading.Thread(target=ejecutar_simulador, daemon=True)
-hilo_simulador.start()
-
-
-# --- HILO CONTROLADOR DE UI (MVC STRICT) ---
+# --- LOOP CONTROLADOR UI ---
 def loop_controlador_ui(page):
-    """
-    Este hilo pertenece al CONTROLADOR.
-    1. Obtiene datos del MODELO.
-    2. Actualiza la VISTA activa si corresponde.
-    """
     while True:
         try:
-            # Solo trabajamos si hay vistas y estamos en dashboard o consumo
             if not page.views or (page.route != "/dashboard" and page.route != "/consumo"):
                 time.sleep(1)
                 continue
-
-            # Obtenemos la vista actual
             vista_actual = page.views[-1]
-
-            # Verificamos si la vista tiene el "puerto" de entrada de datos (callback)
             if hasattr(vista_actual, 'data') and isinstance(vista_actual.data, dict):
                 callback = vista_actual.data.get("update_callback")
-
                 if callback:
                     if page.route == "/dashboard":
-                        # 1. PEDIR DATOS AL MODELO (RAM Cache = Rápido)
-                        datos_sensores = modelo.get_ultimos_sensores_raw()
-                        datos_actuadores = modelo.get_estado_actuadores()
-                        # 2. INYECTAR DATOS A LA VISTA
-                        callback(datos_sensores, datos_actuadores)
-
+                        callback(modelo.get_ultimos_sensores_raw(), modelo.get_estado_actuadores())
                     elif page.route == "/consumo":
-                        # Obtener datos de consumo
-                        datos_consumo = modelo.get_consumo_electrico()
-                        callback(datos_consumo)
-
-            time.sleep(0.5)  # Refresco controlado por el Controlador
-
-        except Exception as e:
-            print(f"Error Loop Controlador: {e}")
+                        callback(modelo.get_consumo_electrico())
+            time.sleep(1)
+        except:
             time.sleep(1)
 
 
 # --- HANDLERS (CONTROLADOR) ---
 def on_login_click(e, campo_usuario, campo_password, texto_error):
     page = e.page
-    rol = modelo.validar_usuario(campo_usuario.value, campo_password.value)
+    rol, user_id, foto_b64 = modelo.validar_usuario(campo_usuario.value, campo_password.value)
     if rol:
         page.session.set("user_rol", rol)
         page.session.set("user_name", campo_usuario.value)
+        page.session.set("user_id", user_id)
+        page.session.set("user_foto", foto_b64)
         texto_error.value = ""
         page.go("/dashboard")
     else:
@@ -102,6 +94,19 @@ def on_logout_click(e):
     e.page.go("/login")
 
 
+def on_control_actuador_click(e, actuador_id, valor_objetivo=None):
+    if e.page.session.get("user_rol") == "policia":
+        e.page.snack_bar = ft.SnackBar(ft.Text("Permiso denegado."), bgcolor="red")
+        e.page.snack_bar.open = True
+        e.page.update()
+        return
+    user_id = e.page.session.get("user_id")
+    if "door" in actuador_id:
+        modelo.toggle_actuador(actuador_id, user_id)
+    else:
+        modelo.set_estado_actuador(actuador_id, valor_objetivo, user_id)
+
+
 def on_refrescar_click(e):
     if hasattr(e, 'page') and e.page:
         ruta = e.page.route
@@ -109,169 +114,206 @@ def on_refrescar_click(e):
         e.page.go(ruta)
 
 
-def on_control_actuador_click(e, actuador_id, valor_objetivo=None):
-    page = e.page
-    usuario = page.session.get("user_name") or "desconocido"
-    if page.session.get("user_rol") == "policia":
-        page.snack_bar = ft.SnackBar(ft.Text("Permiso denegado."), bgcolor="red")
-        page.snack_bar.open = True
-        page.update()
-        return
+# --- HANDLERS DE CREACIÓN Y EDICIÓN CON FOTOS ---
+def guardar_nuevo_preso(e, datos, dialogo, foto_ruta=None):
+    foto_bytes = leer_archivo_binario(foto_ruta)
+    if modelo.add_preso(datos.get("nombre"), datos.get("delito"), datos.get("celda"), foto_bytes):
+        e.page.close(dialogo)
+        on_refrescar_click(e)
 
-    if "door" in actuador_id:
-        modelo.toggle_actuador(actuador_id, usuario)
+
+def guardar_edicion_preso(e, datos, dialogo, foto_ruta=None):
+    foto_bytes = leer_archivo_binario(foto_ruta)
+    if modelo.update_preso(datos.get("id"), datos, foto_bytes):
+        e.page.close(dialogo)
+        on_refrescar_click(e)
+
+
+def on_crear_usuario_click(e, u, p, r, foto_ruta=None):
+    foto_bytes = leer_archivo_binario(foto_ruta)
+    if modelo.add_usuario(u.value, p.value, r.value, foto_bytes):
+        on_refrescar_click(e)
+
+
+def on_editar_usuario_click(e, uid, txt_user, txt_pass, dd_rol, dialogo, foto_ruta=None):
+    foto_bytes = leer_archivo_binario(foto_ruta)
+    if modelo.update_usuario(uid, txt_user.value, txt_pass.value, dd_rol.value, foto_bytes):
+        e.page.close(dialogo)
+        if e.page.session.get("user_id") == uid and foto_bytes:
+            import base64
+            e.page.session.set("user_foto", base64.b64encode(foto_bytes).decode('utf-8'))
+        on_refrescar_click(e)
     else:
-        modelo.set_estado_actuador(actuador_id, valor_objetivo, usuario)
+        e.page.snack_bar = ft.SnackBar(ft.Text("Error al actualizar."), bgcolor="red")
+        e.page.snack_bar.open = True
+        e.page.update()
 
 
-def on_cambiar_modo_click(e, actuador_id):
-    """Alterna entre Auto y Manual"""
-    estados = modelo.get_estado_actuadores()
-    modo_actual = estados.get(actuador_id, {}).get("mode", "manual")
-    nuevo_modo = "manual" if modo_actual == "auto" else "auto"
-    modelo.set_modo_actuador(actuador_id, nuevo_modo)
+# --- SISTEMA DE MENÚ LATERAL ---
+def get_nav_rail(page, current_route):
+    rol = page.session.get("user_rol")
+    nombre = page.session.get("user_name")
+    foto = page.session.get("user_foto")
 
-    e.page.snack_bar = ft.SnackBar(ft.Text(f"{actuador_id.upper()} cambiado a modo {nuevo_modo.upper()}"),
-                                   bgcolor="blue")
-    e.page.snack_bar.open = True
-    e.page.update()
+    # <-- AÑADIDO /chat A LAS RUTAS DEL MENÚ -->
+    rutas = ["/dashboard", "/presos", "/chat"]
+    if rol == "comisario": rutas.append("/usuarios")
+    rutas.extend(["/consumo", "/historico", "/config"])
 
+    destinations = [
+        ft.NavigationRailDestination(icon=ft.Icons.DASHBOARD_OUTLINED, selected_icon=ft.Icons.DASHBOARD, label="Panel"),
+        ft.NavigationRailDestination(icon=ft.Icons.LOCK_OUTLINE, selected_icon=ft.Icons.LOCK, label="Presos"),
+        # <-- AÑADIDO BOTÓN DE CHAT -->
+        ft.NavigationRailDestination(icon=ft.Icons.CHAT_OUTLINED, selected_icon=ft.Icons.CHAT, label="Chat"),
+    ]
+    if rol == "comisario":
+        destinations.append(
+            ft.NavigationRailDestination(icon=ft.Icons.PEOPLE_OUTLINE, selected_icon=ft.Icons.PEOPLE, label="Personal"))
+    destinations.extend([
+        ft.NavigationRailDestination(icon=ft.Icons.BOLT_OUTLINED, selected_icon=ft.Icons.BOLT, label="Consumo"),
+        ft.NavigationRailDestination(icon=ft.Icons.HISTORY_OUTLINED, selected_icon=ft.Icons.HISTORY, label="Histórico"),
+        ft.NavigationRailDestination(icon=ft.Icons.SETTINGS_OUTLINED, selected_icon=ft.Icons.SETTINGS, label="Ajustes"),
+    ])
 
-# Navegación
-def on_ver_camaras_click(e): e.page.go("/camaras")
+    avatar = ft.Container(
+        width=40, height=40, border_radius=20, bgcolor="#374151", alignment=ft.alignment.center,
+        content=ft.Image(src_base64=foto, fit=ft.ImageFit.COVER, border_radius=20, width=40,
+                         height=40) if foto else ft.Icon(ft.Icons.PERSON, color="white")
+    )
 
-
-def on_volver_dashboard_click(e): e.page.go("/dashboard")
-
-
-def on_ver_grabacion_video_click(e): e.page.go("/video")
-
-
-def on_ver_historico_click(e): e.page.go("/historico")
-
-
-def on_configuracion_click(e): e.page.go("/config")
-
-
-def on_ver_consumo_click(e): e.page.go("/consumo")  # Handler navegacion consumo
-
-
-def on_guardar_config_click(e, nuevos_datos):
-    modelo.save_configuracion(nuevos_datos)
-    e.page.snack_bar = ft.SnackBar(ft.Text("Configuración guardada correctamente"), bgcolor="green")
-    e.page.snack_bar.open = True
-    e.page.go("/dashboard")
-
-
-# Gestión Datos CRUD
-def guardar_nuevo_preso(e, datos, dialogo):
-    if modelo.add_preso(datos.get("nombre"), datos.get("delito"), datos.get("celda")):
-        e.page.close(dialogo);
-        on_refrescar_click(e)
-
-
-def guardar_edicion_preso(e, datos, dialogo):
-    if modelo.update_preso(datos.get("id"), datos):
-        e.page.close(dialogo);
-        on_refrescar_click(e)
+    return ft.NavigationRail(
+        selected_index=rutas.index(current_route) if current_route in rutas else 0,
+        label_type=ft.NavigationRailLabelType.ALL,
+        destinations=destinations,
+        on_change=lambda e: page.go(rutas[e.control.selected_index]),
+        bgcolor="#1f2937",
+        indicator_color="#38bdf8",
+        leading=ft.Column([
+            ft.Container(padding=10, content=avatar),
+            ft.Text(nombre, size=10, weight="bold", color="white", text_align="center"),
+            ft.Text(rol, size=8, color="#38bdf8", text_align="center"),
+            ft.Divider(color="#374151")
+        ], horizontal_alignment="center", spacing=2),
+        trailing=ft.IconButton(ft.Icons.LOGOUT, icon_color="#ef4444", on_click=on_logout_click)
+    )
 
 
-def on_abrir_crear_preso(e): e.page.open(vista_gestion_presos.crear_dialogo_preso("Nuevo", guardar_nuevo_preso))
-
-
-def on_abrir_editar_preso(e, preso): e.page.open(
-    vista_gestion_presos.crear_dialogo_preso("Editar", guardar_edicion_preso, preso))
-
-
-def on_borrar_preso_click(e, id_preso):
-    if modelo.delete_preso(id_preso): on_refrescar_click(e)
-
-
-def on_crear_usuario_click(e, u, p, r):
-    if modelo.add_usuario(u.value, p.value, r.value): on_refrescar_click(e)
-
-
-# --- ROUTER PRINCIPAL ---
+# --- MAIN ROUTER ---
 def main(page: ft.Page):
     page.title = "Comisaría IoT"
     page.theme_mode = ft.ThemeMode.DARK
     page.padding = 0
 
-    # Iniciamos el hilo Controlador de UI
+    file_picker = ft.FilePicker()
+    page.overlay.append(file_picker)
+
     threading.Thread(target=loop_controlador_ui, args=(page,), daemon=True).start()
 
     def route_change(evt):
-        route = evt.route
-        if route == "/temp": return
-        page.views.clear()
+        try:
+            page.views.clear()
+            route = page.route
+            if route == "/temp": return
 
-        rol = page.session.get("user_rol")
-        user_name = page.session.get("user_name")
+            rol = page.session.get("user_rol")
+            if not rol and route != "/login":
+                page.go("/login")
+                return
 
-        if not rol and route != "/login":
-            page.go("/login")
-            return
+            if route == "/login":
+                page.views.append(vista_login.crear_vista_login(on_login_click))
 
-        if route == "/login":
-            page.views.append(vista_login.crear_vista_login(on_login_click))
+            elif route == "/dashboard":
+                content = vista_dashboard_sensores.crear_dashboard_view(
+                    page, rol, page.session.get("user_name"),
+                    modelo.get_estado_actuadores(), modelo.get_ultimos_sensores_raw(),
+                    on_refrescar_click, on_control_actuador_click, lambda e: page.go("/camaras"),
+                    lambda e, a: modelo.set_modo_actuador(a, "auto")
+                )
+                v = ft.View("/dashboard", controls=[ft.Row([get_nav_rail(page, route), ft.VerticalDivider(width=1),
+                                                            ft.Container(content=content, expand=True)], expand=True)])
+                v.data = content.data
+                page.views.append(v)
 
-        elif route == "/dashboard":
-            # Pasamos datos iniciales, pero el hilo se encargará de refrescar
-            logs_recientes = modelo.get_log_sensores_filtrado(horas=24)
-            page.views.append(vista_dashboard_sensores.crear_dashboard_view(
-                page, rol, user_name,
-                modelo.get_estado_actuadores(),
-                modelo.get_presos(),
-                modelo.get_usuarios(),
-                logs_recientes,
-                on_logout_click, on_refrescar_click, on_control_actuador_click, on_crear_usuario_click,
-                on_borrar_preso_click, on_ver_camaras_click,
-                on_abrir_crear_preso, on_abrir_editar_preso,
-                on_ver_historico_click,
-                on_configuracion_click,
-                on_cambiar_modo_click,
-                on_ver_consumo_click  # Pasamos el handler nuevo
-            ))
+            elif route == "/presos":
+                content = vista_gestion_presos.crear_vista_presos(
+                    modelo.get_presos(),
+                    lambda _: page.open(
+                        vista_gestion_presos.crear_dialogo_preso("Nuevo", guardar_nuevo_preso, None, file_picker)),
+                    lambda e, p: page.open(
+                        vista_gestion_presos.crear_dialogo_preso("Editar", guardar_edicion_preso, p, file_picker)),
+                    on_refrescar_click, lambda e, pid: modelo.delete_preso(pid) and on_refrescar_click(e)
+                )
+                page.views.append(ft.View("/presos", controls=[ft.Row(
+                    [get_nav_rail(page, route), ft.VerticalDivider(width=1),
+                     ft.Container(content=content, expand=True)], expand=True)]))
 
-        elif route == "/config":
-            page.views.append(vista_configuracion.crear_vista_configuracion(
-                modelo.get_configuracion(),
-                on_guardar_config_click,
-                on_volver_dashboard_click
-            ))
+            # <-- AÑADIDA RUTA /chat -->
+            elif route == "/chat":
+                content = vista_chat.crear_vista_chat(page)
+                page.views.append(ft.View("/chat", controls=[ft.Row(
+                    [get_nav_rail(page, route), ft.VerticalDivider(width=1),
+                     ft.Container(content=content, expand=True)], expand=True)]))
 
-        elif route == "/consumo":
-            page.views.append(vista_consumo.crear_vista_consumo(
-                on_volver_dashboard_click
-            ))
+            elif route == "/usuarios":
+                content = vista_gestion_usuarios.crear_vista_usuarios(
+                    rol, modelo.get_usuarios(), on_crear_usuario_click, on_editar_usuario_click, file_picker
+                )
+                page.views.append(ft.View("/usuarios", controls=[ft.Row(
+                    [get_nav_rail(page, route), ft.VerticalDivider(width=1),
+                     ft.Container(content=content, expand=True)], expand=True)]))
 
-        elif route == "/camaras":
-            page.views.append(vista_camaras.crear_vista_camaras(on_refrescar_click, on_volver_dashboard_click,
-                                                                on_ver_grabacion_video_click))
+            elif route == "/config":
+                content = vista_configuracion.crear_vista_configuracion(
+                    modelo.get_configuracion(), lambda e, d: modelo.save_configuracion(d) and page.go("/dashboard"),
+                    lambda e: page.go("/dashboard")
+                )
+                page.views.append(ft.View("/config", controls=[ft.Row(
+                    [get_nav_rail(page, route), ft.VerticalDivider(width=1),
+                     ft.Container(content=content, expand=True)], expand=True)]))
 
-        elif route == "/historico":
-            page.views.append(vista_historico.crear_vista_historico(
-                datos_promedio_sensores=modelo.get_promedio_sensores_por_hora(),
-                datos_log_actuadores=modelo.get_log_historico_completo(dias=7),
-                on_volver_dashboard=on_volver_dashboard_click
-            ))
+            elif route == "/consumo":
+                content = vista_consumo.crear_vista_consumo(lambda e: page.go("/dashboard"))
+                v = ft.View("/consumo", controls=[ft.Row([get_nav_rail(page, route), ft.VerticalDivider(width=1),
+                                                          ft.Container(content=content, expand=True)], expand=True)])
+                v.data = {"update_callback": content.data.get("update_callback")} if hasattr(content,
+                                                                                             'data') and isinstance(
+                    content.data, dict) else None
+                page.views.append(v)
 
-        elif route == "/video":
-            video_player = fv.Video(expand=True, playlist=[fv.VideoMedia("assets/videoGato.mp4")],
-                                    playlist_mode=fv.PlaylistMode.LOOP, fill_color="#0f1724", aspect_ratio=16 / 9,
-                                    volume=100, autoplay=True)
-            page.views.append(ft.View(route="/video", bgcolor="#0f1724", padding=0,
-                                      appbar=ft.AppBar(title=ft.Text("Grabación"), bgcolor="#0f1724",
-                                                       leading=ft.IconButton(ft.Icons.ARROW_BACK,
-                                                                             on_click=lambda e: page.go("/camaras"))),
-                                      controls=[
-                                          ft.Container(content=video_player, expand=True, alignment=ft.alignment.center,
-                                                       padding=20)]))
+            elif route == "/camaras":
+                page.views.append(vista_camaras.crear_vista_camaras(on_refrescar_click, lambda e: page.go("/dashboard"),
+                                                                    lambda e: page.go("/video")))
 
-        page.update()
+            elif route == "/historico":
+                content = vista_historico.crear_vista_historico(
+                    datos_promedio_sensores=modelo.get_promedio_sensores_por_hora(),
+                    datos_log_actuadores=[],
+                    on_volver_dashboard=lambda e: page.go("/dashboard")
+                )
+                page.views.append(ft.View("/historico", controls=[ft.Row(
+                    [get_nav_rail(page, route), ft.VerticalDivider(width=1),
+                     ft.Container(content=content, expand=True, padding=10)], expand=True)]))
+
+            elif route == "/video":
+                video_player = fv.Video(expand=True, playlist=[fv.VideoMedia("assets/videoGato.mp4")],
+                                        playlist_mode=fv.PlaylistMode.LOOP, fill_color="#0f1724", aspect_ratio=16 / 9,
+                                        volume=100, autoplay=True)
+                page.views.append(ft.View("/video", appbar=ft.AppBar(title=ft.Text("Grabación"), bgcolor="#0f1724",
+                                                                     leading=ft.IconButton(ft.Icons.ARROW_BACK,
+                                                                                           on_click=lambda e: page.go(
+                                                                                               "/camaras"))), controls=[
+                    ft.Container(content=video_player, expand=True, alignment=ft.alignment.center, padding=20)]))
+
+            page.update()
+
+        except Exception as ex:
+            print(f"Error de renderizado: {ex}")
+            page.views.append(ft.View("/error", controls=[ft.Text(f"Error Crítico: {ex}", color="red", size=20)]))
+            page.update()
 
     page.on_route_change = route_change
-    page.go(page.route)
+    page.go("/login")
 
 
 if __name__ == "__main__":
