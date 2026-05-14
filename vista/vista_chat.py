@@ -113,7 +113,7 @@ def crear_vista_chat(page: ft.Page):
         except:
             pass
 
-    # --- Hilo en segundo plano para comprobar mensajes nuevos (reemplaza al viejo socket) ---
+    # --- Hilo en segundo plano para comprobar mensajes nuevos ---
     def bucle_refresco():
         while estado_chat["corriendo"]:
             if page and page.route == "/chat":
@@ -121,7 +121,8 @@ def crear_vista_chat(page: ft.Page):
                 if estado_chat["conversacion_actual"]:
                     modelo.marcar_mensajes_leidos(estado_chat["conversacion_actual"], usuario)
                 refrescar_ui_ahora()
-            time.sleep(2)  # Pregunta a la base de datos cada 2 segundos
+            # MODIFICADO: Pregunta a la base de datos cada 0.5 segundos para que sea instantáneo
+            time.sleep(0.5)
 
     hilo = threading.Thread(target=bucle_refresco, daemon=True)
     hilo.start()
