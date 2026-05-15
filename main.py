@@ -11,41 +11,31 @@ import logging
 from datetime import datetime
 import modelo.manejador_datos as modelo
 from vista import vista_login, vista_dashboard_sensores, vista_camaras, vista_gestion_presos, vista_historico, \
-    vista_configuracion, vista_consumo, vista_gestion_usuarios, vista_chat # <-- IMPORTADO vista_chat
+    vista_configuracion, vista_consumo, vista_gestion_usuarios, vista_chat
 
 logging.getLogger('asyncio').setLevel(logging.CRITICAL)
 logging.getLogger('flet_core').setLevel(logging.CRITICAL)
 
-# --- LÓGICA DE FOTOS (Auto Center-Crop y Compresión) ---
+
 def leer_archivo_binario(ruta):
     if ruta and os.path.exists(ruta):
         try:
-            # Usar numpy para evitar fallos con rutas en Windows
             with open(ruta, "rb") as f:
                 file_bytes = np.frombuffer(f.read(), dtype=np.uint8)
                 img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
 
             if img is not None:
-                # --- AUTO CENTER-CROP (Recorte central cuadrado perfecto) ---
                 h, w = img.shape[:2]
                 min_dim = min(h, w)
-
-                # Calcular coordenadas para el recorte central
                 start_x = (w // 2) - (min_dim // 2)
                 start_y = (h // 2) - (min_dim // 2)
-
-                # Recortar la imagen
                 cropped_img = img[start_y:start_y + min_dim, start_x:start_x + min_dim]
-
-                # Comprimir a 200x200
                 img_resized = cv2.resize(cropped_img, (200, 200))
                 ret, buffer = cv2.imencode('.jpg', img_resized, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
                 if ret:
                     return buffer.tobytes()
         except Exception as e:
-            print(f"Error procesando imagen OpenCV: {e}")
-
-        # Plan B de emergencia: leer archivo crudo (max 1MB)
+            print(f"[ERROR SISTEMA] Procesando imagen OpenCV: {e}")
         try:
             with open(ruta, "rb") as f:
                 return f.read(1024 * 1024)
@@ -53,27 +43,44 @@ def leer_archivo_binario(ruta):
             pass
     return None
 
-# --- LOOP CONTROLADOR UI ---
+
 def loop_controlador_ui(page):
     while True:
         try:
-            if not page.views or (page.route != "/dashboard" and page.route != "/consumo"):
+            if not page.views:
                 time.sleep(1)
                 continue
+
             vista_actual = page.views[-1]
-            if hasattr(vista_actual, 'data') and isinstance(vista_actual.data, dict):
-                callback = vista_actual.data.get("update_callback")
-                if callback:
-                    if page.route == "/dashboard":
-                        callback(modelo.get_ultimos_sensores_raw(), modelo.get_estado_actuadores())
-                    elif page.route == "/consumo":
-                        callback(modelo.get_consumo_electrico())
+
+            if page.route == "/login":
+                if hasattr(vista_actual, 'data') and isinstance(vista_actual.data, dict):
+                    cb_status = vista_actual.data.get("update_status_callback")
+                    if cb_status:
+                        conectado = modelo.probar_conexion()
+                        cb_status(conectado)
+                time.sleep(3)
+                continue
+
+            if page.route == "/dashboard" or page.route == "/consumo":
+                if hasattr(vista_actual, 'data') and isinstance(vista_actual.data, dict):
+                    callback = vista_actual.data.get("update_callback")
+                    if callback:
+                        if page.route == "/dashboard":
+                            # Ahora pasamos también si el ESP32 está ONLINE u OFFLINE
+                            callback(
+                                modelo.get_ultimos_sensores_raw(),
+                                modelo.get_estado_actuadores(),
+                                modelo.obtener_estado_esp32()
+                            )
+                        elif page.route == "/consumo":
+                            callback(modelo.get_consumo_electrico())
             time.sleep(1)
-        except:
+        except Exception as e:
+            print(f"[ERROR UI] Fallo en loop de fondo: {e}")
             time.sleep(1)
 
 
-# --- HANDLERS (CONTROLADOR) ---
 def on_login_click(e, campo_usuario, campo_password, texto_error):
     page = e.page
     rol, user_id, foto_b64 = modelo.validar_usuario(campo_usuario.value, campo_password.value)
@@ -85,7 +92,10 @@ def on_login_click(e, campo_usuario, campo_password, texto_error):
         texto_error.value = ""
         page.go("/dashboard")
     else:
-        texto_error.value = "Datos incorrectos."
+        if not modelo.probar_conexion():
+            texto_error.value = "Error: Sin conexión a la Base de Datos."
+        else:
+            texto_error.value = "Credenciales incorrectas."
         page.update()
 
 
@@ -114,7 +124,6 @@ def on_refrescar_click(e):
         e.page.go(ruta)
 
 
-# --- HANDLERS DE CREACIÓN Y EDICIÓN CON FOTOS ---
 def guardar_nuevo_preso(e, datos, dialogo, foto_ruta=None):
     foto_bytes = leer_archivo_binario(foto_ruta)
     if modelo.add_preso(datos.get("nombre"), datos.get("delito"), datos.get("celda"), foto_bytes):
@@ -149,13 +158,11 @@ def on_editar_usuario_click(e, uid, txt_user, txt_pass, dd_rol, dialogo, foto_ru
         e.page.update()
 
 
-# --- SISTEMA DE MENÚ LATERAL ---
 def get_nav_rail(page, current_route):
     rol = page.session.get("user_rol")
     nombre = page.session.get("user_name")
     foto = page.session.get("user_foto")
 
-    # <-- AÑADIDO /chat A LAS RUTAS DEL MENÚ -->
     rutas = ["/dashboard", "/presos", "/chat"]
     if rol == "comisario": rutas.append("/usuarios")
     rutas.extend(["/consumo", "/historico", "/config"])
@@ -163,7 +170,6 @@ def get_nav_rail(page, current_route):
     destinations = [
         ft.NavigationRailDestination(icon=ft.Icons.DASHBOARD_OUTLINED, selected_icon=ft.Icons.DASHBOARD, label="Panel"),
         ft.NavigationRailDestination(icon=ft.Icons.LOCK_OUTLINE, selected_icon=ft.Icons.LOCK, label="Presos"),
-        # <-- AÑADIDO BOTÓN DE CHAT -->
         ft.NavigationRailDestination(icon=ft.Icons.CHAT_OUTLINED, selected_icon=ft.Icons.CHAT, label="Chat"),
     ]
     if rol == "comisario":
@@ -198,7 +204,6 @@ def get_nav_rail(page, current_route):
     )
 
 
-# --- MAIN ROUTER ---
 def main(page: ft.Page):
     page.title = "Comisaría IoT"
     page.theme_mode = ft.ThemeMode.DARK
@@ -221,14 +226,19 @@ def main(page: ft.Page):
                 return
 
             if route == "/login":
-                page.views.append(vista_login.crear_vista_login(on_login_click))
+                page.views.append(vista_login.crear_vista_login(
+                    on_login_click,
+                    modelo.LOCAL_CONFIG,
+                    modelo.save_local_config
+                ))
 
             elif route == "/dashboard":
                 content = vista_dashboard_sensores.crear_dashboard_view(
                     page, rol, page.session.get("user_name"),
                     modelo.get_estado_actuadores(), modelo.get_ultimos_sensores_raw(),
                     on_refrescar_click, on_control_actuador_click, lambda e: page.go("/camaras"),
-                    lambda e, a: modelo.set_modo_actuador(a, "auto")
+                    # Usamos la nueva función "toggle" para alternar Auto/Manual de forma sana
+                    lambda e, a: modelo.toggle_modo_actuador(a)
                 )
                 v = ft.View("/dashboard", controls=[ft.Row([get_nav_rail(page, route), ft.VerticalDivider(width=1),
                                                             ft.Container(content=content, expand=True)], expand=True)])
@@ -248,7 +258,6 @@ def main(page: ft.Page):
                     [get_nav_rail(page, route), ft.VerticalDivider(width=1),
                      ft.Container(content=content, expand=True)], expand=True)]))
 
-            # <-- AÑADIDA RUTA /chat -->
             elif route == "/chat":
                 content = vista_chat.crear_vista_chat(page)
                 page.views.append(ft.View("/chat", controls=[ft.Row(
@@ -265,8 +274,10 @@ def main(page: ft.Page):
 
             elif route == "/config":
                 content = vista_configuracion.crear_vista_configuracion(
-                    modelo.get_configuracion(), lambda e, d: modelo.save_configuracion(d) and page.go("/dashboard"),
-                    lambda e: page.go("/dashboard")
+                    config_actual=modelo.get_configuracion(),
+                    local_config=modelo.LOCAL_CONFIG,
+                    on_guardar_click=lambda e, d: modelo.save_configuracion(d) and page.go("/dashboard"),
+                    on_guardar_hardware_click=lambda d: modelo.save_local_config(d) and page.go("/dashboard")
                 )
                 page.views.append(ft.View("/config", controls=[ft.Row(
                     [get_nav_rail(page, route), ft.VerticalDivider(width=1),
@@ -308,7 +319,7 @@ def main(page: ft.Page):
             page.update()
 
         except Exception as ex:
-            print(f"Error de renderizado: {ex}")
+            print(f"[ERROR CRÍTICO] Excepción en router de vistas: {ex}")
             page.views.append(ft.View("/error", controls=[ft.Text(f"Error Crítico: {ex}", color="red", size=20)]))
             page.update()
 

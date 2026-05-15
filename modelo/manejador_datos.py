@@ -5,38 +5,169 @@ import re
 import time
 import random
 import base64
-import requests  # <-- Para conectar con el ESP32
-import os  # <-- AÑADIDO: Para crear y guardar los archivos .txt
+import requests
+import os
+import json
+import csv
+import io
 from datetime import datetime
 from collections import defaultdict
 
-# --- CONFIGURACIÓN HARDWARE ESP32 ---
-ESP32_IP = "10.197.123.128"  # <-- PON AQUÍ LA IP DE TU ESP32
-ESP32_CAM_IP = "10.197.123.146"
+# --- CONFIGURACIÓN LOCAL (JSON) ---
+CONFIG_FILE = "ajustes_locales.json"
 
-# --- CONFIGURACIÓN DE BASE DE DATOS MODIFICADA ---
-DB_CONFIG = {
-    'host': '192.168.1.153',  # <-- PON AQUÍ LA IP DE TU MAC EN LA RED WIFI
-    'database': 'comisaria_db',
-    'user': 'root',
-    'password': '123456',  # 123456
-    'port': 3306  # <-- AÑADIDO: El puerto para conexiones externas
+LOCAL_CONFIG = {
+    "db_host": "127.0.0.1",
+    "db_port": "3306",
+    "db_user": "root",
+    "db_pass": "123456",
+    "db_name": "comisaria_db",
+    "esp32_ip": "10.197.123.128",
+    "esp32_cam_ip": "10.197.123.146"
 }
 
-try:
-    db_pool = mysql.connector.pooling.MySQLConnectionPool(pool_name="com_pool", pool_size=10, pool_reset_session=True,
-                                                          **DB_CONFIG)
-except Exception as e:
-    print(f"Error pool: {e}")
-    db_pool = None
+ESP32_IP = LOCAL_CONFIG["esp32_ip"]
+ESP32_CAM_IP = LOCAL_CONFIG["esp32_cam_ip"]
+
+# Variables para controlar el estado online/offline del ESP32 (Heartbeat)
+ultima_conexion_esp32 = 0
+
+def obtener_datos_exportacion_sensores():
+    """Obtiene todos los logs de sensores para exportar a CSV."""
+    conexion = conectar()
+    if conexion:
+        try:
+            cursor = conexion.cursor(dictionary=True)
+            query = """
+                SELECT s.nombre as Sensor, sl.valor as Valor, s.unidad as Unidad, sl.timestamp as Fecha
+                FROM sensores_log sl
+                JOIN sensores s ON sl.sensor_id = s.id
+                ORDER BY sl.timestamp DESC
+            """
+            cursor.execute(query)
+            return cursor.fetchall()
+        finally:
+            conexion.close()
+    return []
+
+def obtener_datos_exportacion_chats():
+    """Obtiene todos los mensajes de chat para exportar a CSV."""
+    conexion = conectar()
+    if conexion:
+        try:
+            cursor = conexion.cursor(dictionary=True)
+            query = """
+                SELECT emisor, receptor, texto, estado, timestamp as Fecha
+                FROM mensajes_chat
+                ORDER BY emisor, receptor, timestamp ASC
+            """
+            cursor.execute(query)
+            return cursor.fetchall()
+        finally:
+            conexion.close()
+    return []
+
+def exportar_a_csv_string(datos):
+    """Convierte una lista de diccionarios a un string formato CSV."""
+    if not datos:
+        return ""
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=datos[0].keys())
+    writer.writeheader()
+    writer.writerows(datos)
+    return output.getvalue()
+
+def actualizar_heartbeat_esp32():
+    global ultima_conexion_esp32
+    ultima_conexion_esp32 = time.time()
+
+
+def obtener_estado_esp32():
+    # Si hace menos de 8 segundos que recibimos un dato de un sensor, está online
+    return (time.time() - ultima_conexion_esp32) < 8
+
+
+def load_local_config():
+    global LOCAL_CONFIG, ESP32_IP, ESP32_CAM_IP
+    if os.path.exists(CONFIG_FILE):
+        try:
+            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+                LOCAL_CONFIG.update(json.load(f))
+        except Exception as e:
+            print(f"[ERROR LOCAL] Fallo al leer config local: {e}")
+    else:
+        save_local_config(LOCAL_CONFIG)
+
+    ESP32_IP = LOCAL_CONFIG.get("esp32_ip", "")
+    ESP32_CAM_IP = LOCAL_CONFIG.get("esp32_cam_ip", "")
+
+
+def save_local_config(new_config):
+    global LOCAL_CONFIG, ESP32_IP, ESP32_CAM_IP
+    LOCAL_CONFIG.update(new_config)
+    ESP32_IP = LOCAL_CONFIG.get("esp32_ip", "")
+    ESP32_CAM_IP = LOCAL_CONFIG.get("esp32_cam_ip", "")
+    try:
+        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+            json.dump(LOCAL_CONFIG, f, indent=4)
+        inicializar_pool()
+    except Exception as e:
+        print(f"[ERROR LOCAL] Fallo al guardar config local: {e}")
+
+
+# --- INICIALIZACIÓN DE BASE DE DATOS ---
+db_pool = None
+
+
+def inicializar_pool():
+    global db_pool
+    try:
+        db_config = {
+            'host': LOCAL_CONFIG['db_host'],
+            'port': int(LOCAL_CONFIG['db_port']),
+            'user': LOCAL_CONFIG['db_user'],
+            'password': LOCAL_CONFIG['db_pass'],
+            'database': LOCAL_CONFIG['db_name'],
+            'connect_timeout': 2
+        }
+        db_pool = mysql.connector.pooling.MySQLConnectionPool(
+            pool_name="com_pool", pool_size=10, pool_reset_session=True, **db_config
+        )
+    except Exception as e:
+        print(f"[ERROR BD] Fallo crítico al inicializar Pool de BD (Revisa credenciales/IP): {e}")
+        db_pool = None
+
+
+load_local_config()
+inicializar_pool()
+
+
+def probar_conexion():
+    try:
+        if db_pool:
+            conn = db_pool.get_connection()
+            conn.close()
+            return True
+        else:
+            inicializar_pool()
+            if db_pool:
+                conn = db_pool.get_connection()
+                conn.close()
+                return True
+    except:
+        return False
+    return False
 
 
 def conectar():
-    return db_pool.get_connection() if db_pool else mysql.connector.connect(**DB_CONFIG)
+    try:
+        return db_pool.get_connection() if db_pool else None
+    except Exception as e:
+        print(f"[ERROR BD] No se pudo obtener conexión del pool: {e}")
+        return None
 
 
 def _convertir_a_base64(blob):
-    """Auxiliar para convertir BLOB de BD a string Base64 para Flet"""
     if blob:
         return base64.b64encode(blob).decode('utf-8')
     return None
@@ -47,31 +178,35 @@ def validar_usuario(u, p):
     conexion = conectar()
     rol, user_id, foto_b64 = None, None, None
     if conexion:
-        cursor = conexion.cursor(dictionary=True)
-        query = """
-                SELECT u.password, r.nombre as rol, p.id, p.foto
-                FROM usuarios u
-                         JOIN personas p ON u.persona_id = p.id
-                         JOIN roles r ON u.rol_id = r.id
-                WHERE u.username = %s \
-                  AND p.activo = 1 \
-                """
-        cursor.execute(query, (u,))
-        usuario = cursor.fetchone()
+        try:
+            cursor = conexion.cursor(dictionary=True)
+            query = """
+                    SELECT u.password, r.nombre as rol, p.id, p.foto
+                    FROM usuarios u
+                             JOIN personas p ON u.persona_id = p.id
+                             JOIN roles r ON u.rol_id = r.id
+                    WHERE u.username = %s \
+                      AND p.activo = 1
+                    """
+            cursor.execute(query, (u,))
+            usuario = cursor.fetchone()
 
-        if usuario:
-            hash_db = usuario['password']
-            match = False
-            if hash_db.startswith('$2b$') or hash_db.startswith('$2a$'):
-                if bcrypt.checkpw(p.encode('utf-8'), hash_db.encode('utf-8')):
+            if usuario:
+                hash_db = usuario['password']
+                match = False
+                if hash_db.startswith('$2b$') or hash_db.startswith('$2a$'):
+                    if bcrypt.checkpw(p.encode('utf-8'), hash_db.encode('utf-8')):
+                        match = True
+                elif p == hash_db:
                     match = True
-            elif p == hash_db:
-                match = True
 
-            if match:
-                rol, user_id = usuario['rol'], usuario['id']
-                foto_b64 = _convertir_a_base64(usuario['foto'])
-        conexion.close()
+                if match:
+                    rol, user_id = usuario['rol'], usuario['id']
+                    foto_b64 = _convertir_a_base64(usuario['foto'])
+        except Exception as e:
+            print(f"[ERROR BD] Fallo en validar_usuario: {e}")
+        finally:
+            conexion.close()
     return rol, user_id, foto_b64
 
 
@@ -80,22 +215,26 @@ def get_usuarios():
     conexion = conectar()
     res = []
     if conexion:
-        cursor = conexion.cursor(dictionary=True)
-        query = """
-                SELECT p.id, u.username as user, u.password, r.nombre as rol, p.foto
-                FROM usuarios u
-                    JOIN personas p \
-                ON u.persona_id = p.id
-                    JOIN roles r ON u.rol_id = r.id
-                WHERE p.activo = 1
-                ORDER BY p.fecha_alta DESC \
-                """
-        cursor.execute(query)
-        datos = cursor.fetchall()
-        for d in datos:
-            d['foto'] = _convertir_a_base64(d['foto'])
-            res.append(d)
-        conexion.close()
+        try:
+            cursor = conexion.cursor(dictionary=True)
+            query = """
+                    SELECT p.id, u.username as user, u.password, r.nombre as rol, p.foto
+                    FROM usuarios u
+                        JOIN personas p \
+                    ON u.persona_id = p.id
+                        JOIN roles r ON u.rol_id = r.id
+                    WHERE p.activo = 1
+                    ORDER BY p.fecha_alta DESC
+                    """
+            cursor.execute(query)
+            datos = cursor.fetchall()
+            for d in datos:
+                d['foto'] = _convertir_a_base64(d['foto'])
+                res.append(d)
+        except Exception as e:
+            print(f"[ERROR BD] Fallo en get_usuarios: {e}")
+        finally:
+            conexion.close()
     return res
 
 
@@ -119,7 +258,7 @@ def add_usuario(u, p, r, foto_bytes=None):
             return True
         except Exception as e:
             conexion.rollback()
-            print("Error add_usuario:", e)
+            print(f"[ERROR BD] Fallo en add_usuario: {e}")
         finally:
             conexion.close()
     return False
@@ -143,8 +282,24 @@ def update_usuario(uid, user, password, rol, foto_bytes=None):
                            (user, hashed, rol_id, uid))
             conexion.commit()
             return True
-        except:
+        except Exception as e:
             conexion.rollback()
+            print(f"[ERROR BD] Fallo en update_usuario: {e}")
+        finally:
+            conexion.close()
+    return False
+
+
+def delete_usuario(uid):
+    conexion = conectar()
+    if conexion:
+        try:
+            cursor = conexion.cursor()
+            cursor.execute("UPDATE personas SET activo = 0, fecha_baja = NOW() WHERE id=%s", (uid,))
+            conexion.commit()
+            return True
+        except Exception as e:
+            print(f"[ERROR BD] Fallo en delete_usuario: {e}")
         finally:
             conexion.close()
     return False
@@ -155,27 +310,31 @@ def get_presos():
     conexion = conectar()
     res = []
     if conexion:
-        cursor = conexion.cursor(dictionary=True)
-        query = """
-                SELECT p.id, \
-                       CONCAT(p.nombre, ' ', p.apellidos)              as nombre, \
-                       pr.delito, \
-                       c.codigo                                        as celda,
-                       DATE_FORMAT(ac.fecha_ingreso, '%d/%m/%Y %H:%M') as fecha_ingreso, \
-                       p.foto
-                FROM personas p
-                         JOIN presos pr ON p.id = pr.persona_id
-                         LEFT JOIN asignacion_celdas ac ON pr.persona_id = ac.preso_id AND ac.activo = 1
-                         LEFT JOIN celdas c ON ac.celda_id = c.id
-                WHERE p.activo = 1
-                ORDER BY p.fecha_alta DESC \
-                """
-        cursor.execute(query)
-        datos = cursor.fetchall()
-        for d in datos:
-            d['foto'] = _convertir_a_base64(d['foto'])
-            res.append(d)
-        conexion.close()
+        try:
+            cursor = conexion.cursor(dictionary=True)
+            query = """
+                    SELECT p.id, \
+                           CONCAT(p.nombre, ' ', p.apellidos)              as nombre, \
+                           pr.delito, \
+                           c.codigo                                        as celda,
+                           DATE_FORMAT(ac.fecha_ingreso, '%d/%m/%Y %H:%M') as fecha_ingreso, \
+                           p.foto
+                    FROM personas p
+                             JOIN presos pr ON p.id = pr.persona_id
+                             LEFT JOIN asignacion_celdas ac ON pr.persona_id = ac.preso_id AND ac.activo = 1
+                             LEFT JOIN celdas c ON ac.celda_id = c.id
+                    WHERE p.activo = 1 \
+                    ORDER BY p.fecha_alta DESC
+                    """
+            cursor.execute(query)
+            datos = cursor.fetchall()
+            for d in datos:
+                d['foto'] = _convertir_a_base64(d['foto'])
+                res.append(d)
+        except Exception as e:
+            print(f"[ERROR BD] Fallo en get_presos: {e}")
+        finally:
+            conexion.close()
     return res
 
 
@@ -202,6 +361,7 @@ def add_preso(nombre_completo, delito, celda_codigo, foto_bytes=None):
             return True
         except Exception as e:
             conexion.rollback()
+            print(f"[ERROR BD] Fallo en add_preso: {e}")
         finally:
             conexion.close()
     return False
@@ -232,53 +392,53 @@ def update_preso(pid, dat, foto_bytes=None):
             cursor.execute("INSERT INTO asignacion_celdas (preso_id, celda_id) VALUES (%s, %s)", (pid, nueva_celda_id))
             conexion.commit()
             return True
-        except:
+        except Exception as e:
             conexion.rollback()
+            print(f"[ERROR BD] Fallo en update_preso: {e}")
         finally:
             conexion.close()
-    return False
-
-
-def delete_usuario(uid):
-    conexion = conectar()
-    if conexion:
-        cursor = conexion.cursor()
-        cursor.execute("UPDATE personas SET activo = 0, fecha_baja = NOW() WHERE id=%s", (uid,))
-        conexion.commit()
-        conexion.close()
-        return True
     return False
 
 
 def delete_preso(pid):
     conexion = conectar()
     if conexion:
-        cursor = conexion.cursor()
-        cursor.execute("UPDATE personas SET activo = 0, fecha_baja = NOW() WHERE id=%s", (pid,))
-        cursor.execute("UPDATE asignacion_celdas SET activo = 0, fecha_salida = NOW() WHERE preso_id=%s AND activo=1",
-                       (pid,))
-        conexion.commit()
-        conexion.close()
-        return True
+        try:
+            cursor = conexion.cursor()
+            cursor.execute("UPDATE personas SET activo = 0, fecha_baja = NOW() WHERE id=%s", (pid,))
+            cursor.execute(
+                "UPDATE asignacion_celdas SET activo = 0, fecha_salida = NOW() WHERE preso_id=%s AND activo=1", (pid,))
+            conexion.commit()
+            return True
+        except Exception as e:
+            print(f"[ERROR BD] Fallo en delete_preso: {e}")
+        finally:
+            conexion.close()
     return False
 
 
+# --- SENSORES Y ACTUADORES ---
 def registrar_dato_sensor(datos):
+    actualizar_heartbeat_esp32()  # <--- Notifica que el ESP32 está vivo
     conexion = conectar()
     if conexion:
-        cursor = conexion.cursor(dictionary=True)
-        cursor.execute("SELECT id, nombre FROM sensores")
-        sensores_db = {r['nombre']: r['id'] for r in cursor.fetchall()}
-        query = "INSERT INTO sensores_log (timestamp, sensor_id, valor) VALUES (%s, %s, %s)"
-        valores = []
-        for d in datos:
-            sid = sensores_db.get(d['sensor'])
-            if sid:
-                num = float(re.search(r"([0-9\.]+)", str(d['valor'])).group(1))
-                valores.append((d['timestamp'], sid, num))
-        cursor.executemany(query, valores)
-        conexion.commit()
-        conexion.close()
+        try:
+            cursor = conexion.cursor(dictionary=True)
+            cursor.execute("SELECT id, nombre FROM sensores")
+            sensores_db = {r['nombre']: r['id'] for r in cursor.fetchall()}
+            query = "INSERT INTO sensores_log (timestamp, sensor_id, valor) VALUES (%s, %s, %s)"
+            valores = []
+            for d in datos:
+                sid = sensores_db.get(d['sensor'])
+                if sid:
+                    num = float(re.search(r"([0-9\.]+)", str(d['valor'])).group(1))
+                    valores.append((d['timestamp'], sid, num))
+            cursor.executemany(query, valores)
+            conexion.commit()
+        except Exception as e:
+            print(f"[ERROR BD] Fallo en registrar_dato_sensor: {e}")
+        finally:
+            conexion.close()
     verificar_automatizacion(datos)
 
 
@@ -311,25 +471,33 @@ def get_configuracion():
     conexion = conectar()
     config = {"temp_max": 28.0, "luz_min": 400.0}
     if conexion:
-        cursor = conexion.cursor(dictionary=True)
-        cursor.execute("SELECT clave, valor FROM configuracion")
-        for fila in cursor.fetchall():
-            config[fila['clave']] = float(fila['valor'])
-        conexion.close()
+        try:
+            cursor = conexion.cursor(dictionary=True)
+            cursor.execute("SELECT clave, valor FROM configuracion")
+            for fila in cursor.fetchall():
+                config[fila['clave']] = float(fila['valor'])
+        except Exception as e:
+            print(f"[ERROR BD] Fallo en get_configuracion: {e}")
+        finally:
+            conexion.close()
     return config
 
 
 def save_configuracion(data):
     conexion = conectar()
     if conexion:
-        cursor = conexion.cursor()
-        for k, v in data.items():
-            cursor.execute(
-                "INSERT INTO configuracion (clave, valor) VALUES (%s, %s) ON DUPLICATE KEY UPDATE valor = %s",
-                (k, str(v), str(v)))
-        conexion.commit()
-        conexion.close()
-        return True
+        try:
+            cursor = conexion.cursor()
+            for k, v in data.items():
+                cursor.execute(
+                    "INSERT INTO configuracion (clave, valor) VALUES (%s, %s) ON DUPLICATE KEY UPDATE valor = %s",
+                    (k, str(v), str(v)))
+            conexion.commit()
+            return True
+        except Exception as e:
+            print(f"[ERROR BD] Fallo en save_configuracion: {e}")
+        finally:
+            conexion.close()
     return False
 
 
@@ -337,11 +505,15 @@ def get_estado_actuadores():
     conexion = conectar()
     estados = {}
     if conexion:
-        cursor = conexion.cursor(dictionary=True)
-        cursor.execute("SELECT uid, label, estado, mode FROM actuadores WHERE activo = 1")
-        for fila in cursor.fetchall():
-            estados[fila['uid']] = fila
-        conexion.close()
+        try:
+            cursor = conexion.cursor(dictionary=True)
+            cursor.execute("SELECT uid, label, estado, mode FROM actuadores WHERE activo = 1")
+            for fila in cursor.fetchall():
+                estados[fila['uid']] = fila
+        except Exception as e:
+            print(f"[ERROR BD] Fallo en get_estado_actuadores: {e}")
+        finally:
+            conexion.close()
     return estados
 
 
@@ -359,97 +531,137 @@ def toggle_actuador(uid, user_id=None):
 def _actualizar_actuador(uid, estado, user_id):
     conexion = conectar()
     if conexion:
-        cursor = conexion.cursor(dictionary=True)
-        cursor.execute("SELECT id, estado FROM actuadores WHERE uid = %s AND activo = 1", (uid,))
-        actuador = cursor.fetchone()
+        try:
+            cursor = conexion.cursor(dictionary=True)
+            cursor.execute("SELECT id, estado FROM actuadores WHERE uid = %s AND activo = 1", (uid,))
+            actuador = cursor.fetchone()
 
-        if actuador and actuador['estado'] != estado:
-            actuador_id = actuador['id']
-            cursor.execute("UPDATE actuadores SET estado = %s WHERE id = %s", (estado, actuador_id))
+            if actuador and actuador['estado'] != estado:
+                actuador_id = actuador['id']
+                cursor.execute("UPDATE actuadores SET estado = %s WHERE id = %s", (estado, actuador_id))
+                cursor.execute("""
+                               INSERT INTO historico_actuadores (actuador_id, usuario_id, accion, timestamp)
+                               VALUES (%s, %s, %s, NOW())
+                               """, (actuador_id, user_id, estado))
+                conexion.commit()
 
-            cursor.execute("""
-                           INSERT INTO historico_actuadores (actuador_id, usuario_id, accion, timestamp)
-                           VALUES (%s, %s, %s, NOW())
-                           """, (actuador_id, user_id, estado))
-            conexion.commit()
+                try:
+                    ip = LOCAL_CONFIG.get("esp32_ip", "")
+                    requests.get(f"http://{ip}/actuadores", params={"dispositivo": uid, "estado": estado}, timeout=2)
+                except Exception as e:
+                    print(f"[ERROR HARDWARE] ESP32 no detectado en IP {ip} al cambiar estado: {e}")
 
-            # --- CONEXIÓN AL HARDWARE REAL ESP32 ---
-            try:
-                requests.get(f"http://{ESP32_IP}/actuadores", params={"dispositivo": uid, "estado": estado}, timeout=2)
-            except Exception as e:
-                print(f"Aviso: Hardware ESP32 no detectado en {ESP32_IP} - {e}")
-            # ----------------------------------------
+            return True
+        except Exception as e:
+            print(f"[ERROR BD] Fallo en _actualizar_actuador: {e}")
+        finally:
+            conexion.close()
+    return False
 
-        conexion.close()
-        return True
+
+def toggle_modo_actuador(uid):
+    """Alterna entre Auto y Manual para un actuador"""
+    conexion = conectar()
+    if conexion:
+        try:
+            cursor = conexion.cursor(dictionary=True)
+            cursor.execute("SELECT mode FROM actuadores WHERE uid = %s", (uid,))
+            res = cursor.fetchone()
+            if res:
+                nuevo_modo = "manual" if res['mode'] == "auto" else "auto"
+                cursor.execute("UPDATE actuadores SET mode = %s WHERE uid = %s", (nuevo_modo, uid))
+                conexion.commit()
+                return True
+        except Exception as e:
+            print(f"[ERROR BD] Error en toggle_modo_actuador: {e}")
+        finally:
+            conexion.close()
     return False
 
 
 def set_modo_actuador(uid, modo):
     conexion = conectar()
     if conexion:
-        cursor = conexion.cursor()
-        cursor.execute("UPDATE actuadores SET mode = %s WHERE uid = %s", (modo, uid))
-        conexion.commit()
-        conexion.close()
-        return True
+        try:
+            cursor = conexion.cursor()
+            cursor.execute("UPDATE actuadores SET mode = %s WHERE uid = %s", (modo, uid))
+            conexion.commit()
+            return True
+        except Exception as e:
+            print(f"[ERROR BD] Fallo en set_modo_actuador: {e}")
+        finally:
+            conexion.close()
     return False
-
 
 def get_ultimos_sensores_raw():
     conexion = conectar()
     res = []
     if conexion:
-        cursor = conexion.cursor(dictionary=True)
-        cursor.execute(
-            "SELECT sl.timestamp, s.nombre as sensor, sl.valor, s.unidad FROM sensores_log sl JOIN sensores s ON sl.sensor_id = s.id ORDER BY sl.id DESC LIMIT 20")
-        for r in cursor.fetchall():
-            res.append({"timestamp": r['timestamp'].strftime('%Y-%m-%d %H:%M:%S'), "sensor": r['sensor'],
-                        "valor": f"{r['valor']} {r['unidad']}"})
-        conexion.close()
+        try:
+            cursor = conexion.cursor(dictionary=True)
+            cursor.execute(
+                "SELECT sl.timestamp, s.nombre as sensor, sl.valor, s.unidad FROM sensores_log sl JOIN sensores s ON sl.sensor_id = s.id ORDER BY sl.id DESC LIMIT 20")
+            for r in cursor.fetchall():
+                res.append({"timestamp": r['timestamp'].strftime('%Y-%m-%d %H:%M:%S'), "sensor": r['sensor'],
+                            "valor": f"{r['valor']} {r['unidad']}"})
+        except Exception as e:
+            print(f"[ERROR BD] Fallo en get_ultimos_sensores_raw: {e}")
+        finally:
+            conexion.close()
     return res[::-1]
 
+# --------- FUNCIONES AÑADIDAS PARA SOLUCIONAR EL CRASH DEL HISTÓRICO ---------
 
 def get_log_sensores_filtrado(horas=24):
     conexion = conectar()
     res = []
     if conexion:
-        cursor = conexion.cursor(dictionary=True)
-        cursor.execute(
-            "SELECT sl.timestamp, s.nombre as sensor, sl.valor, s.unidad FROM sensores_log sl JOIN sensores s ON sl.sensor_id = s.id WHERE sl.timestamp >= NOW() - INTERVAL %s HOUR ORDER BY sl.timestamp DESC",
-            (horas,))
-        for r in cursor.fetchall():
-            res.append({"timestamp": r['timestamp'].strftime('%Y-%m-%d %H:%M:%S'), "sensor": r['sensor'],
-                        "valor": f"{r['valor']} {r['unidad']}"})
-        conexion.close()
+        try:
+            cursor = conexion.cursor(dictionary=True)
+            cursor.execute(
+                "SELECT sl.timestamp, s.nombre as sensor, sl.valor, s.unidad FROM sensores_log sl JOIN sensores s ON sl.sensor_id = s.id WHERE sl.timestamp >= NOW() - INTERVAL %s HOUR ORDER BY sl.timestamp DESC",
+                (horas,))
+            for r in cursor.fetchall():
+                res.append({"timestamp": r['timestamp'].strftime('%Y-%m-%d %H:%M:%S'), "sensor": r['sensor'],
+                            "valor": f"{r['valor']} {r['unidad']}"})
+        except Exception as e:
+            print(f"[ERROR BD] Fallo en get_log_sensores_filtrado: {e}")
+        finally:
+            conexion.close()
     return res
-
-
-def get_promedio_sensores_por_hora():
-    conexion = conectar()
-    res_dict = defaultdict(list)
-    if conexion:
-        cursor = conexion.cursor(dictionary=True)
-        cursor.execute(
-            "SELECT s.nombre as sensor, DATE_FORMAT(sl.timestamp, '%Y-%m-%d %H:00') as hora, AVG(sl.valor) as promedio, MAX(s.unidad) as unidad FROM sensores_log sl JOIN sensores s ON sl.sensor_id = s.id GROUP BY s.nombre, hora ORDER BY hora ASC")
-        for r in cursor.fetchall():
-            res_dict[r['sensor']].append({"hora": r['hora'], "valor": f"{r['promedio']:.1f} {r['unidad']}"})
-        conexion.close()
-    return dict(res_dict)
-
 
 def get_log_actuadores_paginado(uid_parcial, limit=50, offset=0):
     conexion = conectar()
     res = []
     if conexion:
-        cursor = conexion.cursor(dictionary=True)
-        query = "SELECT ha.timestamp, a.uid as id, a.label, ha.accion, IFNULL(p.nombre, 'sistema') as usuario FROM historico_actuadores ha JOIN actuadores a ON ha.actuador_id = a.id LEFT JOIN personas p ON ha.usuario_id = p.id WHERE a.uid LIKE %s ORDER BY ha.timestamp DESC LIMIT %s OFFSET %s"
-        cursor.execute(query, (f"%{uid_parcial}%", limit, offset))
-        for r in cursor.fetchall():
-            r['timestamp'] = r['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
-            res.append(r)
-        conexion.close()
+        try:
+            cursor = conexion.cursor(dictionary=True)
+            query = "SELECT ha.timestamp, a.uid as id, a.label, ha.accion, IFNULL(p.nombre, 'sistema') as usuario FROM historico_actuadores ha JOIN actuadores a ON ha.actuador_id = a.id LEFT JOIN personas p ON ha.usuario_id = p.id WHERE a.uid LIKE %s ORDER BY ha.timestamp DESC LIMIT %s OFFSET %s"
+            cursor.execute(query, (f"%{uid_parcial}%", limit, offset))
+            for r in cursor.fetchall():
+                r['timestamp'] = r['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
+                res.append(r)
+        except Exception as e:
+            print(f"[ERROR BD] Fallo en get_log_actuadores_paginado: {e}")
+        finally:
+            conexion.close()
     return res
+
+def get_promedio_sensores_por_hora():
+    conexion = conectar()
+    res_dict = defaultdict(list)
+    if conexion:
+        try:
+            cursor = conexion.cursor(dictionary=True)
+            cursor.execute(
+                "SELECT s.nombre as sensor, DATE_FORMAT(sl.timestamp, '%Y-%m-%d %H:00') as hora, AVG(sl.valor) as promedio, MAX(s.unidad) as unidad FROM sensores_log sl JOIN sensores s ON sl.sensor_id = s.id GROUP BY s.nombre, hora ORDER BY hora ASC")
+            for r in cursor.fetchall():
+                res_dict[r['sensor']].append({"hora": r['hora'], "valor": f"{r['promedio']:.1f} {r['unidad']}"})
+        except Exception as e:
+            print(f"[ERROR BD] Fallo en get_promedio_sensores_por_hora: {e}")
+        finally:
+            conexion.close()
+    return dict(res_dict)
 
 
 def get_consumo_electrico():
@@ -461,18 +673,17 @@ def get_consumo_electrico():
 # ==============================================================
 # --- SISTEMA DE CHAT CON MYSQL ---
 # ==============================================================
-
 def guardar_historial_txt(emisor, receptor, texto):
-    """AÑADIDO: Guarda el mensaje en un archivo log local .txt."""
     fecha_completa = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     linea = f"[{fecha_completa}] DE: {emisor} | PARA: {receptor} | MSG: {texto}\n"
-
     if not os.path.exists("logs_chat"):
         os.makedirs("logs_chat")
-
     archivo = f"logs_chat/chat_{emisor}.txt"
-    with open(archivo, "a", encoding="utf-8") as f:
-        f.write(linea)
+    try:
+        with open(archivo, "a", encoding="utf-8") as f:
+            f.write(linea)
+    except Exception as e:
+        print(f"[ERROR LOCAL] No se pudo guardar log de chat en TXT: {e}")
 
 
 def enviar_mensaje(emisor, receptor, texto):
@@ -483,50 +694,47 @@ def enviar_mensaje(emisor, receptor, texto):
             query = "INSERT INTO mensajes_chat (emisor, receptor, texto, estado) VALUES (%s, %s, %s, 'RECIBIDO')"
             cursor.execute(query, (emisor, receptor, texto))
             conexion.commit()
-
-            # --- LLAMADA PARA GUARDAR EN TXT ---
             guardar_historial_txt(emisor, receptor, texto)
-
             return True
         except Exception as e:
-            print("Error enviando mensaje DB:", e)
+            print(f"[ERROR BD] Fallo enviando mensaje DB: {e}")
         finally:
             conexion.close()
     return False
 
 
 def get_contactos_chat(mi_usuario):
-    """Devuelve los usuarios con los que he hablado y cuántos mensajes me faltan por leer de cada uno."""
     conexion = conectar()
     contactos = []
     if conexion:
         try:
             cursor = conexion.cursor(dictionary=True)
-            # MODIFICADO: Incluye ENTREGADO en el contador de mensajes sin leer
             query = """
-                    SELECT CASE WHEN emisor = %s THEN receptor ELSE emisor END                    as contacto, \
-                           SUM(CASE WHEN receptor = %s AND estado IN ('RECIBIDO', 'ENTREGADO') THEN 1 ELSE 0 END) as no_leidos
-                    FROM mensajes_chat
+                    SELECT CASE WHEN emisor = %s THEN receptor ELSE emisor END                                    as contacto, \
+                           SUM(CASE \
+                                   WHEN receptor = %s AND estado IN ('RECIBIDO', 'ENTREGADO') THEN 1 \
+                                   ELSE 0 END)                                                                    as no_leidos
+                    FROM mensajes_chat \
                     WHERE emisor = %s \
-                       OR receptor = %s
-                    GROUP BY contacto
-                    ORDER BY MAX(timestamp) DESC \
+                       OR receptor = %s \
+                    GROUP BY contacto \
+                    ORDER BY MAX(timestamp) DESC
                     """
             cursor.execute(query, (mi_usuario, mi_usuario, mi_usuario, mi_usuario))
             contactos = cursor.fetchall()
+        except Exception as e:
+            print(f"[ERROR BD] Fallo en get_contactos_chat: {e}")
         finally:
             conexion.close()
     return contactos
 
 
 def get_mensajes_chat(usuario1, usuario2):
-    """Devuelve todo el historial entre dos personas."""
     conexion = conectar()
     mensajes = []
     if conexion:
         try:
             cursor = conexion.cursor(dictionary=True)
-
             query = """
                     SELECT emisor, receptor, texto, estado, timestamp
                     FROM mensajes_chat
@@ -534,24 +742,21 @@ def get_mensajes_chat(usuario1, usuario2):
                       AND receptor = %s) \
                        OR (emisor = %s \
                       AND receptor = %s)
-                    ORDER BY timestamp ASC \
+                    ORDER BY timestamp ASC
                     """
             cursor.execute(query, (usuario1, usuario2, usuario2, usuario1))
             resultados = cursor.fetchall()
-
             for r in resultados:
                 r['fecha'] = r['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
                 mensajes.append(r)
-
         except Exception as e:
-            print("Error en get_mensajes_chat:", e)
+            print(f"[ERROR BD] Fallo en get_mensajes_chat: {e}")
         finally:
             conexion.close()
     return mensajes
 
 
 def marcar_mensajes_entregados(mi_usuario):
-    """NUEVO: Marca como ENTREGADO (Doble tick gris) los mensajes al entrar a la app."""
     conexion = conectar()
     if conexion:
         try:
@@ -559,12 +764,13 @@ def marcar_mensajes_entregados(mi_usuario):
             query = "UPDATE mensajes_chat SET estado = 'ENTREGADO' WHERE receptor = %s AND estado = 'RECIBIDO'"
             cursor.execute(query, (mi_usuario,))
             conexion.commit()
+        except Exception as e:
+            print(f"[ERROR BD] Fallo marcando entregados: {e}")
         finally:
             conexion.close()
 
 
 def marcar_mensajes_leidos(emisor_contacto, mi_usuario):
-    """MODIFICADO: Marca como LEIDOS los mensajes recibidos o entregados de la otra persona."""
     conexion = conectar()
     if conexion:
         try:
@@ -572,5 +778,7 @@ def marcar_mensajes_leidos(emisor_contacto, mi_usuario):
             query = "UPDATE mensajes_chat SET estado = 'LEIDO' WHERE emisor = %s AND receptor = %s AND estado IN ('RECIBIDO', 'ENTREGADO')"
             cursor.execute(query, (emisor_contacto, mi_usuario))
             conexion.commit()
+        except Exception as e:
+            print(f"[ERROR BD] Fallo marcando leidos: {e}")
         finally:
             conexion.close()
