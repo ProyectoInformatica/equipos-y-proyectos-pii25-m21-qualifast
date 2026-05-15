@@ -1,6 +1,6 @@
 import flet as ft
 from vista.temas import COLORS
-import modelo.manejador_datos as modelo
+import modelo.manejador_datosviejo as modelo
 
 
 def crear_vista_usuarios(rol_actual, lista_usuarios, on_crear_usuario_handler, on_editar_usuario_handler, file_picker):

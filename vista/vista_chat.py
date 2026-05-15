@@ -1,7 +1,7 @@
 import flet as ft
 import time
 import threading
-import modelo.manejador_datos as modelo
+import modelo.manejador_datosviejo as modelo
 from vista.temas import COLORS
 
 

@@ -1,48 +1,15 @@
 import flet as ft
 import flet_video as fv
 import threading
-import random
 import time
-import os
-import cv2
-import numpy as np
-import requests
 import logging
-from datetime import datetime
 import modelo.manejador_datos as modelo
+from vista.componentes_ui import leer_archivo_binario, get_nav_rail
 from vista import vista_login, vista_dashboard_sensores, vista_camaras, vista_gestion_presos, vista_historico, \
     vista_configuracion, vista_consumo, vista_gestion_usuarios, vista_chat
 
 logging.getLogger('asyncio').setLevel(logging.CRITICAL)
 logging.getLogger('flet_core').setLevel(logging.CRITICAL)
-
-
-def leer_archivo_binario(ruta):
-    if ruta and os.path.exists(ruta):
-        try:
-            with open(ruta, "rb") as f:
-                file_bytes = np.frombuffer(f.read(), dtype=np.uint8)
-                img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
-
-            if img is not None:
-                h, w = img.shape[:2]
-                min_dim = min(h, w)
-                start_x = (w // 2) - (min_dim // 2)
-                start_y = (h // 2) - (min_dim // 2)
-                cropped_img = img[start_y:start_y + min_dim, start_x:start_x + min_dim]
-                img_resized = cv2.resize(cropped_img, (200, 200))
-                ret, buffer = cv2.imencode('.jpg', img_resized, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
-                if ret:
-                    return buffer.tobytes()
-        except Exception as e:
-            print(f"[ERROR SISTEMA] Procesando imagen OpenCV: {e}")
-        try:
-            with open(ruta, "rb") as f:
-                return f.read(1024 * 1024)
-        except:
-            pass
-    return None
-
 
 def loop_controlador_ui(page):
     while True:
@@ -157,52 +124,6 @@ def on_editar_usuario_click(e, uid, txt_user, txt_pass, dd_rol, dialogo, foto_ru
         e.page.update()
 
 
-def get_nav_rail(page, current_route):
-    rol = page.session.get("user_rol")
-    nombre = page.session.get("user_name")
-    foto = page.session.get("user_foto")
-
-    rutas = ["/dashboard", "/presos", "/chat"]
-    if rol == "comisario": rutas.append("/usuarios")
-    rutas.extend(["/consumo", "/historico", "/config"])
-
-    destinations = [
-        ft.NavigationRailDestination(icon=ft.Icons.DASHBOARD_OUTLINED, selected_icon=ft.Icons.DASHBOARD, label="Panel"),
-        ft.NavigationRailDestination(icon=ft.Icons.LOCK_OUTLINE, selected_icon=ft.Icons.LOCK, label="Presos"),
-        ft.NavigationRailDestination(icon=ft.Icons.CHAT_OUTLINED, selected_icon=ft.Icons.CHAT, label="Chat"),
-    ]
-    if rol == "comisario":
-        destinations.append(
-            ft.NavigationRailDestination(icon=ft.Icons.PEOPLE_OUTLINE, selected_icon=ft.Icons.PEOPLE, label="Personal"))
-    destinations.extend([
-        ft.NavigationRailDestination(icon=ft.Icons.BOLT_OUTLINED, selected_icon=ft.Icons.BOLT, label="Consumo"),
-        ft.NavigationRailDestination(icon=ft.Icons.HISTORY_OUTLINED, selected_icon=ft.Icons.HISTORY, label="Histórico"),
-        ft.NavigationRailDestination(icon=ft.Icons.SETTINGS_OUTLINED, selected_icon=ft.Icons.SETTINGS, label="Ajustes"),
-    ])
-
-    avatar = ft.Container(
-        width=40, height=40, border_radius=20, bgcolor="#374151", alignment=ft.alignment.center,
-        content=ft.Image(src_base64=foto, fit=ft.ImageFit.COVER, border_radius=20, width=40,
-                         height=40) if foto else ft.Icon(ft.Icons.PERSON, color="white")
-    )
-
-    return ft.NavigationRail(
-        selected_index=rutas.index(current_route) if current_route in rutas else 0,
-        label_type=ft.NavigationRailLabelType.ALL,
-        destinations=destinations,
-        on_change=lambda e: page.go(rutas[e.control.selected_index]),
-        bgcolor="#1f2937",
-        indicator_color="#38bdf8",
-        leading=ft.Column([
-            ft.Container(padding=10, content=avatar),
-            ft.Text(nombre, size=10, weight="bold", color="white", text_align="center"),
-            ft.Text(rol, size=8, color="#38bdf8", text_align="center"),
-            ft.Divider(color="#374151")
-        ], horizontal_alignment="center", spacing=2),
-        trailing=ft.IconButton(ft.Icons.LOGOUT, icon_color="#ef4444", on_click=on_logout_click)
-    )
-
-
 def main(page: ft.Page):
     page.title = "Comisaría IoT"
     page.theme_mode = ft.ThemeMode.DARK
@@ -238,7 +159,7 @@ def main(page: ft.Page):
                     on_refrescar_click, on_control_actuador_click, lambda e: page.go("/camaras"),
                     lambda e, a: modelo.toggle_modo_actuador(a)
                 )
-                v = ft.View("/dashboard", controls=[ft.Row([get_nav_rail(page, route), ft.VerticalDivider(width=1),
+                v = ft.View("/dashboard", controls=[ft.Row([get_nav_rail(page, route, on_logout_click), ft.VerticalDivider(width=1),
                                                             ft.Container(content=content, expand=True)], expand=True)])
                 v.data = content.data
                 page.views.append(v)
@@ -253,13 +174,13 @@ def main(page: ft.Page):
                     on_refrescar_click, lambda e, pid: modelo.delete_preso(pid) and on_refrescar_click(e)
                 )
                 page.views.append(ft.View("/presos", controls=[ft.Row(
-                    [get_nav_rail(page, route), ft.VerticalDivider(width=1),
+                    [get_nav_rail(page, route, on_logout_click), ft.VerticalDivider(width=1),
                      ft.Container(content=content, expand=True)], expand=True)]))
 
             elif route == "/chat":
                 content = vista_chat.crear_vista_chat(page)
                 page.views.append(ft.View("/chat", controls=[ft.Row(
-                    [get_nav_rail(page, route), ft.VerticalDivider(width=1),
+                    [get_nav_rail(page, route, on_logout_click), ft.VerticalDivider(width=1),
                      ft.Container(content=content, expand=True)], expand=True)]))
 
             elif route == "/usuarios":
@@ -267,24 +188,23 @@ def main(page: ft.Page):
                     rol, modelo.get_usuarios(), on_crear_usuario_click, on_editar_usuario_click, file_picker
                 )
                 page.views.append(ft.View("/usuarios", controls=[ft.Row(
-                    [get_nav_rail(page, route), ft.VerticalDivider(width=1),
+                    [get_nav_rail(page, route, on_logout_click), ft.VerticalDivider(width=1),
                      ft.Container(content=content, expand=True)], expand=True)]))
 
             elif route == "/config":
                 content = vista_configuracion.crear_vista_configuracion(
                     config_actual=modelo.get_configuracion(),
                     local_config=modelo.LOCAL_CONFIG,
-                    # HEMOS QUITADO EL 'and page.go("/dashboard")' PARA QUE NO SE CIERRE LA VISTA
                     on_guardar_click=lambda e, d: modelo.save_configuracion(d),
                     on_guardar_hardware_click=lambda d: modelo.save_local_config(d)
                 )
                 page.views.append(ft.View("/config", controls=[ft.Row(
-                    [get_nav_rail(page, route), ft.VerticalDivider(width=1),
+                    [get_nav_rail(page, route, on_logout_click), ft.VerticalDivider(width=1),
                      ft.Container(content=content, expand=True)], expand=True)]))
 
             elif route == "/consumo":
                 content = vista_consumo.crear_vista_consumo(lambda e: page.go("/dashboard"))
-                v = ft.View("/consumo", controls=[ft.Row([get_nav_rail(page, route), ft.VerticalDivider(width=1),
+                v = ft.View("/consumo", controls=[ft.Row([get_nav_rail(page, route, on_logout_click), ft.VerticalDivider(width=1),
                                                           ft.Container(content=content, expand=True)], expand=True)])
                 v.data = {"update_callback": content.data.get("update_callback")} if hasattr(content,
                                                                                              'data') and isinstance(
@@ -302,7 +222,7 @@ def main(page: ft.Page):
                     on_volver_dashboard=lambda e: page.go("/dashboard")
                 )
                 page.views.append(ft.View("/historico", controls=[ft.Row(
-                    [get_nav_rail(page, route), ft.VerticalDivider(width=1),
+                    [get_nav_rail(page, route, on_logout_click), ft.VerticalDivider(width=1),
                      ft.Container(content=content, expand=True, padding=10)], expand=True)]))
 
             elif route == "/video":

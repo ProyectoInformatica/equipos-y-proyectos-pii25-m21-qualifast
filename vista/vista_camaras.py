@@ -7,27 +7,42 @@ import urllib.request
 import time
 
 
-class VideoStream(ft.Stack):
+class VideoStream(ft.Container):
     def __init__(self, url):
-        super().__init__(expand=True)
+        super().__init__(
+            expand=True,
+            border_radius=10,
+            alignment=ft.alignment.center,
+            clip_behavior=ft.ClipBehavior.HARD_EDGE
+        )
         self.url = url
         self.running = False
 
-        self.img = ft.Image(expand=True, fit=ft.ImageFit.CONTAIN, border_radius=10)
+        # 1. Píxel transparente en base64 para evitar el error inicial de Flet
+        pixel_transparente = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
 
-        # Mensaje de error mucho más limpio y profesional (sin la variable de excepción pura)
-        self.error_text = ft.Text("ESTABLECIENDO ENLACE CON LA CÁMARA...", color="white", weight="bold", size=15,
-                                  text_align="center")
-        self.error_container = ft.Container(
-            content=self.error_text,
-            alignment=ft.alignment.center,
-            bgcolor="#aa000000",
+        self.img_control = ft.Image(
+            src_base64=pixel_transparente,
             expand=True,
-            border_radius=10,
-            padding=20
+            fit=ft.ImageFit.CONTAIN,
+            visible=False  # Oculto hasta que haya señal
         )
 
-        self.controls = [self.img, self.error_container]
+        # 2. El recuadro translúcido de error/espera con nuestro mensaje controlado
+        self.error_control = ft.Container(
+            content=ft.Column([
+                ft.Icon(ft.Icons.VIDEOCAM_OFF, size=50, color=COLORS['muted']),
+                ft.Text("CONEXIÓN CON CÁMARA PERDIDA", weight="bold", color=COLORS['text'], size=16),
+                ft.Text("Intentando reconectar o cámara apagada...", size=12, color=COLORS['muted'])
+            ], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+            # SOLUCIÓN: Usamos código Hexadecimal ARGB en lugar de ft.colors (#0D = 5% opacidad)
+            bgcolor="#0DFFFFFF",
+            expand=True,
+            alignment=ft.alignment.center
+        )
+
+        # Por defecto, el contenido del contenedor es el error
+        self.content = self.error_control
 
     def did_mount(self):
         self.running = True
@@ -40,20 +55,17 @@ class VideoStream(ft.Stack):
         while self.running:
             try:
                 req = urllib.request.Request(self.url)
-                stream = urllib.request.urlopen(req, timeout=3)
+                stream = urllib.request.urlopen(req, timeout=5)
                 bytes_data = b''
 
-                if self.error_container.visible:
-                    self.error_container.visible = False
-                    try:
-                        self.update()
-                    except:
-                        pass
+                # Si engancha la señal, cambiamos el contenido a la imagen
+                self.content = self.img_control
+                self.img_control.visible = True
+                self.update()
 
                 while self.running:
                     chunk = stream.read(8192)
-                    if not chunk:
-                        break
+                    if not chunk: break
 
                     bytes_data += chunk
                     a = bytes_data.find(b'\xff\xd8')
@@ -62,34 +74,19 @@ class VideoStream(ft.Stack):
                     if a != -1 and b != -1:
                         jpg = bytes_data[a:b + 2]
                         bytes_data = bytes_data[b + 2:]
-                        self.img.src_base64 = base64.b64encode(jpg).decode('utf-8')
-                        self.img.update()
+                        self.img_control.src_base64 = base64.b64encode(jpg).decode('utf-8')
+                        self.update()
 
-                    if len(bytes_data) > 500000:
-                        bytes_data = b''
+                    if len(bytes_data) > 500000: bytes_data = b''
 
-            except Exception as e:
-                # Traducción del error técnico a lenguaje entendible por el usuario
-                error_str = str(e).lower()
-                if "timed out" in error_str:
-                    motivo = "El dispositivo tardó demasiado en responder."
-                elif "connection refused" in error_str:
-                    motivo = "Conexión rechazada por el dispositivo."
-                else:
-                    motivo = "El dispositivo no está accesible en la red."
-
-                mensaje_ui = f"⚠️ SEÑAL DE VÍDEO PERDIDA\nBuscando conexión en {modelo.ESP32_CAM_IP}...\n\nMotivo: {motivo}"
-
-                if not self.error_container.visible:
-                    print(f"[Aviso] Cámara no disponible. {motivo}")
-
-                self.error_text.value = mensaje_ui
-                self.error_container.visible = True
+            except Exception:
+                # Si falla (no hay cámara), volvemos a mostrar el recuadro translúcido
+                self.content = self.error_control
+                self.img_control.visible = False
                 try:
                     self.update()
                 except:
                     pass
-
                 time.sleep(2)
 
 
@@ -112,13 +109,16 @@ def crear_vista_camaras(on_refrescar_click, on_volver_dashboard, on_ver_video_cl
             ft.Icon(ft.Icons.CIRCLE, color="red", size=15),
             ft.Text("SEÑAL EN VIVO (OV2640)", color="red", weight="bold", size=16),
         ], alignment=ft.MainAxisAlignment.CENTER),
+
         ft.Container(height=10),
         monitor_screen,
         ft.Container(height=20),
+
         ft.Row([
             ft.ElevatedButton("Ver Grabación (Simulada)", icon=ft.Icons.PLAY_CIRCLE_FILLED,
-                              bgcolor=COLORS['accent'], color="#000000", on_click=on_ver_video_click),
+                              bgcolor=COLORS['accent'], color=COLORS['bg'], on_click=on_ver_video_click),
         ], alignment=ft.MainAxisAlignment.CENTER)
+
     ], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER, expand=True)
 
     return ft.View(
@@ -129,5 +129,7 @@ def crear_vista_camaras(on_refrescar_click, on_volver_dashboard, on_ver_video_cl
             bgcolor=COLORS['card'],
             leading=ft.IconButton(ft.Icons.ARROW_BACK, on_click=on_volver_dashboard)
         ),
-        controls=[ft.Container(padding=30, expand=True, alignment=ft.alignment.center, content=contenido_centrado)]
+        controls=[
+            ft.Container(padding=30, expand=True, alignment=ft.alignment.center, content=contenido_centrado)
+        ]
     )

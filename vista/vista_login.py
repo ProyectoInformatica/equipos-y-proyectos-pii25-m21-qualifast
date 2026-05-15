@@ -64,6 +64,7 @@ def crear_vista_login(on_login_click_handler, db_config_actual, on_save_db_confi
     def trigger_login(e):
         on_login_click_handler(e, campo_usuario, campo_password, texto_error)
 
+    # Se ha añadido autofocus=True
     campo_usuario = ft.TextField(
         label="> USUARIO_", prefix_text="┌─ ", width=380, height=60,
         border=ft.border.only(bottom=ft.border.BorderSide(3, "#38bdf8")),
@@ -71,7 +72,7 @@ def crear_vista_login(on_login_click_handler, db_config_actual, on_save_db_confi
         text_style=ft.TextStyle(color="#22c55e", size=16, font_family="Consolas"),
         label_style=ft.TextStyle(color="#38bdf8", size=16, weight="bold"),
         cursor_color="#38bdf8", content_padding=ft.padding.only(left=15, top=20),
-        on_submit=trigger_login
+        on_submit=trigger_login, autofocus=True
     )
 
     campo_password = ft.TextField(
@@ -110,17 +111,15 @@ def crear_vista_login(on_login_click_handler, db_config_actual, on_save_db_confi
         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         padding=30,
         controls=[
-            ft.Row([ft.Container(expand=True), btn_ajustes], alignment=ft.MainAxisAlignment.END),
-            # Ajustes arriba a la derecha
+            ft.Container(expand=True), # Empuja el login hacia el centro
             ft.Container(
                 width=460,
                 padding=40,
                 content=ft.Column([
-                    ft.Text("COMISARÍA CENTRAL", size=42, weight="bold", color="#38bdf8", text_align="center",
-                            font_family="Impact"),
+                    ft.Text("COMISARÍA CENTRAL", size=42, weight="bold", color="#38bdf8", text_align="center", font_family="Impact"),
                     ft.Container(height=30),
 
-                    row_estado,  # Indicador de estado BD
+                    row_estado,
                     ft.Container(height=20),
 
                     ft.Text("ACCESO RESTRINGIDO", size=22, weight="bold", color="#22c55e", text_align="center"),
@@ -134,9 +133,11 @@ def crear_vista_login(on_login_click_handler, db_config_actual, on_save_db_confi
                     ft.Container(height=20),
                     texto_error,
 
-                    ft.Container(expand=True),
                 ], horizontal_alignment="center", spacing=12)
-            )
+            ),
+            ft.Container(expand=True), # Empuja el botón de ajustes hacia abajo
+            # El botón de ajustes pasa a la esquina inferior derecha para no alterar el tabulador
+            ft.Row([ft.Container(expand=True), btn_ajustes], alignment=ft.MainAxisAlignment.END)
         ]
     )
 

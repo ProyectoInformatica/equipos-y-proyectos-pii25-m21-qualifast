@@ -1,6 +1,6 @@
 #!/bin/bash
 # Navegar a la carpeta donde está este script
-cd "$(dirname "$0")"
+cd cd.."$(dirname "$0")"
 
 echo "Activando entorno virtual..."
 source .venv/bin/activate

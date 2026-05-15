@@ -14,7 +14,6 @@ def ejecutar_exportacion_directa(datos, ruta_destino):
         if not datos or len(datos) == 0:
             return False, "No hay datos en la Base de Datos para exportar."
 
-        # Limpiamos los datos (ej: quitar la ristra de texto de las fotos de los presos para no saturar el CSV)
         datos_limpios = []
         for fila in datos:
             fila_limpia = {k: v for k, v in fila.items() if k != 'foto'}
@@ -46,7 +45,6 @@ def obtener_ruta_guardado_universal(nombre_defecto):
 
 
 def crear_vista_historico(datos_promedio_sensores, datos_log_actuadores, on_volver_dashboard):
-    # --- NUEVA FUNCIÓN DE DESCARGA DESDE MYSQL ---
     def iniciar_descarga(e, funcion_fetch, nombre_archivo):
         e.page.snack_bar = ft.SnackBar(ft.Text("Abriendo ventana de guardado..."), duration=1000)
         e.page.snack_bar.open = True
@@ -54,7 +52,6 @@ def crear_vista_historico(datos_promedio_sensores, datos_log_actuadores, on_volv
 
         ruta_destino = obtener_ruta_guardado_universal(nombre_archivo)
         if ruta_destino:
-            # Obtenemos los datos frescos de la Base de Datos
             datos = funcion_fetch()
             exito, msj = ejecutar_exportacion_directa(datos, ruta_destino)
             col = COLORS['good'] if exito else "red"
@@ -70,7 +67,6 @@ def crear_vista_historico(datos_promedio_sensores, datos_log_actuadores, on_volv
                       on_click=lambda e: iniciar_descarga(e, modelo.get_all_actuadores_log_csv, "actuadores.csv")),
         ft.IconButton(ft.Icons.SENSORS, tooltip="Log Sensores", icon_size=20,
                       on_click=lambda e: iniciar_descarga(e, modelo.get_all_sensores_log_csv, "sensores.csv")),
-        # NUEVO BOTÓN DE CHATS
         ft.IconButton(ft.Icons.CHAT, tooltip="Historial de Chats", icon_size=20,
                       on_click=lambda e: iniciar_descarga(e, modelo.get_all_chats_csv, "chats_completos.csv")),
     ], spacing=2)
@@ -112,8 +108,9 @@ def crear_vista_historico(datos_promedio_sensores, datos_log_actuadores, on_volv
             content=ft.Column([
                 ft.Container(
                     content=ft.Text(f"PUERTA {pid.replace('door-', 'P')}", weight="bold", color=COLORS['accent'],
-                                    size=12), bgcolor=COLORS['room_bg'], padding=5, border_radius=5,
-                    alignment=ft.alignment.center),
+                                    size=12),
+                    bgcolor=COLORS['room_bg'], padding=5, border_radius=5, alignment=ft.alignment.center
+                ),
                 lv_puerta, btn_cargar
             ], expand=True),
             expand=1, bgcolor=COLORS['room_bg'], padding=5, border=ft.border.all(1, COLORS['glass']), border_radius=8
@@ -183,9 +180,15 @@ def crear_vista_historico(datos_promedio_sensores, datos_log_actuadores, on_volv
     else:
         for nombre_sensor, datos_lista in datos_promedio_sensores.items():
             datos_lista = list(reversed(datos_lista))
+
+            # --- MEJORA: Tabla con línea horizontal más visible ---
             t_sensor = ft.DataTable(
-                columns=[ft.DataColumn(ft.Text("Hora")), ft.DataColumn(ft.Text("Promedio"))],
-                rows=[], border=ft.border.all(1, COLORS['glass']), heading_row_color=COLORS['glass']
+                columns=[ft.DataColumn(ft.Text("Fecha y Hora")), ft.DataColumn(ft.Text("Promedio"))],
+                rows=[],
+                border=ft.border.all(1, COLORS['glass']),
+                heading_row_color=COLORS['glass'],
+                horizontal_lines=ft.border.BorderSide(1, "#4b5563"),  # Barra separadora visible
+                column_spacing=20
             )
             btn_c = ft.TextButton("Cargar más", visible=False)
             st_sen = {"mostrados": 0, "total": len(datos_lista), "datos": datos_lista, "tabla": t_sensor, "btn": btn_c}
@@ -217,20 +220,28 @@ def crear_vista_historico(datos_promedio_sensores, datos_log_actuadores, on_volv
             elif "Luz" in nombre_sensor:
                 icon_s = DEVICE_ICONS['ldr']
 
+            # --- MEJORA: Tarjeta individual ---
             card_sensor = ft.Container(
                 bgcolor=COLORS['room_bg'], padding=15, border_radius=10, border=ft.border.all(1, COLORS['glass']),
                 content=ft.Column([
                     ft.Text(f"{icon_s} {nombre_sensor}", size=16, weight="bold", color=COLORS['accent']),
-                    ft.Divider(color=COLORS['glass']),
+                    ft.Divider(height=2, thickness=2, color=COLORS['accent']),  # Barra divisoria del título restaurada
                     ft.Column([t_sensor], scroll=ft.ScrollMode.AUTO, expand=True),
                     btn_c
                 ], expand=True)
             )
             controles_sensores.append(card_sensor)
 
+    # --- MEJORA: Layout en 3 columnas exactas ---
     tab_sensores = ft.Tab(text="📈 Sensores (Medias)", content=ft.Container(
-        content=ft.GridView(controls=controles_sensores, runs_count=2, max_extent=400, child_aspect_ratio=0.8,
-                            spacing=10, run_spacing=10, ), padding=20))
+        content=ft.GridView(
+            controls=controles_sensores,
+            runs_count=3,  # Fuerza 3 columnas por fila
+            max_extent=None,  # Obligatorio en None para que runs_count funcione
+            child_aspect_ratio=0.8,
+            spacing=20,
+            run_spacing=20,
+        ), padding=20))
     tabs_list.append(tab_sensores)
 
     tbs = ft.Tabs(selected_index=0, animation_duration=300, tabs=tabs_list, expand=True, divider_color=COLORS['glass'],
