@@ -88,11 +88,17 @@ def crear_dashboard_view(
     map_stack_controls.extend([
         ft.Container(left=870, top=45, content=ft.Icon(ft.Icons.VIDEOCAM, color="#fb7185", size=24), bgcolor="white",
                      border_radius=15, on_click=on_ver_camaras_click),
-        ft.Container(left=715, top=309, content=ft.Text(DEVICE_ICONS['ldr'], size=24), tooltip="LDR"),
-        ft.Container(left=900, top=268, content=ft.Text(DEVICE_ICONS['mq-2'], size=24), tooltip="MQ-2"),
-        ft.Container(left=517, top=367, content=ft.Text(DEVICE_ICONS['mq-135'], size=24), tooltip="MQ-135"),
-        ft.Container(left=900, top=367, content=ft.Text("💧", size=24), tooltip="Humedad"),
-        ft.Container(left=517, top=270, content=ft.Text(DEVICE_ICONS['dht22'], size=20), tooltip="DHT22"),
+
+        ft.Container(left=715, top=309, content=ft.Text(DEVICE_ICONS['ldr'], size=24), tooltip="LDR - Luz"),
+        ft.Container(left=900, top=268, content=ft.Text(DEVICE_ICONS['mq-2'], size=24), tooltip="MQ-2 - Humo"),
+        ft.Container(left=900, top=367, content=ft.Text("💧", size=24), tooltip="DHT11 - Humedad"),
+        ft.Container(left=517, top=270, content=ft.Text(DEVICE_ICONS['dht11'], size=20), tooltip="DHT11 - Temperatura"),
+
+        # --- ICONO DE CALIDAD DE AIRE RESTAURADO ---
+        # left=715 (Alineado con el LDR de arriba)
+        # top=367 (Alineado con la Humedad de la derecha)
+        ft.Container(left=517, top=367, content=ft.Text("🌬️", size=24), tooltip="MQ-2 - Calidad Aire"),
+
         ft.Container(left=600, top=247, content=icon_fan_map, tooltip="Ventilación"),
         ft.Container(left=720, top=315, content=icon_led_map, tooltip="Iluminación Central"),
     ])
@@ -122,7 +128,6 @@ def crear_dashboard_view(
                                 on_click=lambda e: on_cambiar_modo_click(e, "fan") if puede_controlar else None,
                                 tooltip="Alternar modo Auto/Manual")
 
-    # --- TEXTO PARA ESP32 ONLINE/OFFLINE ---
     txt_esp32_status = ft.Text("ESPERANDO", color=COLORS['muted'], size=11, weight="bold")
 
     right_content.controls.extend([
@@ -153,6 +158,8 @@ def crear_dashboard_view(
 
     for nombre_sensor in lista_sensores_fijos:
         icono = "📝"
+        label_mostrar = nombre_sensor
+
         if 'Temp' in nombre_sensor:
             icono = DEVICE_ICONS['dht11']
         elif 'Humedad' in nombre_sensor:
@@ -162,15 +169,17 @@ def crear_dashboard_view(
         elif 'Humo' in nombre_sensor:
             icono = DEVICE_ICONS['mq-2']
         elif 'Aire' in nombre_sensor:
-            icono = DEVICE_ICONS['mq-135']
+            icono = "🌬️"
+            label_mostrar = "MQ-2 - Calidad Aire"
 
         txt_valor = ft.Text("Esperando...", size=15, weight="bold", color=COLORS['accent'])
         txt_hora = ft.Text("--:--:--", size=11, color=COLORS['muted'])
+
         mapa_controles_sensores[nombre_sensor] = (txt_valor, txt_hora)
 
         columna_sensores_fijos.controls.append(ft.Container(
             content=ft.Row([ft.Text(icono, size=22),
-                            ft.Column([ft.Text(nombre_sensor, size=13, weight="bold", color=COLORS['text']), txt_hora],
+                            ft.Column([ft.Text(label_mostrar, size=13, weight="bold", color=COLORS['text']), txt_hora],
                                       spacing=0, expand=True), txt_valor],
                            alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
             bgcolor=COLORS['glass'], padding=12, border_radius=8,
@@ -181,11 +190,9 @@ def crear_dashboard_view(
     right_column = ft.Container(width=340, bgcolor=COLORS['card'], padding=18, expand=False, content=right_content,
                                 border=ft.border.all(1, COLORS['glass']))
 
-    # --- FUNCIÓN PÚBLICA DE ACTUALIZACIÓN ---
     def actualizar_datos_ui(datos_sensores_raw, estados_actuadores, esp32_online=True):
         if not left_column.page: return
 
-        # 1. Actualizar estado del ESP32 Visual
         status_text = "ONLINE" if esp32_online else "OFFLINE"
         status_col = COLORS['good'] if esp32_online else COLORS['bad']
         if txt_esp32_status.value != status_text:
@@ -236,7 +243,6 @@ def crear_dashboard_view(
                     cnt.bgcolor = col
                     if cnt.page: cnt.update()
 
-            # ACTUALIZACIÓN LEDS (Auto / Manual UI Correcta)
             d_led = estados_actuadores.get("leds", {})
             st_led = d_led.get("estado", "off")
             mode_led = d_led.get("mode", "manual")
@@ -260,7 +266,6 @@ def crear_dashboard_view(
                 switch_led.disabled = dis_led
                 if switch_led.page: switch_led.update()
 
-            # ACTUALIZACIÓN VENTILADOR
             d_fan = estados_actuadores.get("fan", {})
             st_fan = d_fan.get("estado", "off")
             mode_fan = d_fan.get("mode", "manual")

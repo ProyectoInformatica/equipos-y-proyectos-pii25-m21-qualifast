@@ -67,7 +67,6 @@ def loop_controlador_ui(page):
                     callback = vista_actual.data.get("update_callback")
                     if callback:
                         if page.route == "/dashboard":
-                            # Ahora pasamos también si el ESP32 está ONLINE u OFFLINE
                             callback(
                                 modelo.get_ultimos_sensores_raw(),
                                 modelo.get_estado_actuadores(),
@@ -237,7 +236,6 @@ def main(page: ft.Page):
                     page, rol, page.session.get("user_name"),
                     modelo.get_estado_actuadores(), modelo.get_ultimos_sensores_raw(),
                     on_refrescar_click, on_control_actuador_click, lambda e: page.go("/camaras"),
-                    # Usamos la nueva función "toggle" para alternar Auto/Manual de forma sana
                     lambda e, a: modelo.toggle_modo_actuador(a)
                 )
                 v = ft.View("/dashboard", controls=[ft.Row([get_nav_rail(page, route), ft.VerticalDivider(width=1),
@@ -276,8 +274,9 @@ def main(page: ft.Page):
                 content = vista_configuracion.crear_vista_configuracion(
                     config_actual=modelo.get_configuracion(),
                     local_config=modelo.LOCAL_CONFIG,
-                    on_guardar_click=lambda e, d: modelo.save_configuracion(d) and page.go("/dashboard"),
-                    on_guardar_hardware_click=lambda d: modelo.save_local_config(d) and page.go("/dashboard")
+                    # HEMOS QUITADO EL 'and page.go("/dashboard")' PARA QUE NO SE CIERRE LA VISTA
+                    on_guardar_click=lambda e, d: modelo.save_configuracion(d),
+                    on_guardar_hardware_click=lambda d: modelo.save_local_config(d)
                 )
                 page.views.append(ft.View("/config", controls=[ft.Row(
                     [get_nav_rail(page, route), ft.VerticalDivider(width=1),

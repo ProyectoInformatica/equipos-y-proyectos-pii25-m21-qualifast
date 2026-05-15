@@ -8,12 +8,9 @@ import base64
 import requests
 import os
 import json
-import csv
-import io
 from datetime import datetime
 from collections import defaultdict
 
-# --- CONFIGURACIÓN LOCAL (JSON) ---
 CONFIG_FILE = "ajustes_locales.json"
 
 LOCAL_CONFIG = {
@@ -23,69 +20,68 @@ LOCAL_CONFIG = {
     "db_pass": "123456",
     "db_name": "comisaria_db",
     "esp32_ip": "10.197.123.128",
-    "esp32_cam_ip": "10.197.123.146"
+    "esp32_cam_ip": "10.197.123.146",
+    "heartbeat_timeout": 5
 }
+
+# --- NUEVAS FUNCIONES DE EXPORTACIÓN (CORREGIDAS PARA CSV) ---
+
+def get_all_sensores_log_csv():
+    conexion = conectar()
+    if conexion:
+        try:
+            cursor = conexion.cursor(dictionary=True)
+            query = "SELECT sl.timestamp, s.nombre, sl.valor, s.unidad FROM sensores_log sl JOIN sensores s ON sl.sensor_id = s.id ORDER BY sl.timestamp ASC"
+            cursor.execute(query)
+            res = []
+            for r in cursor.fetchall():
+                if r['timestamp']: r['timestamp'] = r['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
+                res.append(r)
+            return res
+        finally: conexion.close()
+    return []
+
+def get_all_actuadores_log_csv():
+    conexion = conectar()
+    if conexion:
+        try:
+            cursor = conexion.cursor(dictionary=True)
+            query = "SELECT ha.timestamp, a.label as componente, ha.accion as estado, IFNULL(p.nombre, 'sistema') as usuario FROM historico_actuadores ha JOIN actuadores a ON ha.actuador_id = a.id LEFT JOIN personas p ON ha.usuario_id = p.id ORDER BY ha.timestamp ASC"
+            cursor.execute(query)
+            res = []
+            for r in cursor.fetchall():
+                if r['timestamp']: r['timestamp'] = r['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
+                res.append(r)
+            return res
+        finally: conexion.close()
+    return []
+
+def get_all_chats_csv():
+    conexion = conectar()
+    if conexion:
+        try:
+            cursor = conexion.cursor(dictionary=True)
+            query = "SELECT timestamp, emisor, receptor, texto, estado FROM mensajes_chat ORDER BY emisor, receptor, timestamp ASC"
+            cursor.execute(query)
+            res = []
+            for r in cursor.fetchall():
+                if r['timestamp']: r['timestamp'] = r['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
+                res.append(r)
+            return res
+        finally: conexion.close()
+    return []
 
 ESP32_IP = LOCAL_CONFIG["esp32_ip"]
 ESP32_CAM_IP = LOCAL_CONFIG["esp32_cam_ip"]
 
-# Variables para controlar el estado online/offline del ESP32 (Heartbeat)
 ultima_conexion_esp32 = 0
-
-def obtener_datos_exportacion_sensores():
-    """Obtiene todos los logs de sensores para exportar a CSV."""
-    conexion = conectar()
-    if conexion:
-        try:
-            cursor = conexion.cursor(dictionary=True)
-            query = """
-                SELECT s.nombre as Sensor, sl.valor as Valor, s.unidad as Unidad, sl.timestamp as Fecha
-                FROM sensores_log sl
-                JOIN sensores s ON sl.sensor_id = s.id
-                ORDER BY sl.timestamp DESC
-            """
-            cursor.execute(query)
-            return cursor.fetchall()
-        finally:
-            conexion.close()
-    return []
-
-def obtener_datos_exportacion_chats():
-    """Obtiene todos los mensajes de chat para exportar a CSV."""
-    conexion = conectar()
-    if conexion:
-        try:
-            cursor = conexion.cursor(dictionary=True)
-            query = """
-                SELECT emisor, receptor, texto, estado, timestamp as Fecha
-                FROM mensajes_chat
-                ORDER BY emisor, receptor, timestamp ASC
-            """
-            cursor.execute(query)
-            return cursor.fetchall()
-        finally:
-            conexion.close()
-    return []
-
-def exportar_a_csv_string(datos):
-    """Convierte una lista de diccionarios a un string formato CSV."""
-    if not datos:
-        return ""
-    output = io.StringIO()
-    writer = csv.DictWriter(output, fieldnames=datos[0].keys())
-    writer.writeheader()
-    writer.writerows(datos)
-    return output.getvalue()
 
 def actualizar_heartbeat_esp32():
     global ultima_conexion_esp32
     ultima_conexion_esp32 = time.time()
 
-
 def obtener_estado_esp32():
-    # Si hace menos de 8 segundos que recibimos un dato de un sensor, está online
     return (time.time() - ultima_conexion_esp32) < 8
-
 
 def load_local_config():
     global LOCAL_CONFIG, ESP32_IP, ESP32_CAM_IP
@@ -100,7 +96,6 @@ def load_local_config():
 
     ESP32_IP = LOCAL_CONFIG.get("esp32_ip", "")
     ESP32_CAM_IP = LOCAL_CONFIG.get("esp32_cam_ip", "")
-
 
 def save_local_config(new_config):
     global LOCAL_CONFIG, ESP32_IP, ESP32_CAM_IP
@@ -117,7 +112,6 @@ def save_local_config(new_config):
 
 # --- INICIALIZACIÓN DE BASE DE DATOS ---
 db_pool = None
-
 
 def inicializar_pool():
     global db_pool
@@ -136,7 +130,6 @@ def inicializar_pool():
     except Exception as e:
         print(f"[ERROR BD] Fallo crítico al inicializar Pool de BD (Revisa credenciales/IP): {e}")
         db_pool = None
-
 
 load_local_config()
 inicializar_pool()
@@ -158,14 +151,12 @@ def probar_conexion():
         return False
     return False
 
-
 def conectar():
     try:
         return db_pool.get_connection() if db_pool else None
     except Exception as e:
         print(f"[ERROR BD] No se pudo obtener conexión del pool: {e}")
         return None
-
 
 def _convertir_a_base64(blob):
     if blob:
@@ -263,7 +254,6 @@ def add_usuario(u, p, r, foto_bytes=None):
             conexion.close()
     return False
 
-
 def update_usuario(uid, user, password, rol, foto_bytes=None):
     conexion = conectar()
     if conexion:
@@ -337,7 +327,6 @@ def get_presos():
             conexion.close()
     return res
 
-
 def add_preso(nombre_completo, delito, celda_codigo, foto_bytes=None):
     conexion = conectar()
     if conexion:
@@ -365,7 +354,6 @@ def add_preso(nombre_completo, delito, celda_codigo, foto_bytes=None):
         finally:
             conexion.close()
     return False
-
 
 def update_preso(pid, dat, foto_bytes=None):
     conexion = conectar()
@@ -399,7 +387,6 @@ def update_preso(pid, dat, foto_bytes=None):
             conexion.close()
     return False
 
-
 def delete_preso(pid):
     conexion = conectar()
     if conexion:
@@ -416,10 +403,9 @@ def delete_preso(pid):
             conexion.close()
     return False
 
-
 # --- SENSORES Y ACTUADORES ---
 def registrar_dato_sensor(datos):
-    actualizar_heartbeat_esp32()  # <--- Notifica que el ESP32 está vivo
+    actualizar_heartbeat_esp32()
     conexion = conectar()
     if conexion:
         try:
@@ -440,7 +426,6 @@ def registrar_dato_sensor(datos):
         finally:
             conexion.close()
     verificar_automatizacion(datos)
-
 
 def verificar_automatizacion(ultimos_datos):
     config = get_configuracion()
@@ -466,7 +451,6 @@ def verificar_automatizacion(ultimos_datos):
         elif luz_val >= config['luz_min']:
             set_estado_actuador('leds', 'off')
 
-
 def get_configuracion():
     conexion = conectar()
     config = {"temp_max": 28.0, "luz_min": 400.0}
@@ -481,7 +465,6 @@ def get_configuracion():
         finally:
             conexion.close()
     return config
-
 
 def save_configuracion(data):
     conexion = conectar()
@@ -500,7 +483,6 @@ def save_configuracion(data):
             conexion.close()
     return False
 
-
 def get_estado_actuadores():
     conexion = conectar()
     estados = {}
@@ -516,17 +498,14 @@ def get_estado_actuadores():
             conexion.close()
     return estados
 
-
 def set_estado_actuador(uid, estado, user_id=None):
     return _actualizar_actuador(uid, estado, user_id)
-
 
 def toggle_actuador(uid, user_id=None):
     estados = get_estado_actuadores()
     curr = estados.get(uid, {}).get("estado", "cerrada")
     nuevo = "abierta" if curr == "cerrada" else "cerrada"
     return _actualizar_actuador(uid, nuevo, user_id)
-
 
 def _actualizar_actuador(uid, estado, user_id):
     conexion = conectar()
@@ -558,9 +537,7 @@ def _actualizar_actuador(uid, estado, user_id):
             conexion.close()
     return False
 
-
 def toggle_modo_actuador(uid):
-    """Alterna entre Auto y Manual para un actuador"""
     conexion = conectar()
     if conexion:
         try:
@@ -577,7 +554,6 @@ def toggle_modo_actuador(uid):
         finally:
             conexion.close()
     return False
-
 
 def set_modo_actuador(uid, modo):
     conexion = conectar()
@@ -609,8 +585,6 @@ def get_ultimos_sensores_raw():
         finally:
             conexion.close()
     return res[::-1]
-
-# --------- FUNCIONES AÑADIDAS PARA SOLUCIONAR EL CRASH DEL HISTÓRICO ---------
 
 def get_log_sensores_filtrado(horas=24):
     conexion = conectar()
@@ -663,12 +637,10 @@ def get_promedio_sensores_por_hora():
             conexion.close()
     return dict(res_dict)
 
-
 def get_consumo_electrico():
     total_w = random.uniform(5, 15)
     return {"total_actual": round(total_w, 2), "media_dia": round(total_w * 0.9, 2),
             "media_mes": round(total_w * 0.8, 2), "detalles": []}
-
 
 # ==============================================================
 # --- SISTEMA DE CHAT CON MYSQL ---
@@ -685,7 +657,6 @@ def guardar_historial_txt(emisor, receptor, texto):
     except Exception as e:
         print(f"[ERROR LOCAL] No se pudo guardar log de chat en TXT: {e}")
 
-
 def enviar_mensaje(emisor, receptor, texto):
     conexion = conectar()
     if conexion:
@@ -701,7 +672,6 @@ def enviar_mensaje(emisor, receptor, texto):
         finally:
             conexion.close()
     return False
-
 
 def get_contactos_chat(mi_usuario):
     conexion = conectar()
@@ -727,7 +697,6 @@ def get_contactos_chat(mi_usuario):
         finally:
             conexion.close()
     return contactos
-
 
 def get_mensajes_chat(usuario1, usuario2):
     conexion = conectar()
@@ -755,7 +724,6 @@ def get_mensajes_chat(usuario1, usuario2):
             conexion.close()
     return mensajes
 
-
 def marcar_mensajes_entregados(mi_usuario):
     conexion = conectar()
     if conexion:
@@ -768,7 +736,6 @@ def marcar_mensajes_entregados(mi_usuario):
             print(f"[ERROR BD] Fallo marcando entregados: {e}")
         finally:
             conexion.close()
-
 
 def marcar_mensajes_leidos(emisor_contacto, mi_usuario):
     conexion = conectar()

@@ -3,44 +3,29 @@ from vista.temas import COLORS, DEVICE_ICONS
 import modelo.manejador_datos as modelo
 import os
 import csv
-import json
 import subprocess
 import platform
-
-FILE_PRESOS = "modelo/presos.json"
-FILE_PUERTAS = "modelo/puertas_log.json"
-FILE_SENSORES = "modelo/sensores_log.json"
-FILE_ACTUADORES = "modelo/actuadores_estado.json"
 
 ITEMS_POR_PAGINA = 50
 
 
-def ejecutar_exportacion_directa(archivo_json, ruta_destino):
+def ejecutar_exportacion_directa(datos, ruta_destino):
     try:
-        if not os.path.exists(archivo_json): return False, f"No se encuentra: {archivo_json}"
-        with open(archivo_json, 'r', encoding='utf-8') as f:
-            datos = json.load(f)
-        if not datos: return False, "El archivo JSON está vacío."
+        if not datos or len(datos) == 0:
+            return False, "No hay datos en la Base de Datos para exportar."
 
-        if isinstance(datos, dict):
-            datos_preparados = []
-            for k, v in datos.items():
-                if isinstance(v, dict):
-                    fila = {"id": k}
-                    fila.update(v)
-                    datos_preparados.append(fila)
-                else:
-                    datos_preparados.append({"parametro": k, "valor": v})
-            datos = datos_preparados
+        # Limpiamos los datos (ej: quitar la ristra de texto de las fotos de los presos para no saturar el CSV)
+        datos_limpios = []
+        for fila in datos:
+            fila_limpia = {k: v for k, v in fila.items() if k != 'foto'}
+            datos_limpios.append(fila_limpia)
 
-        if isinstance(datos, list) and len(datos) > 0:
-            columnas = datos[0].keys()
-            with open(ruta_destino, 'w', newline='', encoding='utf-8') as f:
-                writer = csv.DictWriter(f, fieldnames=columnas)
-                writer.writeheader()
-                writer.writerows(datos)
-            return True, f"Guardado correctamente"
-        return False, "Formato de datos no compatible."
+        columnas = datos_limpios[0].keys()
+        with open(ruta_destino, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=columnas)
+            writer.writeheader()
+            writer.writerows(datos_limpios)
+        return True, "Guardado correctamente en CSV"
     except Exception as e:
         return False, str(e)
 
@@ -61,14 +46,17 @@ def obtener_ruta_guardado_universal(nombre_defecto):
 
 
 def crear_vista_historico(datos_promedio_sensores, datos_log_actuadores, on_volver_dashboard):
-    def iniciar_descarga(e, ruta_json):
-        nombre_file = os.path.basename(ruta_json).replace(".json", ".csv")
+    # --- NUEVA FUNCIÓN DE DESCARGA DESDE MYSQL ---
+    def iniciar_descarga(e, funcion_fetch, nombre_archivo):
         e.page.snack_bar = ft.SnackBar(ft.Text("Abriendo ventana de guardado..."), duration=1000)
         e.page.snack_bar.open = True
         e.page.update()
-        ruta_destino = obtener_ruta_guardado_universal(nombre_file)
+
+        ruta_destino = obtener_ruta_guardado_universal(nombre_archivo)
         if ruta_destino:
-            exito, msj = ejecutar_exportacion_directa(ruta_json, ruta_destino)
+            # Obtenemos los datos frescos de la Base de Datos
+            datos = funcion_fetch()
+            exito, msj = ejecutar_exportacion_directa(datos, ruta_destino)
             col = COLORS['good'] if exito else "red"
             e.page.snack_bar = ft.SnackBar(ft.Text(msj), bgcolor=col)
             e.page.snack_bar.open = True
@@ -77,13 +65,14 @@ def crear_vista_historico(datos_promedio_sensores, datos_log_actuadores, on_volv
     botones_exportar = ft.Row([
         ft.Text("Exportar a CSV:", size=12, color=COLORS['muted'], weight="bold"),
         ft.IconButton(ft.Icons.PEOPLE, tooltip="Presos", icon_size=20,
-                      on_click=lambda e: iniciar_descarga(e, FILE_PRESOS)),
-        ft.IconButton(ft.Icons.MEETING_ROOM, tooltip="Log Puertas", icon_size=20,
-                      on_click=lambda e: iniciar_descarga(e, FILE_PUERTAS)),
+                      on_click=lambda e: iniciar_descarga(e, modelo.get_presos, "presos.csv")),
+        ft.IconButton(ft.Icons.MEETING_ROOM, tooltip="Log Actuadores", icon_size=20,
+                      on_click=lambda e: iniciar_descarga(e, modelo.get_all_actuadores_log_csv, "actuadores.csv")),
         ft.IconButton(ft.Icons.SENSORS, tooltip="Log Sensores", icon_size=20,
-                      on_click=lambda e: iniciar_descarga(e, FILE_SENSORES)),
-        ft.IconButton(ft.Icons.TOGGLE_ON, tooltip="Estado Actuadores", icon_size=20,
-                      on_click=lambda e: iniciar_descarga(e, FILE_ACTUADORES)),
+                      on_click=lambda e: iniciar_descarga(e, modelo.get_all_sensores_log_csv, "sensores.csv")),
+        # NUEVO BOTÓN DE CHATS
+        ft.IconButton(ft.Icons.CHAT, tooltip="Historial de Chats", icon_size=20,
+                      on_click=lambda e: iniciar_descarga(e, modelo.get_all_chats_csv, "chats_completos.csv")),
     ], spacing=2)
 
     tabs_list = []
@@ -253,7 +242,6 @@ def crear_vista_historico(datos_promedio_sensores, datos_log_actuadores, on_volv
         botones_exportar
     ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
 
-    # Devolvemos un Container envuelto y preparado para encajar con el menú lateral
     return ft.Container(
         content=ft.Column([header, ft.Divider(color=COLORS['glass']), tbs], expand=True),
         padding=30, expand=True, bgcolor=COLORS['card'], border_radius=10, border=ft.border.all(1, COLORS['glass'])
