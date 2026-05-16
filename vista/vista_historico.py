@@ -82,7 +82,8 @@ def crear_vista_historico(datos_promedio_sensores, datos_log_actuadores, on_volv
         estado_pag = {"mostrados": 0}
 
         def cargar_mas_puerta(e, lv=lv_puerta, btn=btn_cargar, p_id=pid, st=estado_pag):
-            chunk = modelo.get_log_actuadores_paginado(p_id, limit=ITEMS_POR_PAGINA, offset=st["mostrados"])
+            chunk = modelo.get_log_actuadores_paginado(p_id, limit=ITEMS_POR_PAGINA,
+                                                       ultimo_timestamp=st.get("ultimo_ts"))
             for evento in chunk:
                 color_estado = COLORS['good'] if evento['accion'] == "abierta" else COLORS['bad']
                 icon_estado = ft.Icons.LOCK_OPEN if evento['accion'] == "abierta" else ft.Icons.LOCK_OUTLINE
@@ -96,7 +97,8 @@ def crear_vista_historico(datos_promedio_sensores, datos_log_actuadores, on_volv
                     ], spacing=2)
                 )
                 lv.controls.append(card)
-            st["mostrados"] += len(chunk)
+            if chunk:
+                st["ultimo_ts"] = chunk[-1]['timestamp']  # Guardamos la marca temporal para el próximo avance rápido
             btn.visible = (len(chunk) == ITEMS_POR_PAGINA)
             if lv.page: lv.update()
             if btn.page: btn.update()
@@ -132,11 +134,14 @@ def crear_vista_historico(datos_promedio_sensores, datos_log_actuadores, on_volv
             rows=[], border=ft.border.all(1, COLORS['glass']), heading_row_color=COLORS['glass'], column_spacing=15
         )
         btn_cargar = ft.ElevatedButton("⬇️ Cargar más", visible=False, bgcolor=COLORS['glass'], color=COLORS['text'])
-        estado_pag = {"mostrados": 0}
+
+        # CORRECCIÓN: Estado de paginación actualizado al Avance Rápido (Keyset)
+        estado_pag = {"ultimo_ts": None}
 
         def cargar_mas(e):
+            # Usamos ultimo_timestamp en lugar del obsoleto offset
             chunk = modelo.get_log_actuadores_paginado(uid_filtro, limit=ITEMS_POR_PAGINA,
-                                                       offset=estado_pag["mostrados"])
+                                                       ultimo_timestamp=estado_pag.get("ultimo_ts"))
             for log in chunk:
                 color_st = COLORS['good'] if log['accion'] == "on" else COLORS['muted']
                 row = ft.DataRow(cells=[
@@ -147,7 +152,10 @@ def crear_vista_historico(datos_promedio_sensores, datos_log_actuadores, on_volv
                     ft.DataCell(ft.Text(f"👤 {log.get('usuario', 'sistema')}", size=12, color=COLORS['muted'])),
                 ])
                 tabla.rows.append(row)
-            estado_pag["mostrados"] += len(chunk)
+
+            if chunk:
+                estado_pag["ultimo_ts"] = chunk[-1]['timestamp']  # Guardamos la marca temporal
+
             btn_cargar.visible = (len(chunk) == ITEMS_POR_PAGINA)
             if tabla.page: tabla.update()
             if btn_cargar.page: btn_cargar.update()
@@ -181,13 +189,12 @@ def crear_vista_historico(datos_promedio_sensores, datos_log_actuadores, on_volv
         for nombre_sensor, datos_lista in datos_promedio_sensores.items():
             datos_lista = list(reversed(datos_lista))
 
-            # --- MEJORA: Tabla con línea horizontal más visible ---
             t_sensor = ft.DataTable(
                 columns=[ft.DataColumn(ft.Text("Fecha y Hora")), ft.DataColumn(ft.Text("Promedio"))],
                 rows=[],
                 border=ft.border.all(1, COLORS['glass']),
                 heading_row_color=COLORS['glass'],
-                horizontal_lines=ft.border.BorderSide(1, "#4b5563"),  # Barra separadora visible
+                horizontal_lines=ft.border.BorderSide(1, "#4b5563"),
                 column_spacing=20
             )
             btn_c = ft.TextButton("Cargar más", visible=False)
@@ -220,24 +227,22 @@ def crear_vista_historico(datos_promedio_sensores, datos_log_actuadores, on_volv
             elif "Luz" in nombre_sensor:
                 icon_s = DEVICE_ICONS['ldr']
 
-            # --- MEJORA: Tarjeta individual ---
             card_sensor = ft.Container(
                 bgcolor=COLORS['room_bg'], padding=15, border_radius=10, border=ft.border.all(1, COLORS['glass']),
                 content=ft.Column([
                     ft.Text(f"{icon_s} {nombre_sensor}", size=16, weight="bold", color=COLORS['accent']),
-                    ft.Divider(height=2, thickness=2, color=COLORS['accent']),  # Barra divisoria del título restaurada
+                    ft.Divider(height=2, thickness=2, color=COLORS['accent']),
                     ft.Column([t_sensor], scroll=ft.ScrollMode.AUTO, expand=True),
                     btn_c
                 ], expand=True)
             )
             controles_sensores.append(card_sensor)
 
-    # --- MEJORA: Layout en 3 columnas exactas ---
     tab_sensores = ft.Tab(text="📈 Sensores (Medias)", content=ft.Container(
         content=ft.GridView(
             controls=controles_sensores,
-            runs_count=3,  # Fuerza 3 columnas por fila
-            max_extent=None,  # Obligatorio en None para que runs_count funcione
+            runs_count=3,
+            max_extent=None,
             child_aspect_ratio=0.8,
             spacing=20,
             run_spacing=20,

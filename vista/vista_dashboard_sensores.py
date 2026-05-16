@@ -94,9 +94,6 @@ def crear_dashboard_view(
         ft.Container(left=900, top=367, content=ft.Text("💧", size=24), tooltip="DHT11 - Humedad"),
         ft.Container(left=517, top=270, content=ft.Text(DEVICE_ICONS['dht11'], size=20), tooltip="DHT11 - Temperatura"),
 
-        # --- ICONO DE CALIDAD DE AIRE RESTAURADO ---
-        # left=715 (Alineado con el LDR de arriba)
-        # top=367 (Alineado con la Humedad de la derecha)
         ft.Container(left=517, top=367, content=ft.Text("🌬️", size=24), tooltip="MQ-2 - Calidad Aire"),
 
         ft.Container(left=600, top=247, content=icon_fan_map, tooltip="Ventilación"),
@@ -130,15 +127,13 @@ def crear_dashboard_view(
 
     txt_esp32_status = ft.Text("ESPERANDO", color=COLORS['muted'], size=11, weight="bold")
 
+    # SECCIÓN DE ESTADO DE ACTUADORES - SIN "MOTORES PUERTA"
     right_content.controls.extend([
         ft.Text("Estado de Actuadores", size=16, weight="bold", color=COLORS['text']),
+
         ft.Container(bgcolor=COLORS['glass'], padding=8, border_radius=5, content=ft.Row(
             [ft.Text(f"{DEVICE_ICONS['esp32']} Controlador", color=COLORS['text'], size=13),
              ft.Container(expand=True), txt_esp32_status])),
-
-        ft.Container(bgcolor=COLORS['glass'], padding=8, border_radius=5, content=ft.Row(
-            [ft.Text(f"{DEVICE_ICONS['motor']} Motores Puerta", color=COLORS['text'], size=13),
-             ft.Container(expand=True), ft.Text("MANUAL", color=COLORS['accent'], size=11, weight="bold")])),
 
         ft.Container(bgcolor=COLORS['glass'], padding=8, border_radius=5, content=ft.Row(
             [ft.Text(f"{DEVICE_ICONS['leds']} Iluminación", color=COLORS['text'], size=13),

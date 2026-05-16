@@ -9,16 +9,15 @@ from datetime import datetime
 # está una carpeta más atrás, para que pueda encontrar la carpeta "modelo"
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-# 2. IMPORT CORREGIDO: Usamos nuestra nueva arquitectura limpia
+# 2. IMPORT CORREGIDO: Usamos nuestra nueva fachada limpia en lugar del viejo
 import modelo.manejador_datos as modelo
 
 
 def iniciar_recoleccion():
-    # No verás los prints porque correrá en modo invisible (pythonw), pero internamente funcionan
     print(f"✅ Recolector IoT Iniciado. Escuchando al ESP32 en {modelo.ESP32_IP}...")
 
     while True:
-        # Obtenemos el intervalo actual de la BD en cada ciclo
+        # 1. Obtenemos el intervalo actual de la BD en cada ciclo
         config = modelo.get_configuracion()
         segundos_espera = config.get("intervalo_muestreo", 5.0)
         url_sensores = f"http://{modelo.ESP32_IP}/sensores"
@@ -44,12 +43,11 @@ def iniciar_recoleccion():
                     {"timestamp": timestamp, "sensor": "MQ-135 - Aire", "valor": f"{mq135_sim} ppm"}
                 ]
 
-                # Guardar en Base de Datos MySQL de forma silenciosa
                 modelo.registrar_dato_sensor(datos)
                 print(f"[{timestamp}] Guardado. Intervalo actual: {segundos_espera}s")
 
         except Exception:
-            # Si el ESP32 falla o no hay conexión, esperamos en silencio
+            # Si el ESP32 falla, esperamos un poco antes de reintentar
             pass
 
         time.sleep(segundos_espera)

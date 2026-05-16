@@ -301,19 +301,26 @@ def get_consumo_electrico():
         "detalles": detalles
     }
 
-def get_log_actuadores_paginado(uid_parcial, limit=50, offset=0):
+
+def get_log_actuadores_paginado(uid_parcial, limit=50, ultimo_timestamp=None):
     conexion = conectar()
     res = []
     if conexion:
         try:
             cursor = conexion.cursor(dictionary=True)
-            query = "SELECT ha.timestamp, a.uid as id, a.label, ha.accion, IFNULL(p.nombre, 'sistema') as usuario FROM historico_actuadores ha JOIN actuadores a ON ha.actuador_id = a.id LEFT JOIN personas p ON ha.usuario_id = p.id WHERE a.uid LIKE %s ORDER BY ha.timestamp DESC LIMIT %s OFFSET %s"
-            cursor.execute(query, (f"%{uid_parcial}%", limit, offset))
+            if ultimo_timestamp:
+                # ALGORITMO DE AVANCE RÁPIDO (Keyset Pagination)
+                query = "SELECT ha.timestamp, a.uid as id, a.label, ha.accion, IFNULL(p.nombre, 'sistema') as usuario FROM historico_actuadores ha JOIN actuadores a ON ha.actuador_id = a.id LEFT JOIN personas p ON ha.usuario_id = p.id WHERE a.uid LIKE %s AND ha.timestamp < %s ORDER BY ha.timestamp DESC LIMIT %s"
+                cursor.execute(query, (f"%{uid_parcial}%", ultimo_timestamp, limit))
+            else:
+                query = "SELECT ha.timestamp, a.uid as id, a.label, ha.accion, IFNULL(p.nombre, 'sistema') as usuario FROM historico_actuadores ha JOIN actuadores a ON ha.actuador_id = a.id LEFT JOIN personas p ON ha.usuario_id = p.id WHERE a.uid LIKE %s ORDER BY ha.timestamp DESC LIMIT %s"
+                cursor.execute(query, (f"%{uid_parcial}%", limit))
+
             for r in cursor.fetchall():
                 r['timestamp'] = r['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
                 res.append(r)
         except Exception as e:
-            print(f"[ERROR BD] Fallo en get_log_actuadores_paginado: {e}")
+            print(f"[ERROR BD] Fallo en avance rápido: {e}")
         finally:
             conexion.close()
     return res

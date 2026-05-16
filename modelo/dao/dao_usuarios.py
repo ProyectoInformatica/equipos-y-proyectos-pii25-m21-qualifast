@@ -3,10 +3,12 @@ import random
 import base64
 from modelo.dao.conexion_db import conectar
 
+
 def _convertir_a_base64(blob):
     if blob:
         return base64.b64encode(blob).decode('utf-8')
     return None
+
 
 def validar_usuario(u, p):
     conexion = conectar()
@@ -19,7 +21,8 @@ def validar_usuario(u, p):
                     FROM usuarios u
                              JOIN personas p ON u.persona_id = p.id
                              JOIN roles r ON u.rol_id = r.id
-                    WHERE u.username = %s AND p.activo = 1
+                    WHERE u.username = %s \
+                      AND p.activo = 1
                     """
             cursor.execute(query, (u,))
             usuario = cursor.fetchone()
@@ -27,10 +30,19 @@ def validar_usuario(u, p):
             if usuario:
                 hash_db = usuario['password']
                 match = False
-                if hash_db.startswith('$2b$') or hash_db.startswith('$2a$'):
+
+                # 1. Intentamos comparar la contraseña ingresada con el hash de la BD de forma segura
+                try:
                     if bcrypt.checkpw(p.encode('utf-8'), hash_db.encode('utf-8')):
                         match = True
-                elif p == hash_db:
+                except Exception:
+                    # Si lanza un error (ej: ValueError), significa que la contraseña en la BD
+                    # no es un hash cifrado, sino texto plano antiguo. Lo ignoramos y pasamos al Plan B.
+                    pass
+
+                # 2. Plan B (Fallback): Si falla el checkeo del hash, comprobamos si es texto plano directo
+                # Esto es útil para el usuario 'comisario' que configuraste manualmente con '1234'
+                if not match and p == hash_db:
                     match = True
 
                 if match:
@@ -39,6 +51,7 @@ def validar_usuario(u, p):
         finally:
             conexion.close()
     return rol, user_id, foto_b64
+
 
 def get_usuarios():
     conexion = conectar()
@@ -49,7 +62,8 @@ def get_usuarios():
             query = """
                     SELECT p.id, u.username as user, u.password, r.nombre as rol, p.foto
                     FROM usuarios u
-                        JOIN personas p ON u.persona_id = p.id
+                        JOIN personas p \
+                    ON u.persona_id = p.id
                         JOIN roles r ON u.rol_id = r.id
                     WHERE p.activo = 1
                     ORDER BY p.fecha_alta DESC
@@ -62,6 +76,7 @@ def get_usuarios():
         finally:
             conexion.close()
     return res
+
 
 def add_usuario(u, p, r, foto_bytes=None):
     conexion = conectar()
@@ -76,7 +91,10 @@ def add_usuario(u, p, r, foto_bytes=None):
             persona_id = cursor.lastrowid
             cursor.execute("SELECT id FROM roles WHERE nombre = %s", (r,))
             rol_id = cursor.fetchone()[0]
+
+            # Cifrado inicial seguro
             hashed = bcrypt.hashpw(p.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
             cursor.execute("INSERT INTO usuarios (persona_id, username, password, rol_id) VALUES (%s, %s, %s, %s)",
                            (persona_id, u, hashed, rol_id))
             conexion.commit()
@@ -86,6 +104,7 @@ def add_usuario(u, p, r, foto_bytes=None):
         finally:
             conexion.close()
     return False
+
 
 def update_usuario(uid, user, password, rol, foto_bytes=None):
     conexion = conectar()
@@ -100,9 +119,23 @@ def update_usuario(uid, user, password, rol, foto_bytes=None):
 
             cursor.execute("SELECT id FROM roles WHERE nombre = %s", (rol,))
             rol_id = cursor.fetchone()[0]
-            hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-            cursor.execute("UPDATE usuarios SET username=%s, password=%s, rol_id=%s WHERE persona_id=%s",
-                           (user, hashed, rol_id, uid))
+
+            # FILTRO ANTI-DOBLE CIFRADO: Comprobamos si el administrador ha escrito una contraseña nueva.
+            # Si el texto empieza por "$2" (que es como empiezan TODOS los hashes de bcrypt),
+            # significa que la interfaz nos está devolviendo la clave ya encriptada y no debemos volver a cifrarla.
+            if password and not password.startswith('$2'):
+                hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+                cursor.execute("UPDATE usuarios SET username=%s, password=%s, rol_id=%s WHERE persona_id=%s",
+                               (user, hashed, rol_id, uid))
+            elif password:
+                # Si es un hash intacto, lo guardamos tal cual
+                cursor.execute("UPDATE usuarios SET username=%s, password=%s, rol_id=%s WHERE persona_id=%s",
+                               (user, password, rol_id, uid))
+            else:
+                # Si el campo de contraseña viene vacío, actualizamos solo el rol y el usuario
+                cursor.execute("UPDATE usuarios SET username=%s, rol_id=%s WHERE persona_id=%s",
+                               (user, rol_id, uid))
+
             conexion.commit()
             return True
         except:
@@ -110,6 +143,7 @@ def update_usuario(uid, user, password, rol, foto_bytes=None):
         finally:
             conexion.close()
     return False
+
 
 def delete_usuario(uid):
     conexion = conectar()
@@ -123,6 +157,7 @@ def delete_usuario(uid):
             conexion.close()
     return False
 
+
 def get_presos():
     conexion = conectar()
     res = []
@@ -130,13 +165,18 @@ def get_presos():
         try:
             cursor = conexion.cursor(dictionary=True)
             query = """
-                    SELECT p.id, CONCAT(p.nombre, ' ', p.apellidos) as nombre, pr.delito, c.codigo as celda,
-                           DATE_FORMAT(ac.fecha_ingreso, '%d/%m/%Y %H:%M') as fecha_ingreso, p.foto
+                    SELECT p.id, \
+                           CONCAT(p.nombre, ' ', p.apellidos)              as nombre, \
+                           pr.delito, \
+                           c.codigo                                        as celda,
+                           DATE_FORMAT(ac.fecha_ingreso, '%d/%m/%Y %H:%M') as fecha_ingreso, \
+                           p.foto
                     FROM personas p
                              JOIN presos pr ON p.id = pr.persona_id
                              LEFT JOIN asignacion_celdas ac ON pr.persona_id = ac.preso_id AND ac.activo = 1
                              LEFT JOIN celdas c ON ac.celda_id = c.id
-                    WHERE p.activo = 1 ORDER BY p.fecha_alta DESC
+                    WHERE p.activo = 1 \
+                    ORDER BY p.fecha_alta DESC
                     """
             cursor.execute(query)
             datos = cursor.fetchall()
@@ -146,6 +186,7 @@ def get_presos():
         finally:
             conexion.close()
     return res
+
 
 def add_preso(nombre_completo, delito, celda_codigo, foto_bytes=None):
     conexion = conectar()
@@ -173,6 +214,7 @@ def add_preso(nombre_completo, delito, celda_codigo, foto_bytes=None):
         finally:
             conexion.close()
     return False
+
 
 def update_preso(pid, dat, foto_bytes=None):
     conexion = conectar()
@@ -204,6 +246,7 @@ def update_preso(pid, dat, foto_bytes=None):
         finally:
             conexion.close()
     return False
+
 
 def delete_preso(pid):
     conexion = conectar()
