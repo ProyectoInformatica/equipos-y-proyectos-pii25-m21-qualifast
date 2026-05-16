@@ -3,44 +3,28 @@ from vista.temas import COLORS, DEVICE_ICONS
 import modelo.manejador_datos as modelo
 import os
 import csv
-import json
 import subprocess
 import platform
-
-FILE_PRESOS = "modelo/presos.json"
-FILE_PUERTAS = "modelo/puertas_log.json"
-FILE_SENSORES = "modelo/sensores_log.json"
-FILE_ACTUADORES = "modelo/actuadores_estado.json"
 
 ITEMS_POR_PAGINA = 50
 
 
-def ejecutar_exportacion_directa(archivo_json, ruta_destino):
+def ejecutar_exportacion_directa(datos, ruta_destino):
     try:
-        if not os.path.exists(archivo_json): return False, f"No se encuentra: {archivo_json}"
-        with open(archivo_json, 'r', encoding='utf-8') as f:
-            datos = json.load(f)
-        if not datos: return False, "El archivo JSON está vacío."
+        if not datos or len(datos) == 0:
+            return False, "No hay datos en la Base de Datos para exportar."
 
-        if isinstance(datos, dict):
-            datos_preparados = []
-            for k, v in datos.items():
-                if isinstance(v, dict):
-                    fila = {"id": k}
-                    fila.update(v)
-                    datos_preparados.append(fila)
-                else:
-                    datos_preparados.append({"parametro": k, "valor": v})
-            datos = datos_preparados
+        datos_limpios = []
+        for fila in datos:
+            fila_limpia = {k: v for k, v in fila.items() if k != 'foto'}
+            datos_limpios.append(fila_limpia)
 
-        if isinstance(datos, list) and len(datos) > 0:
-            columnas = datos[0].keys()
-            with open(ruta_destino, 'w', newline='', encoding='utf-8') as f:
-                writer = csv.DictWriter(f, fieldnames=columnas)
-                writer.writeheader()
-                writer.writerows(datos)
-            return True, f"Guardado correctamente"
-        return False, "Formato de datos no compatible."
+        columnas = datos_limpios[0].keys()
+        with open(ruta_destino, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=columnas)
+            writer.writeheader()
+            writer.writerows(datos_limpios)
+        return True, "Guardado correctamente en CSV"
     except Exception as e:
         return False, str(e)
 
@@ -61,14 +45,15 @@ def obtener_ruta_guardado_universal(nombre_defecto):
 
 
 def crear_vista_historico(datos_promedio_sensores, datos_log_actuadores, on_volver_dashboard):
-    def iniciar_descarga(e, ruta_json):
-        nombre_file = os.path.basename(ruta_json).replace(".json", ".csv")
+    def iniciar_descarga(e, funcion_fetch, nombre_archivo):
         e.page.snack_bar = ft.SnackBar(ft.Text("Abriendo ventana de guardado..."), duration=1000)
         e.page.snack_bar.open = True
         e.page.update()
-        ruta_destino = obtener_ruta_guardado_universal(nombre_file)
+
+        ruta_destino = obtener_ruta_guardado_universal(nombre_archivo)
         if ruta_destino:
-            exito, msj = ejecutar_exportacion_directa(ruta_json, ruta_destino)
+            datos = funcion_fetch()
+            exito, msj = ejecutar_exportacion_directa(datos, ruta_destino)
             col = COLORS['good'] if exito else "red"
             e.page.snack_bar = ft.SnackBar(ft.Text(msj), bgcolor=col)
             e.page.snack_bar.open = True
@@ -77,13 +62,13 @@ def crear_vista_historico(datos_promedio_sensores, datos_log_actuadores, on_volv
     botones_exportar = ft.Row([
         ft.Text("Exportar a CSV:", size=12, color=COLORS['muted'], weight="bold"),
         ft.IconButton(ft.Icons.PEOPLE, tooltip="Presos", icon_size=20,
-                      on_click=lambda e: iniciar_descarga(e, FILE_PRESOS)),
-        ft.IconButton(ft.Icons.MEETING_ROOM, tooltip="Log Puertas", icon_size=20,
-                      on_click=lambda e: iniciar_descarga(e, FILE_PUERTAS)),
+                      on_click=lambda e: iniciar_descarga(e, modelo.get_presos, "presos.csv")),
+        ft.IconButton(ft.Icons.MEETING_ROOM, tooltip="Log Actuadores", icon_size=20,
+                      on_click=lambda e: iniciar_descarga(e, modelo.get_all_actuadores_log_csv, "actuadores.csv")),
         ft.IconButton(ft.Icons.SENSORS, tooltip="Log Sensores", icon_size=20,
-                      on_click=lambda e: iniciar_descarga(e, FILE_SENSORES)),
-        ft.IconButton(ft.Icons.TOGGLE_ON, tooltip="Estado Actuadores", icon_size=20,
-                      on_click=lambda e: iniciar_descarga(e, FILE_ACTUADORES)),
+                      on_click=lambda e: iniciar_descarga(e, modelo.get_all_sensores_log_csv, "sensores.csv")),
+        ft.IconButton(ft.Icons.CHAT, tooltip="Historial de Chats", icon_size=20,
+                      on_click=lambda e: iniciar_descarga(e, modelo.get_all_chats_csv, "chats_completos.csv")),
     ], spacing=2)
 
     tabs_list = []
@@ -97,7 +82,8 @@ def crear_vista_historico(datos_promedio_sensores, datos_log_actuadores, on_volv
         estado_pag = {"mostrados": 0}
 
         def cargar_mas_puerta(e, lv=lv_puerta, btn=btn_cargar, p_id=pid, st=estado_pag):
-            chunk = modelo.get_log_actuadores_paginado(p_id, limit=ITEMS_POR_PAGINA, offset=st["mostrados"])
+            chunk = modelo.get_log_actuadores_paginado(p_id, limit=ITEMS_POR_PAGINA,
+                                                       ultimo_timestamp=st.get("ultimo_ts"))
             for evento in chunk:
                 color_estado = COLORS['good'] if evento['accion'] == "abierta" else COLORS['bad']
                 icon_estado = ft.Icons.LOCK_OPEN if evento['accion'] == "abierta" else ft.Icons.LOCK_OUTLINE
@@ -111,7 +97,8 @@ def crear_vista_historico(datos_promedio_sensores, datos_log_actuadores, on_volv
                     ], spacing=2)
                 )
                 lv.controls.append(card)
-            st["mostrados"] += len(chunk)
+            if chunk:
+                st["ultimo_ts"] = chunk[-1]['timestamp']  # Guardamos la marca temporal para el próximo avance rápido
             btn.visible = (len(chunk) == ITEMS_POR_PAGINA)
             if lv.page: lv.update()
             if btn.page: btn.update()
@@ -123,8 +110,9 @@ def crear_vista_historico(datos_promedio_sensores, datos_log_actuadores, on_volv
             content=ft.Column([
                 ft.Container(
                     content=ft.Text(f"PUERTA {pid.replace('door-', 'P')}", weight="bold", color=COLORS['accent'],
-                                    size=12), bgcolor=COLORS['room_bg'], padding=5, border_radius=5,
-                    alignment=ft.alignment.center),
+                                    size=12),
+                    bgcolor=COLORS['room_bg'], padding=5, border_radius=5, alignment=ft.alignment.center
+                ),
                 lv_puerta, btn_cargar
             ], expand=True),
             expand=1, bgcolor=COLORS['room_bg'], padding=5, border=ft.border.all(1, COLORS['glass']), border_radius=8
@@ -146,11 +134,14 @@ def crear_vista_historico(datos_promedio_sensores, datos_log_actuadores, on_volv
             rows=[], border=ft.border.all(1, COLORS['glass']), heading_row_color=COLORS['glass'], column_spacing=15
         )
         btn_cargar = ft.ElevatedButton("⬇️ Cargar más", visible=False, bgcolor=COLORS['glass'], color=COLORS['text'])
-        estado_pag = {"mostrados": 0}
+
+        # CORRECCIÓN: Estado de paginación actualizado al Avance Rápido (Keyset)
+        estado_pag = {"ultimo_ts": None}
 
         def cargar_mas(e):
+            # Usamos ultimo_timestamp en lugar del obsoleto offset
             chunk = modelo.get_log_actuadores_paginado(uid_filtro, limit=ITEMS_POR_PAGINA,
-                                                       offset=estado_pag["mostrados"])
+                                                       ultimo_timestamp=estado_pag.get("ultimo_ts"))
             for log in chunk:
                 color_st = COLORS['good'] if log['accion'] == "on" else COLORS['muted']
                 row = ft.DataRow(cells=[
@@ -161,7 +152,10 @@ def crear_vista_historico(datos_promedio_sensores, datos_log_actuadores, on_volv
                     ft.DataCell(ft.Text(f"👤 {log.get('usuario', 'sistema')}", size=12, color=COLORS['muted'])),
                 ])
                 tabla.rows.append(row)
-            estado_pag["mostrados"] += len(chunk)
+
+            if chunk:
+                estado_pag["ultimo_ts"] = chunk[-1]['timestamp']  # Guardamos la marca temporal
+
             btn_cargar.visible = (len(chunk) == ITEMS_POR_PAGINA)
             if tabla.page: tabla.update()
             if btn_cargar.page: btn_cargar.update()
@@ -194,9 +188,14 @@ def crear_vista_historico(datos_promedio_sensores, datos_log_actuadores, on_volv
     else:
         for nombre_sensor, datos_lista in datos_promedio_sensores.items():
             datos_lista = list(reversed(datos_lista))
+
             t_sensor = ft.DataTable(
-                columns=[ft.DataColumn(ft.Text("Hora")), ft.DataColumn(ft.Text("Promedio"))],
-                rows=[], border=ft.border.all(1, COLORS['glass']), heading_row_color=COLORS['glass']
+                columns=[ft.DataColumn(ft.Text("Fecha y Hora")), ft.DataColumn(ft.Text("Promedio"))],
+                rows=[],
+                border=ft.border.all(1, COLORS['glass']),
+                heading_row_color=COLORS['glass'],
+                horizontal_lines=ft.border.BorderSide(1, "#4b5563"),
+                column_spacing=20
             )
             btn_c = ft.TextButton("Cargar más", visible=False)
             st_sen = {"mostrados": 0, "total": len(datos_lista), "datos": datos_lista, "tabla": t_sensor, "btn": btn_c}
@@ -232,7 +231,7 @@ def crear_vista_historico(datos_promedio_sensores, datos_log_actuadores, on_volv
                 bgcolor=COLORS['room_bg'], padding=15, border_radius=10, border=ft.border.all(1, COLORS['glass']),
                 content=ft.Column([
                     ft.Text(f"{icon_s} {nombre_sensor}", size=16, weight="bold", color=COLORS['accent']),
-                    ft.Divider(color=COLORS['glass']),
+                    ft.Divider(height=2, thickness=2, color=COLORS['accent']),
                     ft.Column([t_sensor], scroll=ft.ScrollMode.AUTO, expand=True),
                     btn_c
                 ], expand=True)
@@ -240,8 +239,14 @@ def crear_vista_historico(datos_promedio_sensores, datos_log_actuadores, on_volv
             controles_sensores.append(card_sensor)
 
     tab_sensores = ft.Tab(text="📈 Sensores (Medias)", content=ft.Container(
-        content=ft.GridView(controls=controles_sensores, runs_count=2, max_extent=400, child_aspect_ratio=0.8,
-                            spacing=10, run_spacing=10, ), padding=20))
+        content=ft.GridView(
+            controls=controles_sensores,
+            runs_count=3,
+            max_extent=None,
+            child_aspect_ratio=0.8,
+            spacing=20,
+            run_spacing=20,
+        ), padding=20))
     tabs_list.append(tab_sensores)
 
     tbs = ft.Tabs(selected_index=0, animation_duration=300, tabs=tabs_list, expand=True, divider_color=COLORS['glass'],
@@ -253,7 +258,6 @@ def crear_vista_historico(datos_promedio_sensores, datos_log_actuadores, on_volv
         botones_exportar
     ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
 
-    # Devolvemos un Container envuelto y preparado para encajar con el menú lateral
     return ft.Container(
         content=ft.Column([header, ft.Divider(color=COLORS['glass']), tbs], expand=True),
         padding=30, expand=True, bgcolor=COLORS['card'], border_radius=10, border=ft.border.all(1, COLORS['glass'])

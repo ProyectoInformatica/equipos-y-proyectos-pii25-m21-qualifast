@@ -18,3 +18,13 @@ Thumbs.db
 .idea/
 *.iws
 workspace.xml
+
+# Configuración local (evita conflictos de BD/IPs entre ordenadores)
+ajustes_locales.json
+
+# Logs del chat generados automáticamente
+logs_chat/
+
+# Imágenes generadas dinámicamente por la cámara simulada
+capturas_simuladas/*.jpg
+capturas_simuladas/*.png

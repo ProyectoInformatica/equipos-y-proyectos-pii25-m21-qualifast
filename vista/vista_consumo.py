@@ -27,7 +27,7 @@ def crear_vista_consumo(on_volver_dashboard):
         columns=[
             ft.DataColumn(ft.Text("Dispositivo", weight="bold")),
             ft.DataColumn(ft.Text("Estado", weight="bold")),
-            ft.DataColumn(ft.Text("Consumo (W)", weight="bold", text_align="right")),
+            ft.DataColumn(ft.Text("Consumo", weight="bold", text_align="right")),
         ],
         rows=[], border=ft.border.all(1, COLORS['glass']), heading_row_color=COLORS['glass'], expand=True
     )
@@ -40,12 +40,13 @@ def crear_vista_consumo(on_volver_dashboard):
 
         tabla_consumo.rows.clear()
         for d in datos["detalles"]:
-            color_st = COLORS['good'] if d['estado'] in ["ON", "Activo", "Moviendo", "Online"] else COLORS['muted']
+            color_st = COLORS['good'] if d['estado'] in ["ON", "Activo", "Moviendo", "Online", "Constante"] else COLORS['muted']
             tabla_consumo.rows.append(
                 ft.DataRow(cells=[
                     ft.DataCell(ft.Text(d['nombre'], color=COLORS['text'])),
                     ft.DataCell(ft.Text(d['estado'], color=color_st, weight="bold")),
-                    ft.DataCell(ft.Text(f"{d['watts']} W", color=COLORS['text'])),
+                    # Cambiamos "watts" por "consumo" para que coincida con la Base de Datos
+                    ft.DataCell(ft.Text(str(d.get('consumo', '0 W')), color=COLORS['text'])),
                 ])
             )
         if txt_total_val.page:

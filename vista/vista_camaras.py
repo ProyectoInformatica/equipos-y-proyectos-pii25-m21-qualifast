@@ -7,65 +7,92 @@ import urllib.request
 import time
 
 
-class VideoStream(ft.Image):
+class VideoStream(ft.Container):
     def __init__(self, url):
-        # Componente de imagen nativo de Flet
-        super().__init__(expand=True, fit=ft.ImageFit.CONTAIN, border_radius=10)
+        super().__init__(
+            expand=True,
+            border_radius=10,
+            alignment=ft.alignment.center,
+            clip_behavior=ft.ClipBehavior.HARD_EDGE
+        )
         self.url = url
         self.running = False
 
+        # 1. Píxel transparente en base64 para evitar el error inicial de Flet
+        pixel_transparente = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+
+        self.img_control = ft.Image(
+            src_base64=pixel_transparente,
+            expand=True,
+            fit=ft.ImageFit.CONTAIN,
+            visible=False  # Oculto hasta que haya señal
+        )
+
+        # 2. El recuadro translúcido de error/espera con nuestro mensaje controlado
+        self.error_control = ft.Container(
+            content=ft.Column([
+                ft.Icon(ft.Icons.VIDEOCAM_OFF, size=50, color=COLORS['muted']),
+                ft.Text("CONEXIÓN CON CÁMARA PERDIDA", weight="bold", color=COLORS['text'], size=16),
+                ft.Text("Intentando reconectar o cámara apagada...", size=12, color=COLORS['muted'])
+            ], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+            # SOLUCIÓN: Usamos código Hexadecimal ARGB en lugar de ft.colors (#0D = 5% opacidad)
+            bgcolor="#0DFFFFFF",
+            expand=True,
+            alignment=ft.alignment.center
+        )
+
+        # Por defecto, el contenido del contenedor es el error
+        self.content = self.error_control
+
     def did_mount(self):
-        # Al entrar en la pestaña, arrancamos el motor de captura
         self.running = True
         threading.Thread(target=self.update_frames, daemon=True).start()
 
     def will_unmount(self):
-        # Al salir de la pestaña, detenemos la captura para no saturar el Wi-Fi
         self.running = False
 
     def update_frames(self):
         while self.running:
             try:
-                # Nos conectamos a la cámara "en crudo"
                 req = urllib.request.Request(self.url)
                 stream = urllib.request.urlopen(req, timeout=5)
                 bytes_data = b''
 
+                # Si engancha la señal, cambiamos el contenido a la imagen
+                self.content = self.img_control
+                self.img_control.visible = True
+                self.update()
+
                 while self.running:
-                    # Leemos los datos a trozos
                     chunk = stream.read(8192)
-                    if not chunk:
-                        break  # Si la cámara se apaga, salimos
+                    if not chunk: break
 
                     bytes_data += chunk
-
-                    # Buscamos matemáticamente el inicio y fin de una foto JPEG pura
-                    a = bytes_data.find(b'\xff\xd8')  # Inicio
-                    b = bytes_data.find(b'\xff\xd9')  # Fin
+                    a = bytes_data.find(b'\xff\xd8')
+                    b = bytes_data.find(b'\xff\xd9')
 
                     if a != -1 and b != -1:
-                        # ¡Hemos pescado un fotograma entero!
                         jpg = bytes_data[a:b + 2]
-                        bytes_data = bytes_data[b + 2:]  # Limpiamos lo ya leído
-
-                        # Inyectamos el fotograma directamente en la interfaz (sin OpenCV)
-                        self.src_base64 = base64.b64encode(jpg).decode('utf-8')
+                        bytes_data = bytes_data[b + 2:]
+                        self.img_control.src_base64 = base64.b64encode(jpg).decode('utf-8')
                         self.update()
 
-                    # Limpieza de seguridad por si el Wi-Fi da un tirón
-                    if len(bytes_data) > 500000:
-                        bytes_data = b''
+                    if len(bytes_data) > 500000: bytes_data = b''
 
-            except Exception as e:
-                # Si falla o se desconecta, no rompe la app, solo reintenta silenciosamente
-                print(f"Cámara desconectada, buscando señal... ({e})")
+            except Exception:
+                # Si falla (no hay cámara), volvemos a mostrar el recuadro translúcido
+                self.content = self.error_control
+                self.img_control.visible = False
+                try:
+                    self.update()
+                except:
+                    pass
                 time.sleep(2)
 
 
 def crear_vista_camaras(on_refrescar_click, on_volver_dashboard, on_ver_video_click):
     URL_CAMARA = f"http://{modelo.ESP32_CAM_IP}:81/stream"
 
-    # --- PANTALLA PRINCIPAL ---
     monitor_screen = ft.Container(
         content=VideoStream(URL_CAMARA),
         bgcolor="#000000",
@@ -77,7 +104,6 @@ def crear_vista_camaras(on_refrescar_click, on_volver_dashboard, on_ver_video_cl
         clip_behavior=ft.ClipBehavior.HARD_EDGE
     )
 
-    # Contenedor estético centrado
     contenido_centrado = ft.Column([
         ft.Row([
             ft.Icon(ft.Icons.CIRCLE, color="red", size=15),
@@ -85,9 +111,7 @@ def crear_vista_camaras(on_refrescar_click, on_volver_dashboard, on_ver_video_cl
         ], alignment=ft.MainAxisAlignment.CENTER),
 
         ft.Container(height=10),
-
         monitor_screen,
-
         ft.Container(height=20),
 
         ft.Row([
@@ -106,11 +130,6 @@ def crear_vista_camaras(on_refrescar_click, on_volver_dashboard, on_ver_video_cl
             leading=ft.IconButton(ft.Icons.ARROW_BACK, on_click=on_volver_dashboard)
         ),
         controls=[
-            ft.Container(
-                padding=30,
-                expand=True,
-                alignment=ft.alignment.center,
-                content=contenido_centrado
-            )
+            ft.Container(padding=30, expand=True, alignment=ft.alignment.center, content=contenido_centrado)
         ]
     )
