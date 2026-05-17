@@ -107,15 +107,16 @@ python main.py
 ## 📂 Estructura del Repositorio
 
 📦 qualifast-buildings/
-├── main.py                 # Enrutador Flet y bucles concurrentes principales
-├── Script SQL.sql          # Script de despliegue de base de datos MySQL
-├── modelo/
-│   └── dao/                # Objetos de Acceso a Datos (BD, Usuarios, IoT, Chat)
-│   └── manejador_datos.py  # Patrón Fachada centralizado
-├── vista/                  # Controladores de UI (Login, Dashboard, Chat, etc.)
-├── servicios_iot/          # Microservicios de recolección en segundo plano (Daemon)
-├── assets/                 # Recursos gráficos y multimedia
-└── README.md
+
+    ├── main.py                 # Enrutador Flet y bucles concurrentes principales 
+    ├── Script SQL.sql          # Script de despliegue de base de datos MySQL 
+    ├── modelo/ 
+    │   └── dao/                # Objetos de Acceso a Datos (BD, Usuarios, IoT, Chat)
+    │   └── manejador_datos.py  # Patrón Fachada centralizado 
+    ├── vista/                  # Controladores de UI (Login, Dashboard, Chat, etc.)
+    ├── servicios_iot/          # Microservicios de recolección en segundo plano (Daemon)
+    ├── assets/                 # Recursos gráficos y multimedia 
+    └── README.md
 
 
 ## 👥 Equipo de desarrollo
