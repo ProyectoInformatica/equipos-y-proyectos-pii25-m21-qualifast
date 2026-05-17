@@ -96,8 +96,16 @@ pip install -r requirements.txt
 pip install flet==0.28.3 flet-video==0.1.1 mysql-connector-python==9.6.0 bcrypt==5.0.0 requests==2.33.1
 
 ### 3️⃣ Ejecución del Sistema
+### 📡 Sincronización e Inicio del Hardware IoT
 
-Arranca el Controlador Principal. El recolector de datos IoT en segundo plano se lanzará automáticamente para consultar al hardware.
+Para que la aplicación comience a recibir datos en tiempo real del hardware (ESP32):
+
+1. **Encender el Hardware:** Conecta el microcontrolador ESP32 y el ESP32-CAM a la fuente de alimentación (Hotspot activo).
+2. **Arrancar el Microservicio (Daemon):**
+   * **En Windows:** Ejecuta el archivo `iniciar_recolector.bat` (o haz doble clic sobre él) alojado en la raíz o en la carpeta `servicios_iot/`. Esto lanzará el proceso en segundo plano de forma invisible utilizando `pythonw`.
+   * **En macOS / Linux:** Abre una terminal y ejecuta el script de recolección manualmente: `python servicios_iot/recolector.py &`
+3. **Verificación:** Accede al *Dashboard* del sistema y verifica que el indicador de "Controlador" muestra el estado **ONLINE** en color verde y los datos de los sensores comienzan a fluctuar.
+4. **Detención:** Para detener la recolección en Windows, ejecuta el archivo `detener_recolector.bat`.
 
 python main.py
 
