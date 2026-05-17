@@ -1,8 +1,8 @@
-flet
-opencv-python
-flet-video
-flet-webview
-mysql-connector-python
-bcrypt
-requests
-numpy
+flet==0.28.3
+flet-video==0.1.1
+flet-webview==0.1.0
+mysql-connector-python==9.6.0
+bcrypt==5.0.0
+requests==2.33.1
+opencv-python==4.12.0.88
+numpy==2.2.6
