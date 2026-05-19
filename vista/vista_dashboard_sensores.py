@@ -103,7 +103,7 @@ def crear_dashboard_view(
     # =========================================================================
     labels_config = [
         # Administración
-        ft.Container(left=550, top=100, content=ft.Text("RECEPCIÓN", size=18, weight="bold", color="#cfe7ff")),
+        ft.Container(left=520, top=100, content=ft.Text("RECEPCIÓN", size=18, weight="bold", color="#cfe7ff")),
         ft.Container(left=400, top=265, content=ft.Text("VIGILANCIA", size=16, weight="bold", color="#cfe7ff")),
 
         # Celdas (Textos reajustados para quedar centrados en sus trapecios)
