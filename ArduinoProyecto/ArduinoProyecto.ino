@@ -108,3 +108,12 @@ void setup() {
 void loop() {
   server.handleClient();
 }
+
+//Función para insertar datos dentro de la BBDD
+String DatabaseInsert(int dato1, char dato2){
+    server.send(dato1, dato2, "modelo/Script SQL");
+}
+
+String leerDatosOrdinarios(){
+    return DatabaseInsert(dato1,dato2);
+}

@@ -115,6 +115,13 @@ CREATE TABLE IF NOT EXISTS mensajes_chat (
     INDEX idx_chat_participantes (emisor, receptor)
 );
 
+-- Tabla para almacenar los datos del sensor
+CREATE TABLE IF NOT EXISTS datos_ordinarios(
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    dato1 INT,
+    dato2 CHAR
+);
+
 -- ==========================================
 -- 5. CONJUNTO DE DATOS DE PRUEBA
 -- ==========================================
