@@ -5,20 +5,24 @@ from datetime import datetime
 from collections import defaultdict
 from modelo.dao.conexion_db import conectar, LOCAL_CONFIG
 
+
 def get_all_sensores_log_csv():
     conexion = conectar()
     if conexion:
         try:
             cursor = conexion.cursor(dictionary=True)
-            query = "SELECT sl.timestamp, s.nombre, sl.valor, s.unidad FROM sensores_log sl JOIN sensores s ON sl.sensor_id = s.id ORDER BY sl.timestamp ASC"
+            # MODIFICADO: Se añade sl.valor_texto a la consulta
+            query = "SELECT sl.timestamp, s.nombre, sl.valor, sl.valor_texto, s.unidad FROM sensores_log sl JOIN sensores s ON sl.sensor_id = s.id ORDER BY sl.timestamp ASC"
             cursor.execute(query)
             res = []
             for r in cursor.fetchall():
                 if r['timestamp']: r['timestamp'] = r['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
                 res.append(r)
             return res
-        finally: conexion.close()
+        finally:
+            conexion.close()
     return []
+
 
 def get_all_actuadores_log_csv():
     conexion = conectar()
@@ -32,7 +36,8 @@ def get_all_actuadores_log_csv():
                 if r['timestamp']: r['timestamp'] = r['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
                 res.append(r)
             return res
-        finally: conexion.close()
+        finally:
+            conexion.close()
     return []
 
 
@@ -60,6 +65,7 @@ def obtener_estado_esp32():
             conexion.close()
     return False
 
+
 def registrar_dato_sensor(datos):
     conexion = conectar()
     if conexion:
@@ -67,18 +73,31 @@ def registrar_dato_sensor(datos):
             cursor = conexion.cursor(dictionary=True)
             cursor.execute("SELECT id, nombre FROM sensores")
             sensores_db = {r['nombre']: r['id'] for r in cursor.fetchall()}
-            query = "INSERT INTO sensores_log (timestamp, sensor_id, valor) VALUES (%s, %s, %s)"
+
+            # MODIFICADO: Añadido el campo valor_texto en la inserción
+            query = "INSERT INTO sensores_log (timestamp, sensor_id, valor, valor_texto) VALUES (%s, %s, %s, %s)"
             valores = []
+
             for d in datos:
                 sid = sensores_db.get(d['sensor'])
                 if sid:
-                    num = float(re.search(r"([0-9\.]+)", str(d['valor'])).group(1))
-                    valores.append((d['timestamp'], sid, num))
+                    try:
+                        # Extraemos el número con regex permitiendo también negativos
+                        num = float(re.search(r"([-0-9\.]+)", str(d['valor'])).group(1))
+                    except Exception:
+                        num = 0.0
+
+                    # Extraemos el valor alfanumérico si existe, si no es None
+                    val_texto = d.get("valor_texto", None)
+
+                    valores.append((d['timestamp'], sid, num, val_texto))
+
             cursor.executemany(query, valores)
             conexion.commit()
         finally:
             conexion.close()
     verificar_automatizacion(datos)
+
 
 def verificar_automatizacion(ultimos_datos):
     config = get_configuracion()
@@ -104,6 +123,7 @@ def verificar_automatizacion(ultimos_datos):
         elif luz_val >= config['luz_min']:
             set_estado_actuador('leds', 'off')
 
+
 def get_configuracion():
     conexion = conectar()
     config = {"temp_max": 28.0, "luz_min": 400.0, "intervalo_muestreo": 5.0}
@@ -116,6 +136,7 @@ def get_configuracion():
         finally:
             conexion.close()
     return config
+
 
 def save_configuracion(data):
     conexion = conectar()
@@ -132,6 +153,7 @@ def save_configuracion(data):
             conexion.close()
     return False
 
+
 def get_estado_actuadores():
     conexion = conectar()
     estados = {}
@@ -145,14 +167,17 @@ def get_estado_actuadores():
             conexion.close()
     return estados
 
+
 def toggle_actuador(uid, user_id=None):
     estados = get_estado_actuadores()
     curr = estados.get(uid, {}).get("estado", "cerrada")
     nuevo = "abierta" if curr == "cerrada" else "cerrada"
     return _actualizar_actuador(uid, nuevo, user_id)
 
+
 def set_estado_actuador(uid, estado, user_id=None):
     return _actualizar_actuador(uid, estado, user_id)
+
 
 def _actualizar_actuador(uid, estado, user_id):
     conexion = conectar()
@@ -165,18 +190,21 @@ def _actualizar_actuador(uid, estado, user_id):
             if actuador and actuador['estado'] != estado:
                 actuador_id = actuador['id']
                 cursor.execute("UPDATE actuadores SET estado = %s WHERE id = %s", (estado, actuador_id))
-                cursor.execute("INSERT INTO historico_actuadores (actuador_id, usuario_id, accion, timestamp) VALUES (%s, %s, %s, NOW())",
-                               (actuador_id, user_id, estado))
+                cursor.execute(
+                    "INSERT INTO historico_actuadores (actuador_id, usuario_id, accion, timestamp) VALUES (%s, %s, %s, NOW())",
+                    (actuador_id, user_id, estado))
                 conexion.commit()
 
                 try:
                     ip = LOCAL_CONFIG.get("esp32_ip", "")
                     requests.get(f"http://{ip}/actuadores", params={"dispositivo": uid, "estado": estado}, timeout=2)
-                except: pass
+                except:
+                    pass
             return True
         finally:
             conexion.close()
     return False
+
 
 def toggle_modo_actuador(uid):
     conexion = conectar()
@@ -194,19 +222,32 @@ def toggle_modo_actuador(uid):
             conexion.close()
     return False
 
+
 def get_ultimos_sensores_raw():
     conexion = conectar()
     res = []
     if conexion:
         try:
             cursor = conexion.cursor(dictionary=True)
-            cursor.execute("SELECT sl.timestamp, s.nombre as sensor, sl.valor, s.unidad FROM sensores_log sl JOIN sensores s ON sl.sensor_id = s.id ORDER BY sl.id DESC LIMIT 20")
+            # MODIFICADO: Extraemos sl.valor_texto también
+            cursor.execute(
+                "SELECT sl.timestamp, s.nombre as sensor, sl.valor, sl.valor_texto, s.unidad FROM sensores_log sl JOIN sensores s ON sl.sensor_id = s.id ORDER BY sl.id DESC LIMIT 20")
             for r in cursor.fetchall():
-                res.append({"timestamp": r['timestamp'].strftime('%Y-%m-%d %H:%M:%S'), "sensor": r['sensor'],
-                            "valor": f"{r['valor']} {r['unidad']}"})
+
+                # Preparamos el valor que se va a mostrar en el dashboard
+                val_mostrar = f"{r['valor']} {r['unidad']}"
+                if r.get('valor_texto'):
+                    val_mostrar += f" | {r['valor_texto']}"
+
+                res.append({
+                    "timestamp": r['timestamp'].strftime('%Y-%m-%d %H:%M:%S'),
+                    "sensor": r['sensor'],
+                    "valor": val_mostrar
+                })
         finally:
             conexion.close()
     return res[::-1]
+
 
 def get_promedio_sensores_por_hora():
     conexion = conectar()
@@ -214,12 +255,14 @@ def get_promedio_sensores_por_hora():
     if conexion:
         try:
             cursor = conexion.cursor(dictionary=True)
-            cursor.execute("SELECT s.nombre as sensor, DATE_FORMAT(sl.timestamp, '%Y-%m-%d %H:00') as hora, AVG(sl.valor) as promedio, MAX(s.unidad) as unidad FROM sensores_log sl JOIN sensores s ON sl.sensor_id = s.id GROUP BY s.nombre, hora ORDER BY hora ASC")
+            cursor.execute(
+                "SELECT s.nombre as sensor, DATE_FORMAT(sl.timestamp, '%Y-%m-%d %H:00') as hora, AVG(sl.valor) as promedio, MAX(s.unidad) as unidad FROM sensores_log sl JOIN sensores s ON sl.sensor_id = s.id GROUP BY s.nombre, hora ORDER BY hora ASC")
             for r in cursor.fetchall():
                 res_dict[r['sensor']].append({"hora": r['hora'], "valor": f"{r['promedio']:.1f} {r['unidad']}"})
         finally:
             conexion.close()
     return dict(res_dict)
+
 
 def get_consumo_electrico():
     # 1. Obtenemos configuración para el delay
@@ -264,12 +307,14 @@ def get_consumo_electrico():
             estado_sensores = cursor.fetchall()
 
             # Definimos el consumo estimado en vatios (W) para cada tipo de sensor
+            # MODIFICADO: Añadido el Sensor Biordinario para el panel de consumo eléctrico
             consumo_por_sensor = {
                 "DHT11 - Temperatura": 0.1,
                 "DHT11 - Humedad": 0.1,
                 "LDR - Luz": 0.05,
                 "MQ-2 - Humo": 0.8,
-                "MQ-135 - Aire": 0.8
+                "MQ-135 - Aire": 0.8,
+                "Sensor Biordinario": 0.2
             }
 
             for s in estado_sensores:

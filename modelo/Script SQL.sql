@@ -257,3 +257,13 @@ INSERT IGNORE INTO sensores_log (sensor_id, valor, timestamp) VALUES
 (1, 25.0, DATE_SUB(NOW(), INTERVAL 1 HOUR)),  (2, 39.5, DATE_SUB(NOW(), INTERVAL 1 HOUR)),  (3, 880.0, DATE_SUB(NOW(), INTERVAL 1 HOUR)),  (4, 21.0, DATE_SUB(NOW(), INTERVAL 1 HOUR)),  (5, 455.0, DATE_SUB(NOW(), INTERVAL 1 HOUR));
 
 -- SELECT * FROM sensores_log ORDER BY timestamp DESC LIMIT 10;
+
+-- ==========================================
+-- 8. ADAPTACIÓN PARA SENSOR BIORDINARIO
+-- ==========================================
+-- Añadimos una columna que permita texto (alfanumérico) permitiendo nulos para no afectar a los sensores antiguos
+ALTER TABLE sensores_log ADD COLUMN valor_texto VARCHAR(255) NULL;
+
+-- Registramos el nuevo sensor en el catálogo
+INSERT IGNORE INTO sensores (id, codigo, nombre, unidad) VALUES
+(6, 'bio_ord', 'Sensor Biordinario', 'Mixto');
