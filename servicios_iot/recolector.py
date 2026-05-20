@@ -34,21 +34,25 @@ def iniciar_recoleccion():
                 mq135_sim = int(400 + (mq2_val * 0.4) + random.uniform(-10, 15))
                 if mq135_sim < 400: mq135_sim = 400
 
+                sx_num = data.get('sensorx_num', 0)
+                sx_char = data.get('sensorx_char', 'N/A')
+
                 datos = [
                     {"timestamp": timestamp, "sensor": "DHT11 - Temperatura",
                      "valor": f"{data.get('temperatura', 0)} °C"},
                     {"timestamp": timestamp, "sensor": "DHT11 - Humedad", "valor": f"{data.get('humedad', 0)} %"},
                     {"timestamp": timestamp, "sensor": "LDR - Luz", "valor": f"{data.get('luz', 0)} Lux"},
                     {"timestamp": timestamp, "sensor": "MQ-2 - Humo", "valor": f"{mq2_val} ppm"},
-                    {"timestamp": timestamp, "sensor": "MQ-135 - Aire", "valor": f"{mq135_sim} ppm"}
+                    {"timestamp": timestamp, "sensor": "MQ-135 - Aire", "valor": f"{mq135_sim} ppm"},
+                    {"timestamp": timestamp, "sensor": "SensorX - Valor Numérico", "valor": f"{sx_num} U"},
+                    {"timestamp": timestamp, "sensor": "SensorX - Estado Char", "valor": f"{sx_char}"}
                 ]
 
                 modelo.registrar_dato_sensor(datos)
                 print(f"[{timestamp}] Guardado. Intervalo actual: {segundos_espera}s")
 
-        except Exception:
-            # Si el ESP32 falla, esperamos un poco antes de reintentar
-            pass
+        except requests.exceptions.RequestException as e:
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] ⚠️ Error de conexión con ESP32: {e}")
 
         time.sleep(segundos_espera)
 

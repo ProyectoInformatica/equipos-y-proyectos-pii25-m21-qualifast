@@ -1,5 +1,5 @@
-CREATE DATABASE IF NOT EXISTS comisaria_db DEFAULT CHARACTER SET utf8mb4;
-USE comisaria_db;
+CREATE DATABASE IF NOT EXISTS comisaria_db2 DEFAULT CHARACTER SET utf8mb4;
+USE comisaria_db2;
 
 -- ==========================================
 -- 1. CATÁLOGOS Y CONFIGURACIÓN
@@ -142,7 +142,9 @@ INSERT IGNORE INTO sensores (id, codigo, nombre, unidad) VALUES
 (2, 'dht_hum', 'DHT11 - Humedad', '%'),
 (3, 'ldr_luz', 'LDR - Luz', 'Lux'),
 (4, 'mq2_humo', 'MQ-2 - Humo', 'ppm'),
-(5, 'mq135_aire', 'MQ-135 - Aire', 'ppm');
+(5, 'mq135_aire', 'MQ-135 - Aire', 'ppm'),
+(6, 'sx_num', 'SensorX - Valor Numérico', 'U'), -- estos son los datos nuevos, si se inserta de inicio junto a la creacion con esto valdría
+(7, 'sx_char', 'SensorX - Estado Char', 'Cod'); -- si no, se hace un insert values igual y ya funcionaria
 
 INSERT IGNORE INTO actuadores (id, uid, label, estado, mode) VALUES
 (1, 'door-1', 'P1', 'cerrada', 'manual'), (2, 'door-2', 'P2', 'cerrada', 'manual'),
@@ -257,3 +259,4 @@ INSERT IGNORE INTO sensores_log (sensor_id, valor, timestamp) VALUES
 (1, 25.0, DATE_SUB(NOW(), INTERVAL 1 HOUR)),  (2, 39.5, DATE_SUB(NOW(), INTERVAL 1 HOUR)),  (3, 880.0, DATE_SUB(NOW(), INTERVAL 1 HOUR)),  (4, 21.0, DATE_SUB(NOW(), INTERVAL 1 HOUR)),  (5, 455.0, DATE_SUB(NOW(), INTERVAL 1 HOUR));
 
 -- SELECT * FROM sensores_log ORDER BY timestamp DESC LIMIT 10;
+
