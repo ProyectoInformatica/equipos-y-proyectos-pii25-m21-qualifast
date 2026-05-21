@@ -160,6 +160,12 @@ INSERT IGNORE INTO historico_actuadores (actuador_id, usuario_id, accion, timest
 (1, 1, 'cerrada', DATE_SUB(NOW(), INTERVAL 1 HOUR)),
 (5, NULL, 'on', DATE_SUB(NOW(), INTERVAL 30 MINUTE));
 
+INSERT IGNORE INTO sensores (id, codigo, nombre, unidad) 
+VALUES (6, 'multi_avg', 'Sensor Multiordinario - Media 1min', 'uds');
+
+INSERT IGNORE INTO sensores_log (sensor_id, valor, timestamp) 
+VALUES (6, 23.45, NOW());
+
 -- ==========================================
 -- 6. EVENTO LIMPIEZA
 -- ==========================================

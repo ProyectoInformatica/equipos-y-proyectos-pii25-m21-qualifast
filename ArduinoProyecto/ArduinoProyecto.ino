@@ -2,6 +2,7 @@
 #include <WebServer.h>
 #include <DHT.h>
 #include <ArduinoJson.h>
+#include <HTTPClient.h>
 
 // --- CONFIGURACIÓN WIFI ---
 const char* ssid = "PC LOFRA";
@@ -23,6 +24,37 @@ DHT dht(DHTPIN, DHTTYPE);
 #define DOOR1_PIN 14  // Pin digital para Motor DC Puerta 1
 #define DOOR2_PIN 15  // Pin digital para Motor DC Puerta 2 
 
+const int MULTI_RX = 6; 
+const int MULTI_TX = 7;
+
+unsigned long tiempoInicio = 0; 
+float sumaValores = 0;          
+int cantidadLecturas = 0;       
+
+void DataBaseLoader(const char* valorMediaStr) {
+  if(WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    
+    http.begin("enpointFicticio.com/guardar");
+    http.addHeader("Content-Type", "application/json");
+
+    
+    StaticJsonDocument<200> doc;
+    doc["sensor"] = "Multiordinario";
+    doc["valor"] = valorMediaStr; 
+    
+    String jsonOutput;
+    serializeJson(doc, jsonOutput);
+
+    int httpResponseCode = http.POST(jsonOutput);
+    
+    if (httpResponseCode > 0) {
+      Serial.print("Media enviada a BD. Código HTTP: ");
+      Serial.println(httpResponseCode);
+    }
+    http.end();
+  }
+}
 void setup() {
   Serial.begin(115200);
   
@@ -103,8 +135,36 @@ void setup() {
   });
 
   server.begin();
+
+  inicializarSensor(MULTI_RX, MULTI_TX);
+  
+  tiempoInicio = millis();
 }
 
 void loop() {
   server.handleClient();
+  if (comprobarDatosDisponibles()) {
+    char* datoAlfanumerico = leerDatosOrdinarios();
+    float valorNumerico = atof(datoAlfanumerico);
+    
+    sumaValores += valorNumerico;
+    cantidadLecturas++;
+  }
+
+  
+  if (millis() - tiempoInicio >= 60000) {
+    
+    if (cantidadLecturas > 0) {
+      float media = sumaValores / cantidadLecturas;
+      char mediaFormateada[10];
+      dtostrf(media, 4, 2, mediaFormateada); 
+      DataBaseLoader(mediaFormateada);
+      
+      Serial.print("Minuto completado. Media enviada: ");
+      Serial.println(mediaFormateada);
+    }
+    sumaValores = 0;
+    cantidadLecturas = 0;
+    tiempoInicio = millis(); 
+  }
 }
