@@ -168,9 +168,9 @@ CREATE EVENT IF NOT EXISTS limpiar_sensores_antiguos
 ON SCHEDULE EVERY 1 DAY
 DO DELETE FROM sensores_log WHERE timestamp < NOW() - INTERVAL 30 DAY;
 
--- ==========================================
--- 7. AMPLIACIÓN DE DATOS PARA EVALUACIÓN
--- ==========================================
+-- ======================
+-- 7. AMPLIACIÓN DE DATOS
+-- ======================
 
 -- 7.A CREACIÓN DE 5 COMISARIOS
 INSERT IGNORE INTO personas (id, dni, nombre, apellidos, tipo_persona) VALUES
