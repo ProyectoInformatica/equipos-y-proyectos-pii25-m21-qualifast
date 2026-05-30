@@ -132,21 +132,30 @@ def crear_dashboard_view(
     txt_led_map = ft.Text(DEVICE_ICONS['leds'], size=26)
 
     icons_config = [
-        # 0: Cámara (Situada exactamente en el vértice sin puertas: Superior-Derecho)
-        ft.Container(left=495, top=156, content=ft.Icon(ft.Icons.VIDEOCAM, color="#fb7185", size=26), bgcolor="white", border_radius=15, on_click=on_ver_camaras_click),
+        # 0: Cámara — SIN CAMBIOS
+        ft.Container(left=495, top=156, content=ft.Icon(ft.Icons.VIDEOCAM, color="#fb7185", size=26), bgcolor="white",
+                     border_radius=15, on_click=on_ver_camaras_click),
 
-        # 1-5: SENSORES (Devueltos a Recepción, en la parte superior central)
-        ft.Container(left=430, top=40, content=ft.Text("💧", size=22), tooltip="DHT11 - Humedad"),
-        ft.Container(left=470, top=40, content=ft.Text(DEVICE_ICONS['ldr'], size=22), tooltip="LDR - Luz"),
-        ft.Container(left=510, top=40, content=ft.Text(DEVICE_ICONS['mq-2'], size=22), tooltip="MQ-2 - Humo"),
-        ft.Container(left=550, top=45, content=ft.Text(DEVICE_ICONS['dht11'], size=18), tooltip="DHT11 - Temperatura"),
-        ft.Container(left=590, top=40, content=ft.Text("🌬️", size=22), tooltip="MQ-2 - Calidad Aire"),
+        # 1: 💧 Humedad → Más arriba y a la derecha (para asentarse en la línea de Celda 1)
+        ft.Container(left=310, top=9, content=ft.Text("💧", size=22), tooltip="DHT11 - Humedad"),
 
-        # 6: Actuador Fan (En recepción junto a los sensores)
-        ft.Container(left=630, top=40, content=txt_fan_map, tooltip="Ventilación"),
+        # 2: LDR Luz → Un pelín más arriba y a la derecha (sobre la línea inclinada)
+        ft.Container(left=380, top=145, content=ft.Text(DEVICE_ICONS['ldr'], size=22), tooltip="LDR - Luz"),
 
-        # 7: Actuador LEDs (Mantenemos iluminación general en Vigilancia)
-        ft.Container(left=435, top=220, content=txt_led_map, tooltip="Iluminación Central"),
+        # 3: MQ-2 Humo → Más a la izquierda y un par de píxeles abajo (en el borde de Celda 4)
+        ft.Container(left=720, top=240, content=ft.Text(DEVICE_ICONS['mq-2'], size=22), tooltip="MQ-2 - Humo"),
+
+        # 4: DHT11 Temp → A la altura del fuego, más a la izquierda (justo arriba/derecha de la intersección central)
+        ft.Container(left=570, top=240, content=ft.Text(DEVICE_ICONS['dht11'], size=18), tooltip="DHT11 - Temperatura"),
+
+        # 5: 🌬️ Calidad Aire → Un poco más arriba y un píxel a la izquierda (en la línea de Recepción)
+        ft.Container(left=585, top=9, content=ft.Text("🌬️", size=22), tooltip="MQ-2 - Calidad Aire"),
+
+        # 6: Actuador Fan → Ajustado en el eje X para quedar perfectamente centrado bajo la bombilla
+        ft.Container(left=435, top=292, content=txt_fan_map, tooltip="Ventilación"),
+
+        # 7: LEDs — SIN CAMBIOS
+        ft.Container(left=440, top=220, content=txt_led_map, tooltip="Iluminación Central"),
     ]
     # =========================================================================
 
