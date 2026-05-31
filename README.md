@@ -25,7 +25,7 @@
 
 El sistema permite **monitorizar condiciones ambientales en tiempo real**, controlar iluminación y ventilación de forma automática o manual, y gestionar las credenciales de los agentes mediante cifrado seguro. Cada usuario accede a una **interfaz gráfica interactiva y concurrente** personalizada según su rol (comisario, inspector o policía).
 
-> 🎯 **Objetivo:** Mejorar la seguridad, eficiencia energética y sostenibilidad en instalaciones policiales mediante tecnologías IoT, bases de datos relacionales y control centralizado.
+> 🎯 **Objetivo:** Mejorar la seguridad, eficiencia energética y la sostenibilidad en instalaciones policiales mediante tecnologías IoT, bases de datos relacionales y control centralizado.
 
 ---
 
