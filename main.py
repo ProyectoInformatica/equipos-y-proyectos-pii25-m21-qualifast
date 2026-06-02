@@ -11,7 +11,6 @@ from vista import vista_login, vista_dashboard_sensores, vista_camaras, vista_ge
 logging.getLogger('asyncio').setLevel(logging.CRITICAL)
 logging.getLogger('flet_core').setLevel(logging.CRITICAL)
 
-
 def loop_controlador_ui(page):
     while True:
         try:
@@ -86,13 +85,9 @@ def on_control_actuador_click(e, actuador_id, valor_objetivo=None):
 
 def on_refrescar_click(e):
     if hasattr(e, 'page') and e.page:
-        # SOLUCIÓN DEFINITIVA: Cuando Flet cierra un diálogo, el motor gráfico (Flutter)
-        # necesita unos milisegundos para terminar la animación de cierre. Si destruimos
-        # la vista actual antes de que acabe, la pantalla crashea y se queda en negro.
         def recarga_segura():
-            time.sleep(0.3)  # Retraso estratégico para que termine la animación visual
+            time.sleep(0.3)
             e.page.on_route_change(None)
-
         threading.Thread(target=recarga_segura, daemon=True).start()
 
 
@@ -135,6 +130,13 @@ def main(page: ft.Page):
     page.theme_mode = ft.ThemeMode.DARK
     page.padding = 0
 
+    # --- NUEVO: FORZAR PANTALLA MAXIMIZADA ---
+    try:
+        page.window.state = ft.WindowState.MAXIMIZED
+    except AttributeError:
+        # Fallback para versiones antiguas de Flet
+        page.window_state = "maximized"
+
     file_picker = ft.FilePicker()
     page.overlay.append(file_picker)
 
@@ -144,6 +146,7 @@ def main(page: ft.Page):
         try:
             page.views.clear()
             route = page.route
+            if route == "/temp": return
 
             rol = page.session.get("user_rol")
             if not rol and route != "/login":
@@ -164,9 +167,8 @@ def main(page: ft.Page):
                     on_refrescar_click, on_control_actuador_click, lambda e: page.go("/camaras"),
                     lambda e, a: modelo.toggle_modo_actuador(a)
                 )
-                v = ft.View("/dashboard",
-                            controls=[ft.Row([get_nav_rail(page, route, on_logout_click), ft.VerticalDivider(width=1),
-                                              ft.Container(content=content, expand=True)], expand=True)])
+                v = ft.View("/dashboard", controls=[ft.Row([get_nav_rail(page, route, on_logout_click), ft.VerticalDivider(width=1),
+                                                            ft.Container(content=content, expand=True)], expand=True)])
                 v.data = content.data
                 page.views.append(v)
 
@@ -210,9 +212,8 @@ def main(page: ft.Page):
 
             elif route == "/consumo":
                 content = vista_consumo.crear_vista_consumo(lambda e: page.go("/dashboard"))
-                v = ft.View("/consumo",
-                            controls=[ft.Row([get_nav_rail(page, route, on_logout_click), ft.VerticalDivider(width=1),
-                                              ft.Container(content=content, expand=True)], expand=True)])
+                v = ft.View("/consumo", controls=[ft.Row([get_nav_rail(page, route, on_logout_click), ft.VerticalDivider(width=1),
+                                                          ft.Container(content=content, expand=True)], expand=True)])
                 v.data = {"update_callback": content.data.get("update_callback")} if hasattr(content,
                                                                                              'data') and isinstance(
                     content.data, dict) else None

@@ -93,21 +93,11 @@ def crear_vista_login(on_login_click_handler, db_config_actual, on_save_db_confi
         on_click=trigger_login, animate_scale=ft.Animation(300, "easeOut"),
     )
 
-    # --- BOTÓN AJUSTES FLOTANTE ---
-    btn_ajustes = ft.Container(
-        content=ft.IconButton(
-            icon=ft.Icons.SETTINGS,
-            icon_color="#94a3b8",
-            icon_size=28,
-            tooltip="Configurar Conexión",
-            on_click=lambda e: e.page.open(dlg_config)
-        ),
-        width=60,
-        height=60,
-        alignment=ft.alignment.center,
-        border_radius=30,
-        ink=True,
-        margin=ft.padding.only(bottom=20), # SOLUCIÓN: Lo eleva 20 píxeles para que no choque con el suelo
+    # --- NUEVO: BOTÓN FLOTANTE NATIVO (Ignora barras de tareas) ---
+    btn_ajustes_flotante = ft.FloatingActionButton(
+        icon=ft.Icons.SETTINGS,
+        bgcolor="#1f2937",
+        tooltip="Configurar Conexión",
         on_click=lambda e: e.page.open(dlg_config)
     )
 
@@ -118,8 +108,8 @@ def crear_vista_login(on_login_click_handler, db_config_actual, on_save_db_confi
         vertical_alignment=ft.MainAxisAlignment.CENTER,
         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         padding=30,
+        floating_action_button=btn_ajustes_flotante,  # Propiedad nativa implementada
         controls=[
-            ft.Container(expand=True),
             ft.Container(
                 width=460,
                 padding=40,
@@ -142,9 +132,7 @@ def crear_vista_login(on_login_click_handler, db_config_actual, on_save_db_confi
                     texto_error,
 
                 ], horizontal_alignment="center", spacing=12)
-            ),
-            ft.Container(expand=True),
-            ft.Row([ft.Container(expand=True), btn_ajustes], alignment=ft.MainAxisAlignment.END)
+            )
         ]
     )
 
