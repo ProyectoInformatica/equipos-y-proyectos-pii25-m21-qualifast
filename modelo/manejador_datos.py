@@ -53,5 +53,6 @@ from modelo.dao.dao_chat import (
     get_mensajes_chat,
     marcar_mensajes_entregados,
     marcar_mensajes_leidos,
-    get_all_chats_csv
+    get_all_chats_csv,
+    eliminar_conversacion  # <--- CORRECCIÓN AÑADIDA
 )
