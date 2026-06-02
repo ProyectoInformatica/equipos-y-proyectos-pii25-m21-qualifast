@@ -149,14 +149,25 @@ def delete_usuario(uid):
     conexion = conectar()
     if conexion:
         try:
+            conexion.start_transaction()
             cursor = conexion.cursor()
+
+            # 1. Marcamos a la persona como inactiva (Borrado lógico)
             cursor.execute("UPDATE personas SET activo = 0, fecha_baja = NOW() WHERE id=%s", (uid,))
+
+            # 2. CORRECCIÓN: Liberamos el nombre de usuario concatenándole '_del_ID'
+            # para que la restricción UNIQUE de MySQL nos deje crear usuarios con el mismo nombre en el futuro.
+            cursor.execute("UPDATE usuarios SET username = CONCAT(username, '_del_', %s) WHERE persona_id=%s",
+                           (uid, uid))
+
             conexion.commit()
             return True
+        except Exception as e:
+            conexion.rollback()
+            print(f"[ERROR BD] Fallo al eliminar usuario: {e}")
         finally:
             conexion.close()
     return False
-
 
 def get_presos():
     conexion = conectar()

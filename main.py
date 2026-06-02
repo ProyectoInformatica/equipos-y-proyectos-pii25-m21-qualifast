@@ -85,9 +85,10 @@ def on_control_actuador_click(e, actuador_id, valor_objetivo=None):
 
 def on_refrescar_click(e):
     if hasattr(e, 'page') and e.page:
-        ruta = e.page.route
-        e.page.go("/temp")
-        e.page.go(ruta)
+        def recarga_segura():
+            time.sleep(0.3)
+            e.page.on_route_change(None)
+        threading.Thread(target=recarga_segura, daemon=True).start()
 
 
 def guardar_nuevo_preso(e, datos, dialogo, foto_ruta=None):
@@ -128,6 +129,13 @@ def main(page: ft.Page):
     page.title = "Comisaría IoT"
     page.theme_mode = ft.ThemeMode.DARK
     page.padding = 0
+
+    # --- NUEVO: FORZAR PANTALLA MAXIMIZADA ---
+    try:
+        page.window.state = ft.WindowState.MAXIMIZED
+    except AttributeError:
+        # Fallback para versiones antiguas de Flet
+        page.window_state = "maximized"
 
     file_picker = ft.FilePicker()
     page.overlay.append(file_picker)

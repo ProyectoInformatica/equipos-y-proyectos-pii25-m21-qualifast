@@ -1,4 +1,6 @@
 import flet as ft
+import time
+import threading
 from vista.temas import COLORS
 import modelo.manejador_datos as modelo
 
@@ -57,7 +59,6 @@ def crear_vista_usuarios(rol_actual, lista_usuarios, on_crear_usuario_handler, o
         for user in lista_usuarios:
             foto_b64 = user.get('foto')
 
-            # --- SOLUCIÓN AVATAR (Contenedor Redondo con Image src_base64) ---
             avatar = ft.Container(
                 width=40, height=40, border_radius=20, bgcolor=COLORS['glass'], alignment=ft.alignment.center,
                 content=ft.Image(src_base64=foto_b64, fit=ft.ImageFit.COVER, border_radius=20, width=40,
@@ -85,8 +86,11 @@ def crear_vista_usuarios(rol_actual, lista_usuarios, on_crear_usuario_handler, o
                         e.page.update()
                     else:
                         if modelo.delete_usuario(uid):
-                            e.page.go("/temp")
-                            e.page.go("/usuarios")
+                            def recarga_segura():
+                                time.sleep(0.3)
+                                e.page.on_route_change(None)
+
+                            threading.Thread(target=recarga_segura, daemon=True).start()
 
                 btn_row = ft.Row(spacing=5)
                 btn_row.controls.append(ft.IconButton(icon=ft.Icons.EDIT, icon_color=COLORS['accent'], tooltip="Editar",
@@ -114,13 +118,16 @@ def crear_vista_usuarios(rol_actual, lista_usuarios, on_crear_usuario_handler, o
 
 def crear_dialogo_usuario(titulo, usuario_actual, file_picker, on_editar_usuario_handler):
     val_user = usuario_actual.get("user", "")
-    val_pass = usuario_actual.get("password", "")
     val_rol = usuario_actual.get("rol", "policia")
 
     txt_user = ft.TextField(label="Nombre de Usuario", value=val_user, bgcolor=COLORS['glass'],
                             border_color=COLORS['muted'])
-    txt_pass = ft.TextField(label="Contraseña", password=True, can_reveal_password=True, value=val_pass,
+
+    txt_pass = ft.TextField(label="Nueva Contraseña", password=True, can_reveal_password=True,
+                            value="",
+                            hint_text="Vacío = No cambiar",  # SOLUCIÓN: Texto acortado
                             bgcolor=COLORS['glass'], border_color=COLORS['muted'])
+
     dd_rol = ft.Dropdown(
         label="Rol del Sistema", value=val_rol, bgcolor=COLORS['glass'], border_color=COLORS['muted'],
         options=[ft.dropdown.Option("comisario"), ft.dropdown.Option("inspector"), ft.dropdown.Option("policia")]

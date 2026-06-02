@@ -12,7 +12,6 @@ def crear_vista_login(on_login_click_handler, db_config_actual, on_save_db_confi
         spacing=5
     )
 
-    # Función que actualiza el estado (será llamada desde main.py periódicamente)
     def update_status(is_connected):
         if is_connected:
             icono_estado.name = ft.Icons.WIFI
@@ -48,7 +47,7 @@ def crear_vista_login(on_login_click_handler, db_config_actual, on_save_db_confi
         }
         on_save_db_config(nuevos_datos)
         e.page.close(dlg_config)
-        update_status(False)  # Se forzará actualización en el próximo tick del main
+        update_status(False)
 
     dlg_config = ft.AlertDialog(
         title=ft.Text("Configuración Base de Datos"),
@@ -64,7 +63,6 @@ def crear_vista_login(on_login_click_handler, db_config_actual, on_save_db_confi
     def trigger_login(e):
         on_login_click_handler(e, campo_usuario, campo_password, texto_error)
 
-    # Se ha añadido autofocus=True
     campo_usuario = ft.TextField(
         label="> USUARIO_", prefix_text="┌─ ", width=380, height=60,
         border=ft.border.only(bottom=ft.border.BorderSide(3, "#38bdf8")),
@@ -95,10 +93,10 @@ def crear_vista_login(on_login_click_handler, db_config_actual, on_save_db_confi
         on_click=trigger_login, animate_scale=ft.Animation(300, "easeOut"),
     )
 
-    # --- BOTÓN AJUSTES FLOTANTE ---
-    btn_ajustes = ft.IconButton(
+    # --- NUEVO: BOTÓN FLOTANTE NATIVO (Ignora barras de tareas) ---
+    btn_ajustes_flotante = ft.FloatingActionButton(
         icon=ft.Icons.SETTINGS,
-        icon_color="#94a3b8",
+        bgcolor="#1f2937",
         tooltip="Configurar Conexión",
         on_click=lambda e: e.page.open(dlg_config)
     )
@@ -110,8 +108,8 @@ def crear_vista_login(on_login_click_handler, db_config_actual, on_save_db_confi
         vertical_alignment=ft.MainAxisAlignment.CENTER,
         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         padding=30,
+        floating_action_button=btn_ajustes_flotante,  # Propiedad nativa implementada
         controls=[
-            ft.Container(expand=True), # Empuja el login hacia el centro
             ft.Container(
                 width=460,
                 padding=40,
@@ -134,13 +132,9 @@ def crear_vista_login(on_login_click_handler, db_config_actual, on_save_db_confi
                     texto_error,
 
                 ], horizontal_alignment="center", spacing=12)
-            ),
-            ft.Container(expand=True), # Empuja el botón de ajustes hacia abajo
-            # El botón de ajustes pasa a la esquina inferior derecha para no alterar el tabulador
-            ft.Row([ft.Container(expand=True), btn_ajustes], alignment=ft.MainAxisAlignment.END)
+            )
         ]
     )
 
-    # Inyectamos el callback en la vista para que main.py pueda llamarlo
     vista.data = {"update_status_callback": update_status}
     return vista
